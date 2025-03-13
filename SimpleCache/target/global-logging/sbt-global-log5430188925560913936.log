@@ -1,0 +1,34 @@
+[debug] > Exec(testOnly CacheControllerTest, None, None)
+[debug] Evaluating tasks: Test / testOnly
+[debug] Running task... Cancel: Signal, check cycles: false, forcegc: true
+[info] compiling 2 Scala sources to C:\Users\gusta\OneDrive - Danmarks Tekniske Universitet\6. Semester\Bachelor\Cache\target\scala-2.13\classes ...
+[info] done compiling
+[info] CacheControllerTest:
+[info] Controller
+[info] - should init
+[info] Controller
+[info] - should miss
+[info] Controller
+[info] - should be invalid
+[info] Controller
+[info] - should be valid
+[info] Controller
+[info] - should hit
+[info] Controller
+[info] - should write
+[info] Controller
+[info] - should read
+[info] Controller
+[info] - should read (other word in block)
+[info] Controller
+[info] - should be invalid (new block)
+[info] Controller
+[info] - should allocate
+[info] Run completed in 10 seconds, 661 milliseconds.
+[info] Total number of tests run: 10
+[info] Suites: completed 1, aborted 0
+[info] Tests: succeeded 10, failed 0, canceled 0, ignored 0, pending 0
+[info] All tests passed.
+[debug] Forcing garbage collection...
+[success] Total time: 22 s, completed 6. mar. 2025 14.41.12
+[debug] > Exec(idea-shell, None, None)

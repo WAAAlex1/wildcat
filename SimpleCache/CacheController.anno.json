@@ -1,0 +1,35 @@
+[
+  {
+    "class":"firrtl.EmitCircuitAnnotation",
+    "emitter":"firrtl.VerilogEmitter"
+  },
+  {
+    "class":"chisel3.experimental.EnumAnnotations$EnumDefAnnotation",
+    "typeName":"CacheController$State",
+    "definition":{
+      "writethrough":4,
+      "allocate":2,
+      "compareTag":1,
+      "idle":0,
+      "writewait":3
+    }
+  },
+  {
+    "class":"chisel3.experimental.EnumAnnotations$EnumComponentAnnotation",
+    "target":"CacheController.CacheController.stateReg",
+    "enumTypeName":"CacheController$State"
+  },
+  {
+    "class":"firrtl.transforms.BlackBoxTargetDirAnno",
+    "targetDir":"."
+  },
+  {
+    "class":"firrtl.transforms.CombinationalPath",
+    "sink":"~CacheController|CacheController>io_cacheMiss",
+    "sources":[
+      "~CacheController|CacheController>io_memAdd",
+      "~CacheController|CacheController>io_validReq",
+      "~CacheController|CacheController>io_memReady"
+    ]
+  }
+]

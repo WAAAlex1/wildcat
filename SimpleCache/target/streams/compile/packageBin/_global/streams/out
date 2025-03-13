@@ -1,0 +1,35 @@
+[debug] Packaging C:\Users\gusta\OneDrive - Danmarks Tekniske Universitet\6. Semester\Bachelor\Cache\target\scala-2.13\cache_2.13-0.1.0-SNAPSHOT.jar ...
+[debug] Input file mappings:
+[debug] 	CacheController$$anon$1.class
+[debug] 	  C:\Users\gusta\OneDrive - Danmarks Tekniske Universitet\6. Semester\Bachelor\Cache\target\scala-2.13\classes\CacheController$$anon$1.class
+[debug] 	CacheController$.class
+[debug] 	  C:\Users\gusta\OneDrive - Danmarks Tekniske Universitet\6. Semester\Bachelor\Cache\target\scala-2.13\classes\CacheController$.class
+[debug] 	CacheController$delayedInit$body.class
+[debug] 	  C:\Users\gusta\OneDrive - Danmarks Tekniske Universitet\6. Semester\Bachelor\Cache\target\scala-2.13\classes\CacheController$delayedInit$body.class
+[debug] 	CacheController$State$.class
+[debug] 	  C:\Users\gusta\OneDrive - Danmarks Tekniske Universitet\6. Semester\Bachelor\Cache\target\scala-2.13\classes\CacheController$State$.class
+[debug] 	CacheController.class
+[debug] 	  C:\Users\gusta\OneDrive - Danmarks Tekniske Universitet\6. Semester\Bachelor\Cache\target\scala-2.13\classes\CacheController.class
+[debug] 	CacheTop$$anon$1.class
+[debug] 	  C:\Users\gusta\OneDrive - Danmarks Tekniske Universitet\6. Semester\Bachelor\Cache\target\scala-2.13\classes\CacheTop$$anon$1.class
+[debug] 	CacheTop.class
+[debug] 	  C:\Users\gusta\OneDrive - Danmarks Tekniske Universitet\6. Semester\Bachelor\Cache\target\scala-2.13\classes\CacheTop.class
+[debug] 	EMem$$anon$1.class
+[debug] 	  C:\Users\gusta\OneDrive - Danmarks Tekniske Universitet\6. Semester\Bachelor\Cache\target\scala-2.13\classes\EMem$$anon$1.class
+[debug] 	EMem$State$.class
+[debug] 	  C:\Users\gusta\OneDrive - Danmarks Tekniske Universitet\6. Semester\Bachelor\Cache\target\scala-2.13\classes\EMem$State$.class
+[debug] 	EMem.class
+[debug] 	  C:\Users\gusta\OneDrive - Danmarks Tekniske Universitet\6. Semester\Bachelor\Cache\target\scala-2.13\classes\EMem.class
+[debug] 	Mux2$$anon$1.class
+[debug] 	  C:\Users\gusta\OneDrive - Danmarks Tekniske Universitet\6. Semester\Bachelor\Cache\target\scala-2.13\classes\Mux2$$anon$1.class
+[debug] 	Mux2.class
+[debug] 	  C:\Users\gusta\OneDrive - Danmarks Tekniske Universitet\6. Semester\Bachelor\Cache\target\scala-2.13\classes\Mux2.class
+[debug] 	Mux4$$anon$2.class
+[debug] 	  C:\Users\gusta\OneDrive - Danmarks Tekniske Universitet\6. Semester\Bachelor\Cache\target\scala-2.13\classes\Mux4$$anon$2.class
+[debug] 	Mux4.class
+[debug] 	  C:\Users\gusta\OneDrive - Danmarks Tekniske Universitet\6. Semester\Bachelor\Cache\target\scala-2.13\classes\Mux4.class
+[debug] 	RAM$$anon$1.class
+[debug] 	  C:\Users\gusta\OneDrive - Danmarks Tekniske Universitet\6. Semester\Bachelor\Cache\target\scala-2.13\classes\RAM$$anon$1.class
+[debug] 	RAM.class
+[debug] 	  C:\Users\gusta\OneDrive - Danmarks Tekniske Universitet\6. Semester\Bachelor\Cache\target\scala-2.13\classes\RAM.class
+[debug] Done packaging.

@@ -1,0 +1,14 @@
+[error] firrtl.passes.PassExceptions: 
+[error] firrtl.passes.CheckInitialization$RefNotInitializedException:  : [module CacheController]  Reference io is not fully initialized.
+[error]    : io.tagOut <= VOID
+[error] firrtl.passes.CheckInitialization$RefNotInitializedException:  @[CacheController.scala 37:24] : [module CacheController]  Reference tagStore is not fully initialized.
+[error]    : io.tagOut <= VOID
+[error]    @[CacheController.scala 350:18] : tagStore.io.DI <= io.tagOut @[CacheController.scala 350:18]
+[error] firrtl.passes.PassException: 2 errors detected!
+[error] (Compile / run) firrtl.passes.PassExceptions: 
+[error] firrtl.passes.CheckInitialization$RefNotInitializedException:  : [module CacheController]  Reference io is not fully initialized.
+[error]    : io.tagOut <= VOID
+[error] firrtl.passes.CheckInitialization$RefNotInitializedException:  @[CacheController.scala 37:24] : [module CacheController]  Reference tagStore is not fully initialized.
+[error]    : io.tagOut <= VOID
+[error]    @[CacheController.scala 350:18] : tagStore.io.DI <= io.tagOut @[CacheController.scala 350:18]
+[error] firrtl.passes.PassException: 2 errors detected!
