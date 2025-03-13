@@ -1,4 +1,14 @@
+/*
+    First draft : Being able to send byte[] through UART
+        Needs to be able to send many bytes over UART
+        Needs to determine structure of address and data. Maybe 32address followed by 32data for every word?
+
+
+
+ */
+
 import com.fazecast.jSerialComm.*;
+import java.util.HexFormat;
 
 public class SendUART {
     public static void main(String[] args) {
@@ -32,19 +42,24 @@ public class SendUART {
         System.out.println("Port opened successfully.");
 
         // Send data
-        String message = "Hello, UART!";
-        byte[] data = message.getBytes();
+            // This byte array should contain the addresses and instructions for turning on the LED on the FPGA board
+        byte[] data = HexFormat.of().parseHex("000000000012829300000004e00003370000000800530023");
         serialPort.writeBytes(data, data.length);
-        System.out.println("Data sent: " + message);
+        System.out.println("Data sent: ");
 
         // Close the port
+        /*
         boolean varb = true;
         while(varb)
         {
             varb = true;
         }
+        */
         serialPort.closePort();
         System.out.println("Port closed.");
 
     }
+
+
+
 }
