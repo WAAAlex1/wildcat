@@ -89,6 +89,9 @@ class BootloaderTop(frequ: Int, baudRate: Int = 115200) extends Module {
   rx.io.rxd := io.rx
 }
 
+//We will be implementing the Bootloader as a module together with Wildcat to test everything so we don't need this:
+/*
 object BootloaderTopTop extends App {
   emitVerilog(new BootloaderTop(100000000), Array("--target-dir", "generated"))
 }
+*/
