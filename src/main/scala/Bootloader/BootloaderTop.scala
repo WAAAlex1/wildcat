@@ -11,15 +11,14 @@ import chisel3.experimental.ChiselEnum
  * Current version is simple and SHOULD BE sufficient for loading elf-files as needed for running uCLinux.
  * Current version is NO LONGER modelled after the following figure: https://media.discordapp.net/attachments/1017062502066036897/1342132354218463233/Bootloader_fem_design.jpg?ex=67b92e68&is=67b7dce8&hm=81295ce8f7da45314c537b57b1d813111f06dd7174463621f7f2cd665a5e183b&=&format=webp&width=543&height=993
  *    The model is outdated since Georg added address reading without adding it to the figure.
- *    To use this new module you should first send the address through UART and then immedietly after the instr
+ *    To use this new module you should first send the address through UART and then immediately after send the instr
  *
- * Initial state waiting for magic number: 0xB00710AD maybe?
- * receive address, then receive data, then send data to address
- * Then return to idle
  *
  * New design : Use a memory-mapped IO signal to deactivate/activate the bootloader
- *
+ *              - Active on startup
+ *              - Memorymapped to 0xF100_0000
  */
+
 class BootloaderTop(frequ: Int, baudRate: Int = 115200) extends Module {
   val io = IO(new Bundle {
     val instrData = Output(UInt(32.W))
