@@ -38,9 +38,9 @@ object SendUART {
     // Send data
     // This byte array should contain the addresses and instructions for turning on the LED on the FPGA board
     val hexString = "F0010000000000FFF100000000000001"
-    val data = BigInt(Integer.parseInt(hexString,16)).toByteArray
+    val data = Array[Byte](0xF0.toByte,0x01.toByte,0x00.toByte,0x00.toByte,0x00.toByte,0x00.toByte,0x00.toByte,0xFF.toByte,0xF1.toByte,0x00.toByte,0x00.toByte,0x00.toByte,0x00.toByte,0x00.toByte,0x00.toByte,0x01.toByte)
     System.out.println(data.mkString("Array(", ", ", ")")) //Check what we are sending
-    serialPort.writeBytes(data, data.length)
+    serialPort.writeBytes(data, hexString.length / 2)
     System.out.println("Data sent.")
     serialPort.closePort
     System.out.println("Port closed.")
