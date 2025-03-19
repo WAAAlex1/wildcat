@@ -1,8 +1,8 @@
 package wildcat.pipeline
 
+import Bootloader._
 import chisel3._
 import wildcat.Util
-
 import chisel.lib.uart._
 
 /*
@@ -23,7 +23,9 @@ class WildcatTop(file: String) extends Module {
     val rx = Input(UInt(1.W))
   })
 
-  val (memory, start) = Util.getCode(file)
+  //No file loading necessary when using the bootloader. Instead pass empty int array.
+  //val (memory, start) = Util.getCode(file)
+  val memory = new Array [Int](100)
 
   // Here switch between different designs
   val cpu = Module(new ThreeCats())
@@ -34,9 +36,15 @@ class WildcatTop(file: String) extends Module {
   val imem = Module(new InstructionROM(memory))
   imem.io.address := cpu.io.imem.address
   cpu.io.imem.data := imem.io.data
-  cpu.io.imem.stall := imem.io.stall
+
+  //Implement quick and dirty stalling:
+  val pcStallReg = RegInit(true.B)
+  cpu.io.imem.stall := pcStallReg
   // TODO: stalling
 
+  //Bootloader module initialization
+  //Frequency set to 100MHz
+  val bootloader = Module(new Bootloader(100000000))
 
   // Here IO stuff
   // IO is mapped ot 0xf000_0000
@@ -78,6 +86,32 @@ class WildcatTop(file: String) extends Module {
     }
     dmem.io.wrEnable := VecInit(Seq.fill(4)(false.B))
   }
+
+  //Bootloader IO
+  //Map bootloader sleep bit to 0xf100_0000, write 0x00 to set bootloader active or 0x01 to set it to sleep
+  // TODO: Test this WildcatTop with Bootloader
+  bootloader.io.rx := io.rx //Connect bootloader UART to toplevel UART rx
+  val bootSleepReg = RegInit(0.U(8.W))
+  when(bootSleepReg === 1.U){
+    pcStallReg := false.B
+  }.elsewhen(true.B){
+    imem.io.address := bootloader.io.instrAddr
+    //imem.io.
+  }
+  bootloader.io.sleep := bootSleepReg(0).asBool
+  when((cpu.io.dmem.wrAddress(31,28) === 0xf.U) && cpu.io.dmem.wrEnable(0)){
+    when(cpu.io.dmem.wrAddress(27,24) === 1.U){
+      bootSleepReg := cpu.io.dmem.wrData(7,0)
+
+    }
+
+    dmem.io.wrEnable := VecInit(Seq.fill(4)(false.B))
+  }
+
+
+
+
+
 
   io.led := 1.U ## 0.U(7.W) ## RegNext(ledReg)
 }
