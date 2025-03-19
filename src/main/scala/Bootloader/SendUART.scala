@@ -41,9 +41,10 @@ object SendUART {
     val data = Array[Byte](0xF0.toByte,0x01.toByte,0x00.toByte,0x00.toByte,0x00.toByte,0x00.toByte,0x00.toByte,0xFF.toByte,0xF1.toByte,0x00.toByte,0x00.toByte,0x00.toByte,0x00.toByte,0x00.toByte,0x00.toByte,0x01.toByte)
 
     for(i <- data){
-      serialPort.writeBytes(data.slice(i,i+4),1)
+      serialPort.writeBytes(data.slice(i,i+4),4)
       System.out.println(data.slice(i,i+4).mkString("Array(", ", ", ")")) //Check what we are sending
     }
+
 
     System.out.println("Data sent.")
     serialPort.closePort
