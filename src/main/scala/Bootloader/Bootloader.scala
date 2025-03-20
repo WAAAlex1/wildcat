@@ -4,18 +4,12 @@ import chisel3._
 import chisel.lib.uart._
 import chisel3.util._
 import chisel3.experimental.ChiselEnum
-import wildcat.pipeline.ScratchPadMem
 
 /**
  * Bootloader by Alexander and Georg for the Wildcat
- *
- * Current version is simple and SHOULD BE sufficient for loading elf-files as needed for running uCLinux.
- * Current version is NO LONGER modelled after the following figure: https://media.discordapp.net/attachments/1017062502066036897/1342132354218463233/Bootloader_fem_design.jpg?ex=67b92e68&is=67b7dce8&hm=81295ce8f7da45314c537b57b1d813111f06dd7174463621f7f2cd665a5e183b&=&format=webp&width=543&height=993
- *    The model is outdated since Georg added address reading without adding it to the figure.
- *    To use this new module you should first send the address through UART and then immedietly after the instr
+ * To use this new module you should first send the address through UART and then immedietly after the instr
  *
  * receive address, then receive data, then send data to address
- * Then return to idle
  *
  * New design : Use a memory-mapped IO signal to deactivate/activate the bootloader
  *
@@ -29,7 +23,7 @@ class Bootloader(frequ: Int, baudRate: Int = 115200) extends Module {
     val sleep = Input(Bool())
   })
 
-  //val tx = Module(new BufferedTx(100000000, baudRate))
+  //val tx = Module(new BufferedTx(frequ, baudRate))
   val rx = Module(new Rx(frequ, baudRate))
   val buffer = Module(new BootBuffer())
 
@@ -84,9 +78,10 @@ class Bootloader(frequ: Int, baudRate: Int = 115200) extends Module {
     }
   }
 
+
   io.wrEnabled := wrEnabled
-  io.instrData := buffer.io.dataOut(63,32)
-  io.instrAddr := buffer.io.dataOut(31,0)
+  io.instrData := buffer.io.dataOut(31,0)
+  io.instrAddr := buffer.io.dataOut(63,32)
   rx.io.rxd := io.rx
 }
 

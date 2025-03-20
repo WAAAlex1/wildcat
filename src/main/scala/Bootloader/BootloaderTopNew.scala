@@ -19,15 +19,13 @@ class BootloaderTop(frequ: Int, baudRate: Int = 115200) extends Module {
 
   bootloader.io.rx := io.rx
   testMem.io.wrAddress := bootloader.io.instrAddr
-  testMem.io.wrEnable := VecInit(Seq.fill(4)(bootloader.io.wrEnabled))
+  testMem.io.wrEnable(0) := bootloader.io.wrEnabled
+  testMem.io.wrEnable(1) := bootloader.io.wrEnabled
+  testMem.io.wrEnable(2) := bootloader.io.wrEnabled
+  testMem.io.wrEnable(3) := bootloader.io.wrEnabled
   testMem.io.wrData := bootloader.io.instrData
   testMem.io.rdAddress := 0.U
   testMem.io.rdEnable := false.B
-
-  val bootAddrReg = RegInit(0.U(16.W))
-  when(bootloader.io.wrEnabled === 1.U){
-    bootAddrReg := bootloader.io.instrAddr(31,16)
-  }
 
   //Bootloader IO
   //Map bootloader sleep bit to 0xf100_0000, write 0x00 to set bootloader active or 0x01 to set it to sleep
@@ -51,9 +49,7 @@ class BootloaderTop(frequ: Int, baudRate: Int = 115200) extends Module {
     }
   }
 
-  io.led := bootAddrReg
-
-
+  io.led := 1.U ## 0.U(7.W) ## ledReg
 }
 
 //We test the bootloader on its own without the wildcat first.
