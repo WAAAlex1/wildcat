@@ -38,9 +38,7 @@ class BootloaderTop(frequ: Int, baudRate: Int = 115200) extends Module {
   when((testMem.io.wrAddress(31, 28) === 0xf.U) && testMem.io.wrEnable(0)) {
     when(testMem.io.wrAddress(27, 24) === 1.U) {
       bootSleepReg := testMem.io.wrData(7, 0)
-
     }
-
   }
 
   //Scuffed memory mapped LED
@@ -52,7 +50,6 @@ class BootloaderTop(frequ: Int, baudRate: Int = 115200) extends Module {
   }
 
   io.led := bootAddrReg
-
 
 }
 

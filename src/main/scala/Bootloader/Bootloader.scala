@@ -33,18 +33,18 @@ class Bootloader(frequ: Int, baudRate: Int = 115200) extends Module {
   val rx = Module(new Rx(frequ, baudRate))
   val buffer = Module(new BootBuffer())
 
-
+  //Initializing values
   object State extends ChiselEnum {
     val Active, Sleep = Value
   }
   import State._
   val stateReg = RegInit(Active)
-
   val incr = RegInit(0.U(1.W))
   val save = RegInit(0.U(1.W))
   val wrEnabled = RegInit(0.U(1.W))
   val byteCount = RegInit(0.U(4.W))
 
+  //Simple counter to find how many bytes have been accepted
   when(incr === 1.U){
     byteCount := byteCount + 1.U
   }
@@ -52,12 +52,13 @@ class Bootloader(frequ: Int, baudRate: Int = 115200) extends Module {
   buffer.io.saveCtrl := save
   buffer.io.dataIn := rx.io.channel.bits
 
+  //Base cases
   rx.io.channel.ready := false.B
   incr := 0.U
   save := 0.U
   wrEnabled := 0.U
 
-
+  //State machine
   switch(stateReg){
     is(Sleep){
       when(!io.sleep){
@@ -84,6 +85,7 @@ class Bootloader(frequ: Int, baudRate: Int = 115200) extends Module {
     }
   }
 
+  //Output connections
   io.wrEnabled := wrEnabled
   io.instrData := buffer.io.dataOut(63,32)
   io.instrAddr := buffer.io.dataOut(31,0)
