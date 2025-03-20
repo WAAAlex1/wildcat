@@ -24,6 +24,11 @@ class BootloaderTop(frequ: Int, baudRate: Int = 115200) extends Module {
   testMem.io.rdAddress := 0.U
   testMem.io.rdEnable := false.B
 
+  val bootAddrReg = RegInit(0.U(16.W))
+  when(bootloader.io.wrEnabled === 1.U){
+    bootAddrReg := bootloader.io.instrAddr(31,16)
+  }
+
   //Bootloader IO
   //Map bootloader sleep bit to 0xf100_0000, write 0x00 to set bootloader active or 0x01 to set it to sleep
   val bootSleepReg = RegInit(0.U(8.W))
@@ -45,7 +50,8 @@ class BootloaderTop(frequ: Int, baudRate: Int = 115200) extends Module {
       ledReg := testMem.io.wrData(7, 0)
     }
   }
-  io.led := 1.U ## 0.U(7.W) ## RegNext(ledReg)
+
+  io.led := bootAddrReg
 
 
 }
