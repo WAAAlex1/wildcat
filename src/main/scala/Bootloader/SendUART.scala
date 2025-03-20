@@ -9,6 +9,8 @@ package Bootloader
 import com.fazecast.jSerialComm._
 import java.util.HexFormat
 import scala.math.BigInt
+import scala.io.Source
+import scala.util.Try
 
 object SendUART {
   def main(args: Array[String]): Unit = {
@@ -33,21 +35,56 @@ object SendUART {
       System.out.println("Failed to open port.")
       return
     }
+    else{
+      System.out.println("Port opened successfully.")
+    }
 
-    System.out.println("Port opened successfully.")
-    // Send data
+    /*
+    // Send data - Test program using hardcoded data
     // This byte array should contain the addresses and instructions for turning on the LED on the FPGA board
-
     val data = Array[Byte](0xF0.toByte,0x01.toByte,0x00.toByte,0x00.toByte,0x00.toByte,0x00.toByte,0x00.toByte,0xFF.toByte,0xF1.toByte,0x00.toByte,0x00.toByte,0x00.toByte,0x00.toByte,0x00.toByte,0x00.toByte,0x01.toByte)
 
     for(i <- data){
       serialPort.writeBytes(data.slice(i,i+4),4)
       System.out.println(data.slice(i,i+4).mkString("Array(", ", ", ")")) //Check what we are sending
     }
+    */
 
+    // Send data - actual program fetching data from file
+    val filePath = "ElfTranslated.txt" // Get data from the translated elf file
+
+    try {
+      val source = Source.fromFile(filePath)
+
+      for (line <- source.getLines()) { // Reading file line by line
+        val parts = line.trim.split("\\s+") // Splitting on one or more spaces
+
+        // Get the address - make into byte array - pad byte array to always be 4 bytes (32bit)
+        val address = parts(0).toInt
+        val addressBytes: Array[Byte] = BigInt(address).toByteArray
+        val addressBytesPadded = addressBytes.reverse.padTo(4,0).reverse //Pad to always 4 bytes (might be needed for small values)
+
+        // Get the data - make into byte array - pad byte array to always be 4 bytes (32bit)
+        val data = parts(1).toInt
+        val dataBytes: Array[Byte] = BigInt(data).toByteArray
+        val dataBytesPadded = dataBytes.reverse.padTo(4, 0).reverse //Pad to always 4 bytes (might be needed for small values)
+
+        // Write address (4 bytes)
+        serialPort.writeBytes(addressBytesPadded, 4)
+        System.out.println(addressBytesPadded.mkString("Array(", ", ", ")")) //Check what we are sending
+
+        // Write data (4 bytes)
+        serialPort.writeBytes(dataBytesPadded, 4)
+        System.out.println(dataBytesPadded.mkString("Array(", ", ", ")")) //Check what we are sending
+      }
+      source.close() // Make sure to close the file we read from
+
+    } catch {
+      case ex: Exception => println(s"Error reading file: ${ex.getMessage}")
+    }
 
     System.out.println("Data sent.")
-    serialPort.closePort
+    serialPort.closePort  // Make sure to close the SerialPort
     System.out.println("Port closed.")
   }
 }
