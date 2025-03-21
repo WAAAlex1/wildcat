@@ -7,6 +7,8 @@ package Bootloader
  */
 
 import com.fazecast.jSerialComm._
+
+import java.nio.ByteBuffer
 import java.util.HexFormat
 import scala.math.BigInt
 import scala.io.Source
@@ -61,20 +63,22 @@ object SendUART {
 
         // Get the address - make into byte array - pad byte array to always be 4 bytes (32bit)
         val address = parts(0).toInt
-        val addressBytes: Array[Byte] = BigInt(address).toByteArray
-        val addressBytesPadded = addressBytes.reverse.padTo(4,0).reverse //Pad to always 4 bytes (might be needed for small values)
+        //val addressBytes = BigInt(address).toByteArray
+        val addressBytesPadded = ByteBuffer.allocate(4).putInt(address).array()
+        //val addressBytesPadded = addressBytes.reverse.padTo(4,0).reverse //Pad to always 4 bytes (might be needed for small values)
 
         // Get the data - make into byte array - pad byte array to always be 4 bytes (32bit)
         val data = parts(1).toInt
-        val dataBytes: Array[Byte] = BigInt(data).toByteArray
-        val dataBytesPadded = dataBytes.reverse.padTo(4, 0).reverse //Pad to always 4 bytes (might be needed for small values)
+        val dataBytesPadded = ByteBuffer.allocate(4).putInt(data).array()
+        //val dataBytes = BigInt(data).toByteArray
+        //val dataBytesPadded = dataBytes.reverse.padTo(4, 0).reverse //Pad to always 4 bytes (might be needed for small values)
 
         // Write address (4 bytes)
-        serialPort.writeBytes(addressBytesPadded, 4)
+        serialPort.writeBytes(addressBytesPadded.slice(0,4), 4)
         System.out.println(addressBytesPadded.mkString("Array(", ", ", ")")) //Check what we are sending
 
         // Write data (4 bytes)
-        serialPort.writeBytes(dataBytesPadded, 4)
+        serialPort.writeBytes(dataBytesPadded.slice(0,4), 4)
         System.out.println(dataBytesPadded.mkString("Array(", ", ", ")")) //Check what we are sending
       }
       source.close() // Make sure to close the file we read from
