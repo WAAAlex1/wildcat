@@ -71,11 +71,11 @@ object SendUART {
 
         // Write address (4 bytes)
         serialPort.writeBytes(addressBytesPadded, 4)
-        System.out.println(addressBytesPadded.mkString("Array(", ", ", ")")) //Check what we are sending
+        System.out.println(addressBytesPadded.mkString("Address: (", ", ", ")")) //Check what we are sending
 
         // Write data (4 bytes)
         serialPort.writeBytes(dataBytesPadded, 4)
-        System.out.println(dataBytesPadded.mkString("Array(", ", ", ")")) //Check what we are sending
+        System.out.println(dataBytesPadded.mkString("Data: (", ", ", ")")) //Check what we are sending
       }
       source.close() // Make sure to close the file we read from
 
