@@ -6,7 +6,7 @@ import java.nio.ByteOrder;
 
 public class ELFHandler {
     public static void main(String[] args) {
-        String elfFilePath = "test.elf"; // Replace with actual ELF file
+        String elfFilePath = "test_program.elf"; // Replace with actual ELF file
 
         try {
             // Get loadable program headers
