@@ -16,7 +16,7 @@ circuit RAM :
       write-latency => 1
       reader => io_DO_MPORT
       writer => MPORT
-      read-under-write => undefined
+      read-under-write => new
     node _T = and(io_rw, io_EN) @[RAM.scala 26:14]
     node _GEN_0 = validif(UInt<1>("h1"), io_ad) @[RAM.scala 27:{22,22}]
     node _io_DO_WIRE = _GEN_0 @[RAM.scala 27:22]

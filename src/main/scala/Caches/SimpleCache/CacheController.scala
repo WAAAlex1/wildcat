@@ -2,6 +2,8 @@ package Caches.SimpleCache
 
 import chisel3._
 import chisel3.util._
+import wildcat.pipeline._
+import Caches.SimpleCache.CacheFunctions._
 
 
 /**
@@ -24,6 +26,8 @@ class CacheController() extends Module {
     val memReady = Input(Bool())
     val cacheMiss = Output(Bool())
     val cacheInvalid = Output(Bool())
+    val wrEnable = Input(Vec (4, Bool()))
+    val modData = Output(UInt(32.W))
   })
 
   val blockSize = 4
@@ -31,14 +35,13 @@ class CacheController() extends Module {
   val blockCount = cacheSize / blockSize
 
   val lastRead = RegInit(0.U(32.W)) // Register to remember last read value
-  val tagStore = Module(new RAM(cacheSize/2,32))
-  val cache = Module(new RAM(cacheSize,32))
-  val extMem = Module(new RAM(4*cacheSize,32))
+  val tagStore = Module(new SRAM(cacheSize/2,32))
+  val cache = Module(new SRAM(cacheSize,32))
+  val extMem = Module(new SRAM(4*cacheSize,32)) // temporary model of external memory
 
 
 
 
-  val byteOffset = io.memAdd(1, 0)
   val blockOffset = io.memAdd(1 + log2Down(blockSize), 2)
   val index = io.memAdd(1 + log2Down(blockSize) + log2Down(blockCount), 2 + log2Down(blockSize))
   val targetTag = io.memAdd(31, 2 + log2Down(blockSize) + log2Down(blockCount))
@@ -47,13 +50,14 @@ class CacheController() extends Module {
   val cacheValid = tagStore.io.DO(1 + log2Down(blockSize) + log2Down(blockCount))
   val writeIndex = RegInit(0.U(3.W)) // Tracks the index during write-through
   val updatedTag = RegInit(0.U(32.W))
-  val cacheHit = RegInit(false.B)
   val cacheWriteAdd = WireInit(0.U(log2Down(cacheSize).W))
   val cacheReadAdd = WireInit(0.U(log2Down(cacheSize).W))
   val memDataIn = WireInit(0.U(32.W))
   val cacheAdd = WireInit(0.U(log2Down(cacheSize).W))
   val memWordAdd = io.memAdd(31, 2)
+  val modifiedData = WireInit(0.U(32.W))
 
+  io.modData := modifiedData
 
   // Default connections
   tagStore.io.rw := true.B
@@ -61,7 +65,7 @@ class CacheController() extends Module {
   cache.io.rw := true.B
   cache.io.EN := false.B
   cache.io.DI := io.DI
-  extMem.io.rw:=true.B
+  extMem.io.rw:= true.B
   extMem.io.EN := false.B
   extMem.io.ad := memWordAdd
   io.cacheMiss := false.B
@@ -87,28 +91,19 @@ class CacheController() extends Module {
   val stateReg = RegInit(idle)
 
 
-  def startRead(M: RAM) = {
-    M.io.EN := true.B
-    M.io.rw := true.B
-  }
-  def writeRAM(M: RAM): Unit = {
-    M.io.EN := true.B
-    M.io.rw := false.B
-  }
-  def setIdle(M: RAM): Unit = {
-    M.io.EN := false.B
-    M.io.rw := true.B
-  }
 
   switch(stateReg) {
     is(idle) {
       setIdle(extMem)
+      io.DO := lastRead
       when(io.validReq) {
         // Start to read tag
         cacheAdd := cacheReadAdd
         startRead(tagStore)
         stateReg := compareTag
+        startRead(cache)
 
+        /*
         when(io.rw) {
           // start Read stuff
           startRead(cache)
@@ -117,7 +112,7 @@ class CacheController() extends Module {
           // write stuff
           writeRAM(cache)
           cache.io.DI := io.DI
-        }
+        } */
 
       }.otherwise {
         setIdle(tagStore)
@@ -128,21 +123,25 @@ class CacheController() extends Module {
       tagStore.io.EN := true.B // Keep enable high for read
       when(!cacheValid) {
         cacheAdd := cacheWriteAdd
-
+        io.cacheMiss := true.B
         startRead(extMem)
         stateReg := allocate
       }.elsewhen(actualTag === targetTag) { // cache hit
         cacheAdd := cacheReadAdd
+        cache.io.EN := true.B // keep enable high for read
+
+
 
         when(io.rw) {
           // Read stuff
-          cache.io.EN := true.B // keep enable high for read
           lastRead := cache.io.DO
+          io.DO := cache.io.DO
           stateReg := idle
         }.otherwise {
           // write stuff
           writeRAM(cache)
-          cache.io.DI := io.DI
+          modifiedData := maskedWriteData(cache.io.DO,io.DI,io.wrEnable)
+          cache.io.DI := modifiedData
           stateReg := writethrough
         }
       }.otherwise { // cache miss
@@ -166,6 +165,7 @@ class CacheController() extends Module {
       }
     }
     is(allocate) {
+      io.cacheMiss := true.B
       // Fetch memory
       writeRAM(cache)
       cacheAdd := cacheWriteAdd
@@ -175,13 +175,13 @@ class CacheController() extends Module {
 
       updatedTag := targetTagWord | "h800".U // Setting valid bit to 1
 
-      when(io.memReady && writeIndex === 3.U) {
+      when(io.memReady && writeIndex === (blockSize - 1).asUInt) {
         //Update tag store
         writeRAM(tagStore)
         stateReg := compareTag
         writeIndex := 0.U
-      }.elsewhen(!io.memReady && writeIndex === 3.U) {
-        writeIndex := 3.U
+      }.elsewhen(!io.memReady && writeIndex === (blockSize - 1).asUInt) {
+        writeIndex := (blockSize - 1).asUInt
       }.otherwise {
         writeIndex := writeIndex + 1.U
       }
@@ -199,8 +199,5 @@ class CacheController() extends Module {
 
 }
 
-object CacheController extends App {
-  println("I will now generate the Verilog file")
-  emitVerilog(new CacheController())
-}
+
 

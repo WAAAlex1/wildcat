@@ -6,7 +6,7 @@ import org.scalatest.flatspec.AnyFlatSpec
 
 class RAMTest extends AnyFlatSpec with ChiselScalatestTester {
   "Ram" should "pass" in {
-    test(new RAM(64,32)) { dut =>
+    test(new SRAM(64,32)) { dut =>
       dut.io.EN.poke(true.B)
       dut.io.ad.poke(0.U)
       dut.io.rw.poke(true.B)

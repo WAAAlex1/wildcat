@@ -1,0 +1,7653 @@
+$date
+2025-03-20T15:04+0000
+$end
+$version
+0.2
+$end
+$comment
+
+$end
+$timescale 1ns  $end
+$scope module WildcatTestTop $end
+ $var wire 8 T io_led $end
+ $var wire 1 ` decExRegdecOutisECall_25 $end
+ $var wire 32 #W io_regFile_20 $end
+ $var wire 32 #X io_regFile_21 $end
+ $var wire 32 #Y io_regFile_24 $end
+ $var wire 32 #Z io_regFile_25 $end
+ $var wire 32 #[ io_regFile_22 $end
+ $var wire 32 #\ io_regFile_23 $end
+ $var wire 32 #] io_regFile_28 $end
+ $var wire 32 #^ io_regFile_29 $end
+ $var wire 32 #_ io_regFile_26 $end
+ $var wire 32 #` io_regFile_27 $end
+ $var wire 32 #a io_regFile_19 $end
+ $var wire 32 #d io_regFile_10 $end
+ $var wire 32 #e io_regFile_13 $end
+ $var wire 32 #f io_regFile_14 $end
+ $var wire 32 #g io_regFile_11 $end
+ $var wire 32 #h io_regFile_12 $end
+ $var wire 32 #i io_regFile_17 $end
+ $var wire 32 #j io_regFile_18 $end
+ $var wire 32 #k io_regFile_15 $end
+ $var wire 32 #l io_regFile_16 $end
+ $var wire 32 #r io_regFile_31 $end
+ $var wire 32 #s io_regFile_30 $end
+ $var wire 8 #{ ledReg_25 $end
+ $var wire 32 $I debugRegs_25_17 $end
+ $var wire 32 $J debugRegs_25_16 $end
+ $var wire 32 $K debugRegs_25_19 $end
+ $var wire 32 $L debugRegs_25_18 $end
+ $var wire 32 $M debugRegs_25_13 $end
+ $var wire 32 $N debugRegs_25_12 $end
+ $var wire 32 $O debugRegs_25_15 $end
+ $var wire 32 $P debugRegs_25_14 $end
+ $var wire 32 $R debugRegs_25_11 $end
+ $var wire 32 $S debugRegs_25_10 $end
+ $var wire 32 $T debugRegs_25_28 $end
+ $var wire 32 $U debugRegs_25_27 $end
+ $var wire 32 $V debugRegs_25_29 $end
+ $var wire 32 $W debugRegs_25_24 $end
+ $var wire 32 $X debugRegs_25_23 $end
+ $var wire 32 $Y debugRegs_25_26 $end
+ $var wire 32 $[ debugRegs_25_25 $end
+ $var wire 32 $] debugRegs_25_20 $end
+ $var wire 32 $_ debugRegs_25_22 $end
+ $var wire 32 $` debugRegs_25_21 $end
+ $var wire 1 $c clock $end
+ $var wire 32 $f debugRegs_25_31 $end
+ $var wire 32 $g debugRegs_25_30 $end
+ $var wire 1 $h io_tx $end
+ $var wire 1 $k cpuTop $end
+ $var wire 1 %5 reset $end
+ $var wire 1 &1 io_rx $end
+ $var wire 1 &3 io_stop $end
+ $var wire 32 &6 debugRegs_25_9 $end
+ $var wire 32 &7 debugRegs_25_8 $end
+ $var wire 32 &8 debugRegs_25_7 $end
+ $var wire 32 &9 debugRegs_25_2 $end
+ $var wire 32 &: debugRegs_25_1 $end
+ $var wire 32 &; debugRegs_25_0 $end
+ $var wire 32 &= debugRegs_25_6 $end
+ $var wire 32 &> debugRegs_25_5 $end
+ $var wire 32 &? debugRegs_25_4 $end
+ $var wire 32 &@ debugRegs_25_3 $end
+ $var wire 32 &G io_regFile_6 $end
+ $var wire 32 &H io_regFile_7 $end
+ $var wire 32 &I io_regFile_4 $end
+ $var wire 32 &J io_regFile_5 $end
+ $var wire 32 &K io_regFile_2 $end
+ $var wire 32 &L io_regFile_3 $end
+ $var wire 32 &M io_regFile_0 $end
+ $var wire 32 &N io_regFile_1 $end
+ $var wire 32 &O io_regFile_8 $end
+ $var wire 32 &P io_regFile_9 $end
+  $scope module cpuTop.cpu $end
+  $upscope $end
+  $scope module cpuTop.imem $end
+  $upscope $end
+  $scope module cpuTop.tx.tx $end
+  $upscope $end
+  $scope module cpuTop.dmem $end
+  $upscope $end
+  $scope module cpuTop.SimpleCache.Controller.tagStore $end
+  $upscope $end
+  $scope module cpuTop.SimpleCache.Controller $end
+  $upscope $end
+  $scope module cpuTop.rx $end
+  $upscope $end
+  $scope module cpuTop.SimpleCache $end
+  $upscope $end
+  $scope module cpuTop $end
+   $var wire 2 7 uartStatusReg $end
+   $var wire 1 K decExReg_decOut_isECall $end
+   $var wire 32 L memAddressReg $end
+   $var wire 1 y dmem $end
+   $var wire 32 "/ debugRegs_22 $end
+   $var wire 32 "0 debugRegs_23 $end
+   $var wire 32 "2 debugRegs_20 $end
+   $var wire 32 "3 debugRegs_21 $end
+   $var wire 32 "4 debugRegs_26 $end
+   $var wire 32 "5 debugRegs_27 $end
+   $var wire 32 "6 debugRegs_24 $end
+   $var wire 32 "7 debugRegs_25 $end
+   $var wire 32 "9 debugRegs_28 $end
+   $var wire 32 ": debugRegs_29 $end
+   $var wire 32 "; debugRegs_30 $end
+   $var wire 32 "< debugRegs_31 $end
+   $var wire 1 #> tx $end
+   $var wire 1 #C rx $end
+   $var wire 32 $7 debugRegs_6 $end
+   $var wire 32 $8 debugRegs_7 $end
+   $var wire 32 $9 debugRegs_8 $end
+   $var wire 32 $: debugRegs_9 $end
+   $var wire 32 $; debugRegs_0 $end
+   $var wire 32 $< debugRegs_1 $end
+   $var wire 32 $> debugRegs_2 $end
+   $var wire 32 $? debugRegs_3 $end
+   $var wire 32 $@ debugRegs_4 $end
+   $var wire 32 $B debugRegs_5 $end
+   $var wire 8 %B ledReg_0 $end
+   $var wire 1 %C printf $end
+   $var wire 1 %F io_tx $end
+   $var wire 1 %P clock $end
+   $var wire 32 %U debugRegs_11 $end
+   $var wire 32 %V debugRegs_12 $end
+   $var wire 32 %W debugRegs_10 $end
+   $var wire 32 %X debugRegs_15 $end
+   $var wire 32 %Y debugRegs_16 $end
+   $var wire 32 %Z debugRegs_13 $end
+   $var wire 32 %[ debugRegs_14 $end
+   $var wire 32 %\ debugRegs_19 $end
+   $var wire 32 %] debugRegs_17 $end
+   $var wire 32 %_ debugRegs_18 $end
+   $var wire 1 %d reset $end
+   $var wire 1 %e io_rx $end
+   $var wire 1 %f imem $end
+   $var wire 1 %i SimpleCache $end
+   $var wire 1 && cpu $end
+   $var wire 8 &\ ledReg $end
+    $scope module cpu $end
+     $var wire 5 " decEx_rs2 $end
+     $var wire 32 # debugRegs_10 $end
+     $var wire 32 $ val2 $end
+     $var wire 32 % debugRegs_12 $end
+     $var wire 32 & debugRegs_11 $end
+     $var wire 32 ' debugRegs_14 $end
+     $var wire 2 ( decExReg__memLow $end
+     $var wire 32 ) debugRegs_13 $end
+     $var wire 32 * debugRegs_16 $end
+     $var wire 32 , debugRegs_15 $end
+     $var wire 32 - debugRegs_18 $end
+     $var wire 32 . debugRegs_17 $end
+     $var wire 32 / debugRegs_19 $end
+     $var wire 2 0 decEx_memLow $end
+     $var wire 5 3 decEx_rs1 $end
+     $var wire 1 6 decOut_isJal $end
+     $var wire 32 > instrReg $end
+     $var wire 1 ? decExReg__decOut_isBranch $end
+     $var wire 32 @ decExReg__pc $end
+     $var wire 5 F decExReg__rd $end
+     $var wire 32 H wbData $end
+     $var wire 1 J decExReg__decOut_isECall $end
+     $var wire 4 P decEx_decOut_aluOp $end
+     $var wire 1 U decOut_isLoad $end
+     $var wire 32 X io_dmem_wrData $end
+     $var wire 1 Z decExReg__decOut_rfWrite $end
+     $var wire 32 \ debugRegs_0_23 $end
+     $var wire 32 ] debugRegs_0_24 $end
+     $var wire 32 ^ debugRegs_0_25 $end
+     $var wire 32 _ debugRegs_0_26 $end
+     $var wire 32 a debugRegs_0_20 $end
+     $var wire 32 b debugRegs_0_21 $end
+     $var wire 32 c debugRegs_0_22 $end
+     $var wire 32 d debugRegs_0_27 $end
+     $var wire 32 e debugRegs_0_28 $end
+     $var wire 32 f debugRegs_0_29 $end
+     $var wire 5 g wbDest $end
+     $var wire 32 h debugRegs_0_30 $end
+     $var wire 1 i decOut_rfWrite $end
+     $var wire 32 j debugRegs_0_31 $end
+     $var wire 32 k res_res_1 $end
+     $var wire 32 l debugRegs_0_12 $end
+     $var wire 32 m debugRegs_0_13 $end
+     $var wire 32 n debugRegs_0_14 $end
+     $var wire 32 p debugRegs_0_15 $end
+     $var wire 32 q debugRegs_0_10 $end
+     $var wire 32 r debugRegs_0_11 $end
+     $var wire 5 s regs_rs2Val_MPORT_addr_pipe_0 $end
+     $var wire 32 t debugRegs_0_16 $end
+     $var wire 32 u debugRegs_0_17 $end
+     $var wire 32 v debugRegs_0_18 $end
+     $var wire 32 w debugRegs_0_19 $end
+     $var wire 32 | regs $end
+     $var wire 32 ~ decExReg__rs2Val $end
+     $var wire 1 "" decExReg__decOut_isLoad $end
+     $var wire 4 "# decExReg__decOut_aluOp $end
+     $var wire 1 ", regs_rs1Val_MPORT_en_pipe_0 $end
+     $var wire 32 "= instr $end
+     $var wire 32 "? debugRegs_21 $end
+     $var wire 1 "@ decOut_isECall $end
+     $var wire 32 "A debugRegs_20 $end
+     $var wire 32 "B debugRegs_23 $end
+     $var wire 32 "C debugRegs_22 $end
+     $var wire 32 "D debugRegs_25 $end
+     $var wire 32 "E debugRegs_24 $end
+     $var wire 32 "F debugRegs_27 $end
+     $var wire 32 "G debugRegs_26 $end
+     $var wire 32 "H debugRegs_29 $end
+     $var wire 32 "I debugRegs_28 $end
+     $var wire 1 "J decEx_valid $end
+     $var wire 5 "K regs_rs1Val_MPORT_addr_pipe_0 $end
+     $var wire 32 "L debugRegs_30 $end
+     $var wire 32 "M debugRegs_31 $end
+     $var wire 32 "P decOut_decOut_imm_imm $end
+     $var wire 1 "Y doBranch_res $end
+     $var wire 32 "l pcReg $end
+     $var wire 3 "o decOut_decOut_aluOp_func3 $end
+     $var wire 1 "q decEx_decOut_isECall $end
+     $var wire 7 "r decOut_decOut_aluOp_func7 $end
+     $var wire 32 "t io_dmem_wrAddress $end
+     $var wire 32 "u v2 $end
+     $var wire 32 "v v1 $end
+     $var wire 1 #$ io_dmem_wrEnable_1 $end
+     $var wire 1 #% io_dmem_wrEnable_2 $end
+     $var wire 1 #& io_dmem_wrEnable_3 $end
+     $var wire 32 #' decEx_pc $end
+     $var wire 1 #( io_dmem_wrEnable_0 $end
+     $var wire 1 #) decOut_isImm $end
+     $var wire 32 #. decOut_imm $end
+     $var wire 1 #3 decEx_decOut_isLoad $end
+     $var wire 5 #4 decEx_rd $end
+     $var wire 5 #5 rs2Val_REG $end
+     $var wire 1 #7 decExReg__decOut_isImm $end
+     $var wire 3 #: decExReg__func3 $end
+     $var wire 1 #; doBranch $end
+     $var wire 1 #< decExReg__decOut_isJal $end
+     $var wire 1 #B decEx_decOut_rfWrite $end
+     $var wire 1 #D decOut_isLui $end
+     $var wire 32 #E debugRegs_0_4 $end
+     $var wire 32 #F debugRegs_0_3 $end
+     $var wire 32 #G debugRegs_0_6 $end
+     $var wire 32 #H debugRegs_0_5 $end
+     $var wire 32 #I debugRegs_0_8 $end
+     $var wire 32 #J debugRegs_0_7 $end
+     $var wire 32 #K debugRegs_0_9 $end
+     $var wire 32 #M debugRegs_0_0 $end
+     $var wire 32 #N debugRegs_0_2 $end
+     $var wire 32 #O debugRegs_0_1 $end
+     $var wire 1 #S wre_2 $end
+     $var wire 1 #T wre_3 $end
+     $var wire 1 #U wre_0 $end
+     $var wire 1 #V wre_1 $end
+     $var wire 32 #b decExReg__rs1Val $end
+     $var wire 1 #n decEx_decOut_isLui $end
+     $var wire 32 #q rs2Val $end
+     $var wire 32 #u decEx_decOut_imm $end
+     $var wire 32 #y decEx_rs2Val $end
+     $var wire 32 #~ exFwdReg_wbData $end
+     $var wire 7 $! decOut_decOut_aluOp_opcode $end
+     $var wire 1 $" decExReg__decOut_isLui $end
+     $var wire 1 $% decExReg__decOut_isAuiPc $end
+     $var wire 1 $& clock $end
+     $var wire 32 $' decEx_rs1Val $end
+     $var wire 5 $( decExReg__rs2 $end
+     $var wire 5 $) decExReg__rs1 $end
+     $var wire 1 $* decOut_isBranch $end
+     $var wire 1 $+ reset $end
+     $var wire 3 $/ decEx_func3 $end
+     $var wire 1 $0 decOut_isAuiPc $end
+     $var wire 32 $2 res $end
+     $var wire 3 $A decOut_func3 $end
+     $var wire 32 $C io_dmem_rdData $end
+     $var wire 32 $\ io_imem_data $end
+     $var wire 1 $l decEx_decOut_isJalr $end
+     $var wire 7 $n decOut_opcode $end
+     $var wire 5 $p rs1 $end
+     $var wire 5 $q rs2 $end
+     $var wire 1 $z decEx_decOut_isBranch $end
+     $var wire 1 $~ io_dmem_rdEnable $end
+     $var wire 32 %, memAddress $end
+     $var wire 5 %- exFwdReg_wbDest $end
+     $var wire 1 %6 decEx_decOut_isImm $end
+     $var wire 32 %8 branchTarget $end
+     $var wire 32 %= pcRegReg $end
+     $var wire 32 %> io_dmem_rdAddress $end
+     $var wire 1 %G decEx_decOut_isAuiPc $end
+     $var wire 1 %J decOut_isStore $end
+     $var wire 32 %L res_res $end
+     $var wire 32 %Q rs1Val $end
+     $var wire 4 %` decOut_aluOp $end
+     $var wire 1 %c io_imem_stall $end
+     $var wire 32 %j wrd $end
+     $var wire 1 %l decExReg__valid $end
+     $var wire 1 %n decExReg_decOut_isECall $end
+     $var wire 32 %q io_imem_address $end
+     $var wire 32 %r debugRegs_8 $end
+     $var wire 32 %s debugRegs_9 $end
+     $var wire 32 %t debugRegs_4 $end
+     $var wire 32 %u debugRegs_5 $end
+     $var wire 32 %v debugRegs_6 $end
+     $var wire 32 %w debugRegs_7 $end
+     $var wire 32 %y debugRegs_0 $end
+     $var wire 1 %z wrEna $end
+     $var wire 32 %{ debugRegs_1 $end
+     $var wire 32 %| debugRegs_2 $end
+     $var wire 32 %} debugRegs_3 $end
+     $var wire 32 &! address $end
+     $var wire 32 &% data $end
+     $var wire 3 &' decOut_instrType $end
+     $var wire 1 &) decEx_decOut_isJal $end
+     $var wire 1 &. decOut_isJalr $end
+     $var wire 1 &< exFwdReg_valid $end
+     $var wire 1 &D regs_rs2Val_MPORT_en_pipe_0 $end
+     $var wire 5 &Q rs1Val_REG $end
+     $var wire 1 &S decExReg__decOut_isJalr $end
+     $var wire 32 &V pcNext $end
+     $var wire 32 &c decExReg__decOut_imm $end
+     $var wire 4 &e decOut_decOut_aluOp_aluOp $end
+      $scope module regs $end
+       $var wire 32 %. MPORT $end
+        $scope module MPORT $end
+         $var wire 1 ! mask $end
+         $var wire 1 8 pipeline_valid_0 $end
+         $var wire 32 I pipeline_data_0 $end
+         $var wire 1 } en $end
+         $var wire 5 #z pipeline_addr_0 $end
+         $var wire 32 $H data $end
+         $var wire 1 $Z valid $end
+         $var wire 1 %R clk $end
+         $var wire 5 %k addr $end
+        $upscope $end
+        $scope module rs1Val_MPORT $end
+         $var wire 1 E en $end
+         $var wire 1 G clk $end
+         $var wire 5 "V addr $end
+         $var wire 32 $# data $end
+        $upscope $end
+        $scope module rs2Val_MPORT $end
+         $var wire 32 $, data $end
+         $var wire 1 $G en $end
+         $var wire 1 %+ clk $end
+         $var wire 5 &" addr $end
+        $upscope $end
+      $upscope $end
+    $upscope $end
+    $scope module tx $end
+     $var wire 1 + reset $end
+     $var wire 1 < io_channel_ready $end
+     $var wire 1 = clock $end
+     $var wire 1 "> buf $end
+     $var wire 1 #9 io_channel_valid $end
+     $var wire 1 #Q io_txd $end
+     $var wire 8 $F io_channel_bits $end
+     $var wire 1 &( tx $end
+      $scope module tx $end
+       $var wire 1 5 io_txd $end
+       $var wire 10 : shift $end
+       $var wire 1 M reset $end
+       $var wire 1 o io_channel_ready $end
+       $var wire 1 "% clock $end
+       $var wire 11 ". shiftReg $end
+       $var wire 20 $6 cntReg $end
+       $var wire 4 $u bitsReg $end
+       $var wire 1 &$ io_channel_valid $end
+       $var wire 8 &A io_channel_bits $end
+      $upscope $end
+      $scope module buf $end
+       $var wire 1 R stateReg $end
+       $var wire 1 "8 io_out_valid $end
+       $var wire 1 #2 io_in_valid $end
+       $var wire 1 $- io_in_ready $end
+       $var wire 8 $1 io_out_bits $end
+       $var wire 1 $Q io_out_ready $end
+       $var wire 1 $w reset $end
+       $var wire 8 %~ dataReg $end
+       $var wire 1 &B clock $end
+       $var wire 8 &Z io_in_bits $end
+      $upscope $end
+    $upscope $end
+    $scope module dmem $end
+     $var wire 32 O io_wrAddress $end
+     $var wire 8 "( MEM_3 $end
+     $var wire 8 ") MEM_2 $end
+     $var wire 8 "* MEM_1 $end
+     $var wire 1 #* MEM_3_io_rdData_MPORT_en_pipe_0 $end
+     $var wire 10 #- MEM_3_io_rdData_MPORT_addr_pipe_0 $end
+     $var wire 1 #0 clock $end
+     $var wire 1 #? MEM_1_io_rdData_MPORT_2_en_pipe_0 $end
+     $var wire 10 #A MEM_1_io_rdData_MPORT_2_addr_pipe_0 $end
+     $var wire 1 $E MEM_2_io_rdData_MPORT_1_en_pipe_0 $end
+     $var wire 1 %0 io_wrEnable_1 $end
+     $var wire 1 %1 io_wrEnable_0 $end
+     $var wire 1 %2 io_wrEnable_3 $end
+     $var wire 1 %3 io_wrEnable_2 $end
+     $var wire 32 %7 io_rdAddress $end
+     $var wire 32 %T io_wrData $end
+     $var wire 10 %x MEM_io_rdData_MPORT_3_addr_pipe_0 $end
+     $var wire 10 &2 MEM_2_io_rdData_MPORT_1_addr_pipe_0 $end
+     $var wire 8 &C MEM $end
+     $var wire 1 &F MEM_io_rdData_MPORT_3_en_pipe_0 $end
+     $var wire 32 &U io_rdData $end
+      $scope module MEM_2 $end
+       $var wire 8 "' MPORT_2 $end
+        $scope module MPORT_2 $end
+         $var wire 10 1 addr $end
+         $var wire 1 #+ pipeline_valid_0 $end
+         $var wire 1 $a en $end
+         $var wire 1 $y mask $end
+         $var wire 8 %o pipeline_data_0 $end
+         $var wire 1 &, clk $end
+         $var wire 8 &- data $end
+         $var wire 1 &4 valid $end
+         $var wire 10 &a pipeline_addr_0 $end
+        $upscope $end
+        $scope module io_rdData_MPORT_1 $end
+         $var wire 1 C en $end
+         $var wire 10 #p addr $end
+         $var wire 8 %: data $end
+         $var wire 1 &+ clk $end
+        $upscope $end
+      $upscope $end
+      $scope module MEM_1 $end
+       $var wire 8 #o MPORT_1 $end
+        $scope module io_rdData_MPORT_2 $end
+         $var wire 8 ; data $end
+         $var wire 1 S en $end
+         $var wire 10 "Z addr $end
+         $var wire 1 #1 clk $end
+        $upscope $end
+        $scope module MPORT_1 $end
+         $var wire 10 "! addr $end
+         $var wire 1 #, clk $end
+         $var wire 8 #t data $end
+         $var wire 1 %; valid $end
+         $var wire 1 %H pipeline_valid_0 $end
+         $var wire 1 %^ mask $end
+         $var wire 8 %m pipeline_data_0 $end
+         $var wire 1 &E en $end
+         $var wire 10 &` pipeline_addr_0 $end
+        $upscope $end
+      $upscope $end
+      $scope module MEM $end
+       $var wire 8 "1 MPORT $end
+        $scope module MPORT $end
+         $var wire 1 A en $end
+         $var wire 8 #c data $end
+         $var wire 10 $3 pipeline_addr_0 $end
+         $var wire 1 $s valid $end
+         $var wire 10 $x addr $end
+         $var wire 1 %E clk $end
+         $var wire 8 %S pipeline_data_0 $end
+         $var wire 1 &Y pipeline_valid_0 $end
+         $var wire 1 &] mask $end
+        $upscope $end
+        $scope module io_rdData_MPORT_3 $end
+         $var wire 10 "$ addr $end
+         $var wire 8 #w data $end
+         $var wire 1 $= clk $end
+         $var wire 1 %b en $end
+        $upscope $end
+      $upscope $end
+      $scope module MEM_3 $end
+       $var wire 8 &T MPORT_3 $end
+        $scope module MPORT_3 $end
+         $var wire 1 Q pipeline_valid_0 $end
+         $var wire 8 W data $end
+         $var wire 8 $j pipeline_data_0 $end
+         $var wire 1 $} mask $end
+         $var wire 1 %< en $end
+         $var wire 1 %D valid $end
+         $var wire 1 &5 clk $end
+         $var wire 10 &X pipeline_addr_0 $end
+         $var wire 10 &d addr $end
+        $upscope $end
+        $scope module io_rdData_MPORT $end
+         $var wire 10 #6 addr $end
+         $var wire 1 $D en $end
+         $var wire 8 $r data $end
+         $var wire 1 &/ clk $end
+        $upscope $end
+      $upscope $end
+    $upscope $end
+    $scope module SimpleCache $end
+     $var wire 1 9 io_stall $end
+     $var wire 1 B reset $end
+     $var wire 32 "+ io_rdAddress $end
+     $var wire 32 "R io_wrAddress $end
+     $var wire 2 #m weBits_lo $end
+     $var wire 2 #} weBits_hi $end
+     $var wire 4 $^ weBits $end
+     $var wire 1 $| Controller $end
+     $var wire 1 %K io_wrEnable_3 $end
+     $var wire 1 %M io_wrEnable_1 $end
+     $var wire 1 %N io_wrEnable_2 $end
+     $var wire 1 %O io_wrEnable_0 $end
+     $var wire 1 %a io_rdEnable $end
+     $var wire 2 %g stateReg $end
+     $var wire 2 &[ storeType $end
+     $var wire 1 &^ clock $end
+      $scope module Controller $end
+       $var wire 2 2 stateReg $end
+       $var wire 1 4 io_memReady $end
+       $var wire 1 D io_cacheMiss $end
+       $var wire 32 "& updatedTag $end
+       $var wire 1 "O tagStore $end
+       $var wire 1 "U io_validReq $end
+       $var wire 1 #R cacheValid $end
+       $var wire 20 #x targetTag $end
+       $var wire 8 $. index $end
+       $var wire 1 $b io_ready $end
+       $var wire 20 %/ actualTag $end
+       $var wire 32 %@ io_memAdd $end
+       $var wire 1 %p clock $end
+       $var wire 1 &* io_rw $end
+       $var wire 3 &0 writeIndex $end
+       $var wire 32 &W targetTagWord $end
+       $var wire 1 &_ reset $end
+        $scope module tagStore $end
+         $var wire 9 "S io_ad $end
+         $var wire 32 "W mem $end
+         $var wire 9 #/ mem_io_DO_MPORT_addr_pipe_0 $end
+         $var wire 1 #@ io_rw $end
+         $var wire 1 #L clock $end
+         $var wire 1 $5 mem_io_DO_MPORT_en_pipe_0 $end
+         $var wire 32 $d io_DI $end
+         $var wire 32 $e io_DO $end
+         $var wire 1 $i io_EN $end
+          $scope module mem $end
+           $var wire 32 #| MPORT $end
+            $scope module MPORT $end
+             $var wire 32 V pipeline_data_0 $end
+             $var wire 1 { en $end
+             $var wire 32 "N data $end
+             $var wire 1 #P pipeline_valid_0 $end
+             $var wire 1 #v valid $end
+             $var wire 1 $4 clk $end
+             $var wire 1 ${ mask $end
+             $var wire 9 &# pipeline_addr_0 $end
+             $var wire 9 &b addr $end
+            $upscope $end
+            $scope module io_DO_MPORT $end
+             $var wire 1 #8 clk $end
+             $var wire 9 #= addr $end
+             $var wire 32 $m data $end
+             $var wire 1 &R en $end
+            $upscope $end
+          $upscope $end
+        $upscope $end
+      $upscope $end
+    $upscope $end
+    $scope module imem $end
+     $var wire 32 N io_address $end
+     $var wire 32 Y io_data $end
+     $var wire 32 "[ instructions_20 $end
+     $var wire 32 "\ instructions_21 $end
+     $var wire 32 "] instructions_22 $end
+     $var wire 32 "^ instructions_23 $end
+     $var wire 32 "_ instructions_24 $end
+     $var wire 32 "` instructions_25 $end
+     $var wire 32 "a instructions_26 $end
+     $var wire 32 "b instructions_27 $end
+     $var wire 32 "c instructions_28 $end
+     $var wire 32 "d instructions_18 $end
+     $var wire 32 "e instructions_19 $end
+     $var wire 32 "f instructions_10 $end
+     $var wire 32 "g instructions_11 $end
+     $var wire 32 "h instructions_12 $end
+     $var wire 32 "i instructions_13 $end
+     $var wire 32 "j instructions_14 $end
+     $var wire 32 "k instructions_15 $end
+     $var wire 32 "m instructions_16 $end
+     $var wire 32 "n instructions_17 $end
+     $var wire 32 "p instructions_40 $end
+     $var wire 32 "w instructions_30 $end
+     $var wire 32 "x instructions_31 $end
+     $var wire 32 "y instructions_32 $end
+     $var wire 32 "z instructions_33 $end
+     $var wire 32 "{ instructions_34 $end
+     $var wire 32 "| instructions_35 $end
+     $var wire 32 "} instructions_36 $end
+     $var wire 32 "~ instructions_37 $end
+     $var wire 32 #! instructions_38 $end
+     $var wire 32 #" instructions_39 $end
+     $var wire 32 ## instructions_29 $end
+     $var wire 1 $$ io_stall $end
+     $var wire 32 %! instructions_0 $end
+     $var wire 32 %" instructions_4 $end
+     $var wire 32 %# instructions_3 $end
+     $var wire 32 %$ instructions_2 $end
+     $var wire 32 %% instructions_1 $end
+     $var wire 32 %& instructions_8 $end
+     $var wire 32 %' instructions_7 $end
+     $var wire 32 %( instructions_6 $end
+     $var wire 32 %) instructions_5 $end
+     $var wire 32 %* instructions_9 $end
+     $var wire 32 %? addrReg $end
+     $var wire 1 %I clock $end
+     $var wire 1 %h reset $end
+    $upscope $end
+    $scope module rx $end
+     $var wire 1 [ io_channel_valid $end
+     $var wire 1 x rxReg $end
+     $var wire 1 z falling_REG $end
+     $var wire 8 "- shiftReg $end
+     $var wire 1 "Q io_rxd $end
+     $var wire 20 "T cntReg $end
+     $var wire 1 "X valReg $end
+     $var wire 8 "s io_channel_bits $end
+     $var wire 1 $o reset $end
+     $var wire 4 $t bitsReg $end
+     $var wire 1 $v clock $end
+     $var wire 1 %4 falling $end
+     $var wire 1 %9 rxReg_REG $end
+     $var wire 1 %A io_channel_ready $end
+    $upscope $end
+  $upscope $end
+  $scope module cpuTop.tx.buf $end
+  $upscope $end
+  $scope module cpuTop.tx $end
+  $upscope $end
+$upscope $end
+$enddefinitions $end
+$dumpvars
+b00 7
+b00 0
+b00 2
+b00 (
+0""
+0"%
+0",
+b00000 "K
+0"8
+0">
+0"@
+0#$
+0#%
+0#&
+0#(
+0#)
+0#*
+0"J
+0#+
+0#,
+0"O
+0#0
+0#1
+0"Q
+0#2
+0#3
+0"U
+0#7
+0#8
+0"X
+0#9
+0"Y
+0#;
+0#<
+0#>
+0#?
+0#@
+0$"
+0#B
+0#C
+0$$
+0#D
+0$%
+0$&
+0$*
+0$+
+0#L
+0$-
+0$0
+0#P
+0#Q
+0"q
+0#R
+0#S
+0$4
+0#T
+0$5
+0#U
+0#V
+b00000 %-
+1$y
+1${
+0$=
+1$}
+1%^
+0$D
+0$E
+0$G
+0%+
+0#n
+0%0
+0%1
+0$Q
+0%2
+0%3
+0%4
+0%5
+0%6
+0#v
+0%9
+0$Z
+0%;
+0%<
+1&]
+0%A
+0$a
+0$b
+0%C
+0&$
+b00000 $)
+0$c
+0%D
+b00000 $(
+0%E
+0&&
+0%F
+0%G
+0&(
+0%H
+0&)
+0$h
+0%I
+0&*
+0$i
+0%J
+0&+
+0%K
+0&,
+0$k
+0$l
+0%M
+0&.
+0%N
+0&/
+0%O
+b00000 #4
+0$o
+0%P
+0&1
+0%R
+0&3
+b00000 #5
+0&4
+0$s
+0&5
+b00000 "V
+b00000 %k
+0$v
+0$w
+b00000 &Q
+0$z
+0&<
+0$|
+b0000000000 "$
+0$~
+0%a
+0&B
+0%b
+0%c
+0&D
+0%d
+0&E
+0%e
+0&F
+0%f
+0%h
+0%i
+0%l
+0%n
+0%p
+0&R
+0&S
+b0000000000 #-
+0&Y
+0%z
+b00000 $q
+b00000 $p
+0&^
+0&_
+b00000 #z
+b0000000000 #A
+b000000000 #=
+b00000 &"
+b0000000000 #6
+b000000000 "S
+b0000000000 "Z
+b000000000 #/
+b00000000000000000000 "T
+b0000000000 "!
+b0000000000 &2
+b0000000000 :
+b0000000000 1
+b00000 "
+b0000000000 $x
+b00000 3
+b00000000000000000000000000000000 ~
+b0000000000 &a
+b0000000000 &`
+b0000000000 &d
+b00000 F
+b0000000000 %x
+b0000000000 &X
+b0000 "#
+b00000000000000000000000000000000 k
+b00000000000000000000000000000000 j
+b00000000000000000000000000000000 m
+b00000000000000000000000000000000 l
+b0000000000 $3
+b00000000000000000000000000000000 f
+b00000000000000000000000000000000 h
+b00000000000000000000000000000000 c
+b00000000000000000000000000000000 b
+b00000000000000000000000000000000 e
+b00000000000000000000000000000000 d
+b00000000000000000000000000000000 _
+b00000000000000000000000000000000 ^
+b00000000000000000000000000000000 a
+b00000000 ;
+b00000000000000000000000000000000 |
+b00000 g
+b00000000000000000000000000000000 w
+b00000000000000000000000000000000 v
+b00000000000000000000000000000000 r
+b00000000000000000000000000000000 u
+b00000000000000000000000000000000 t
+b00000000000000000000000000000000 n
+b00000000000000000000000000000000 q
+b00000000000000000000000000000000 p
+b00000 s
+b0000000000 #p
+b00000000000000000000000000000000 L
+b00000000000000000000000000000000 I
+b00000000000000000000000000000000 H
+b00000000000 ".
+b00000000000000000000000000000000 >
+b00000000000000000000000000000000 @
+b00000000000000000000000000000000 ]
+b00000000000000000000000000000000 \
+b00000000000000000000000000000000 V
+b00000000000000000000000000000000 Y
+b00000000000000000000000000000000 X
+0+
+b00000000000000000000000000000000 O
+b00000000000000000000000000000000 N
+b00000000000000000000000000000000 *
+b00000000000000000000000000000000 -
+b00000000000000000000000000000000 ,
+04
+b00000000000000000000000000000000 '
+05
+b00000000000000000000000000000000 &
+b00 &[
+06
+b00000000000000000000000000000000 )
+08
+b00000000000000000000000000000000 #
+09
+b00000000000000000000000000000000 %
+b00000000000000000000000000000000 $
+0<
+0=
+0?
+1!
+0A
+0B
+0C
+0D
+b00 %g
+0E
+0G
+0J
+0K
+b00000000000000000000000000000000 /
+0M
+b00000000000000000000000000000000 .
+0Q
+0R
+0S
+0U
+b10110111 &C
+0Z
+0[
+0`
+b00000000 W
+0i
+b0000 $^
+b00000000 T
+0o
+0x
+0y
+0z
+0{
+b00 #}
+0}
+b0000 $u
+b0000 $t
+b0000000 "r
+b0000 %`
+b00 #m
+b0000000 $!
+b0000 &e
+b00000000000000000000000000000000 %Q
+b00000000000000000000000000000000 %V
+b00000000000000000000000000000000 &7
+b00000000000000000000000000000000 %U
+b00000000000000000000000000000000 &6
+b00000000000000000000000000000000 %T
+b00000000 $1
+b00000000000000000000000000000000 $g
+b00000000000000000000 $6
+b00000000000000000000000000000000 $f
+b00000000 $.
+b00000000000000000000000000000000 $m
+b00000000 "s
+b00000000000000000000000000000000 %L
+b00000000000000000000000000000000 %_
+b00000000000000000000000000000000 &@
+b00000000000000000000000000000000 &G
+b00000000000000000000000000000000 %Z
+b00000000000000000000000000000000 &;
+b00000000000000000000000000000000 %Y
+b00000000000000000000000000000000 &:
+b00000000000000000000000000000000 %X
+b00000000000000000000000000000000 &9
+b00000000000000000000000000000000 %W
+b00000000000000000000000000000000 &8
+b00000000000000000000000000000000 &?
+b00000000000000000000000000000000 %]
+b00000000000000000000000000000000 &>
+b00000000 #c
+b00000000000000000000000000000000 %\
+b00000000000000000000000000000000 &=
+b00000000000000000000000000000000 %[
+b00000000000000000000000000000000 %r
+b00000001 ")
+b00000000000000000000000000000000 %q
+b00000000000000000000000000000000 &P
+b00000000 $F
+b00000000000000000000000000000000 %v
+b00000000000000000000000000000000 &W
+b00000000000000000000000000000000 %u
+b00000000000000000000000000000000 &V
+b00000000000000000000000000000000 %t
+b00000000000000000000000000000000 &U
+b00000000000000000000000000000000 %s
+b00000000000000000000000000000000 %j
+b00000000000000000000000000000000 &K
+b00000000000000000000000000000000 &J
+b00000000000000000000 #x
+b00000000 #o
+b00000000000000000000000000000000 &I
+b00000000000000000000000000000000 &H
+b00000000000000000000000000000000 &O
+b00000000 #t
+b00000000000000000000000000000000 &N
+b00000000000000000000000000000000 &M
+b00000000000000000000000000000000 &L
+b00000000000000000000000000000000 &c
+b00000000 %:
+b00000000 #w
+b0000000 $n
+b00000000000000000000 %/
+b00000000 #{
+b000000000 &b
+b00000000 %B
+b00000000000000000000000000000000 %y
+b00000000000000000000000000000000 %w
+b00000000000000000000000000000000 %}
+b00000000000000000000000000000000 %|
+b00000000000000000000000000000000 %{
+b00000000000000000000000000000000 "n
+b00000000000000000000000000000000 #O
+b00000000000000000000000000000000 "m
+b00000000000000000000000000000000 #N
+b00000000000000000000000000000000 "l
+b00000000000000000000000000000000 #M
+b00000000 &-
+b00000000000000000000000000000000 "p
+b00000000000000000000000000000000 $2
+b00000000 $j
+b00000000000000000000000000000000 "g
+b00000000000000000000000000000000 #H
+b00000000000000000000000000000000 "f
+b00000000000000000000000000000000 #G
+b00000000000000000000000000000000 "e
+b00000000000000000000000000000000 #F
+b00000000000000000000000000000000 $'
+b00000000000000000000000000000000 "d
+b00000000000000000000000000000000 #E
+b00000000000000000000000000000000 "k
+b00000000000000000000000000000000 "j
+b00000000000000000000000000000000 #K
+b00000000000000000000000000000000 $,
+b00000000000000000000000000000000 "i
+b00000000000000000000000000000000 #J
+b00000000000000000000000000000000 "h
+b00000000000000000000000000000000 #I
+b00000000 $r
+b00000000 %S
+b00000000000000000000000000000000 #`
+b00000000000000000000000000000000 %"
+b00000000000000000000000000000000 "~
+b00000000000000000000000000000000 #_
+b00000000000000000000000000000000 $@
+b00000000000000000000000000000000 %!
+b00000000000000000000000000000000 "}
+b00000000000000000000000000000000 #^
+b00000000000000000000000000000000 $?
+b00000000000000000000000000000000 "|
+b00000000000000000000000000000000 #]
+b00000000000000000000000000000000 $>
+b00000000000000000000000000000000 #d
+b00000000000000000000000000000000 %&
+b00000000000000000000000000000000 %%
+b00000000000000000000000000000000 #b
+b00000000000000000000000000000000 $C
+b00000000000000000000000000000000 %$
+b00000000000000000000000000000000 #a
+b00000000000000000000000000000000 $B
+b00000000000000000000000000000000 %#
+b00000000000000000000000000000000 "w
+b00000000000000000000000000000000 #X
+b00000000000000000000000000000000 $9
+b00000000000000000000000000000000 "v
+b00000000000000000000000000000000 #W
+b00000000000000000000000000000000 $8
+b00000000000000000000000000000000 "u
+b00000000000000000000000000000000 $7
+b00000000 &A
+b00000000000000000000000000000000 "t
+b00000000000000000000000000000000 "{
+b00000000000000000000000000000000 #\
+b00000000000000000000000000000000 "z
+b00000000000000000000000000000000 #[
+b00000000000000000000000000000000 $<
+b00000000000000000000000000000000 "y
+b00000000000000000000000000000000 #Z
+b00000000000000000000000000000000 $;
+b00000000000000000000000000000000 "x
+b00000000000000000000000000000000 #Y
+b00000000000000000000000000000000 $:
+b00000000000000000000000000000000 $P
+b00000000000000000000000000000000 $O
+b00000000000000000000000000000000 $N
+b00000000000000000000000000000000 $U
+b00000000000000000000000000000000 #s
+b00000000000000000000000000000000 $T
+b00000000 %m
+b00000000000000000000000000000000 #r
+b00000000000000000000000000000000 $S
+b00000000000000000000000000000000 #q
+b00000000000000000000000000000000 $R
+b00000000000000000000000000000000 #h
+b00000000000000000000000000000000 $I
+b00000000000000000000000000000000 %*
+b00000000000000000000000000000000 #g
+b00000000000000000000000000000000 $H
+b00000000000000000000000000000000 %)
+b00000000000000000000000000000000 #f
+b00000000000000000000000000000000 %(
+b00000000000000000000000000000000 #e
+b00000000000000000000000000000000 %'
+b00000000 %o
+b00000000000000000000000000000000 #l
+b00000000000000000000000000000000 $M
+b00000000000000000000000000000000 %.
+b00000000000000000000000000000000 #k
+b00000000000000000000000000000000 $L
+b00000000000000000000000000000000 #j
+b00000000000000000000000000000000 $K
+b00000000000000000000000000000000 %,
+b00000000000000000000000000000000 #i
+b00000000000000000000000000000000 $J
+b00000000 &T
+b00000000000000000000000000000000 $`
+b00000000 &Z
+b00000000000000000000000000000000 #~
+b00000000000000000000000000000000 $_
+b00000000000000000000000000000000 %@
+b00000000000000000000000000000000 &!
+b00000000000000000000000000000000 %?
+b00000000000000000000000000000000 $e
+b00000000 %~
+b00000000000000000000000000000000 $d
+b00000000000000000000000000000000 &%
+b000000000 &#
+b00000000 &\
+b00000000000000000000000000000000 $Y
+b00000000000000000000000000000000 $X
+b00000000000000000000000000000000 $W
+b00000000000000000000000000000000 %8
+b00000000000000000000000000000000 #u
+b00000000000000000000000000000000 $V
+b00000000000000000000000000000000 %7
+b00000000000000000000000000000000 #|
+b00000000000000000000000000000000 $]
+b00000000000000000000000000000000 %>
+b00000000000000000000000000000000 $\
+b00000000000000000000000000000000 %=
+b00000000000000000000000000000000 $[
+b00000000000000000000000000000000 #y
+b00000000000000000000000000000000 "/
+b00000000000000000000000000000000 "3
+b00000000000000000000000000000000 "2
+b00000000000000000000000000000000 "0
+b00000000000000000000000000000000 "&
+b00000000000000000000000000000000 "+
+b00000000000000000000000000000000 "?
+b00000000000000000000000000000000 "=
+b00000000000000000000000000000000 "<
+b00000000000000000000000000000000 "C
+b00000000000000000000000000000000 "B
+b00000000000000000000000000000000 ##
+b00000000000000000000000000000000 "A
+b00000000000000000000000000000000 #"
+b00000000000000000000000000000000 #!
+b00000000000000000000000000000000 "7
+b00000000000000000000000000000000 "6
+b00000000000000000000000000000000 "5
+b00000000000000000000000000000000 "4
+b00000000000000000000000000000000 ";
+b00000000000000000000000000000000 ":
+b00000000000000000000000000000000 "9
+b00000000000000000000000000000000 "N
+b00000000000000000000000000000000 "M
+b00000000000000000000000000000000 #.
+b00000000000000000000000000000000 "L
+b00000000000000000000000000000000 "R
+b00000000000000000000000000000000 "P
+b00000000000000000000000000000000 "G
+b00000000000000000000000000000000 "F
+b00000000000000000000000000000000 #'
+b00000000000000000000000000000000 "E
+b00000000000000000000000000000000 "D
+b00000000000000000000000000000000 "I
+b00000000000000000000000000000000 "H
+b00000000000000000000000000000000 "_
+b00000000000000000000000000000000 "^
+b00000000000000000000000000000000 "]
+b00000000000000000000000000000000 "\
+b00000000000000000000000000000000 "c
+b00000000000000000000000000000000 "b
+b00000000000000000000000000000000 "a
+b00000000000000000000000000000000 $#
+b00000000000000000000000000000000 "`
+b00000000000000000000000000000000 "W
+b00000000000000000000000000000000 "[
+b00000000 "'
+b00000000 "*
+b00000000 "-
+b00000000 "1
+b000 &'
+b000 &0
+b000 #:
+b000 "o
+b000 $/
+b000 $A
+b11111111 "(
+b0000 P
+$end
+#0
+b11111111000000010000000010110111 "b
+b11110000000000001000000010010011 "c
+b00000000010000000000000110010011 "d
+b00000101110111110001000001100011 "e
+b11111111000011101000111010010011 "f
+b00000000001100000000000110010011 "g
+b00000101110111110001111001100011 "h
+b00000000111111110000000010110111 "i
+1$+
+b00001111111100001000000010010011 "j
+b01110000111100001110111100010011 "k
+1$-
+b00000000111111110000111010110111 "m
+b01111111111111101000111010010011 "n
+b00000000000000000000000001110011 "p
+1#U
+b11111111000000010000111010110111 "w
+b11111111000011101000111010010011 "x
+b00000000011000000000000110010011 "y
+b00000001110100001001010001100011 "z
+b00000000001100000001100001100011 "{
+b00000000000100000000010100010011 "|
+b00000101110100000000100010010011 "}
+b11111111000000010000000010110111 %!
+b00000000000000000000000001110011 "~
+b00000000001000000000000110010011 %"
+b11110000111100000000111010010011 %#
+b11110000111100001110111100010011 %$
+b11111111000000010000000010110111 $C
+b11110000000000001000000010010011 %%
+b00001111000000001110111100010011 %&
+b11111111000000001000000010010011 %'
+b00001111111100000001000010110111 %(
+b00000111110111110001110001100011 %)
+b00001111111100000001111010110111 %*
+1+
+1$Q
+1%5
+14
+b10110111 #w
+b00000001 %:
+b11111111000000010000000010110111 $\
+1<
+1$b
+1B
+1&*
+1$o
+b00010 $p
+1M
+b10000 $q
+b00000000000000000000000000000100 N
+b11111111 $r
+1$w
+b11111111000000010000000010110111 Y
+b11111111000000010000000010110111 "=
+b00000000000000000000010100010011 #!
+b00000101110100000000100010010011 #"
+1%d
+b00001111000000001110000010010011 ##
+1%h
+1"J
+b11111111111111111111111110110111 k
+b00000000000000000000000000000100 %q
+1o
+b11111111000000010000000010110111 &U
+b00000000000000000000000000000100 &V
+b11 &[
+1"Y
+b11110000000011111111000010110111 "[
+1&_
+b00000000111100001000000010010011 "\
+b00001111000000001110111100010011 "]
+b11110000000011111111111010110111 "^
+b00001111111111101000111010010011 "_
+1#@
+b00000000010100000000000110010011 "`
+b00000011110111110001001001100011 "a
+#1
+1$&
+1#L
+1#Q
+1$4
+1$=
+1$D
+1$E
+1$G
+1%+
+15
+b01 7
+b1111111111 :
+b10000 &"
+1=
+b00000000000000000000000000110011 >
+1$c
+1%E
+1%F
+1C
+1"%
+1$h
+1%I
+1E
+1&+
+1&,
+1G
+1&/
+1",
+b0110011 $n
+1%P
+b11111111111 ".
+1%R
+1&5
+1$v
+1S
+1&B
+1%b
+1&D
+1&F
+1#*
+1i
+1#,
+b00010 "K
+1%p
+b00010 &Q
+1#0
+1#1
+b00000000001101100011 "T
+b10000 #5
+b10000 s
+b00010 "V
+1#8
+1&^
+1#?
+b0110011 $!
+1#B
+#6
+0%E
+0B
+0$&
+0"%
+0%I
+0&+
+0&,
+0G
+0$+
+0#L
+0&/
+0%P
+0$o
+0M
+0%R
+0&5
+0$4
+0$v
+0$w
+0$=
+0&B
+0%d
+0%h
+0%+
+0#,
+0+
+0%p
+0#0
+0#1
+0%5
+0#8
+0&^
+0&_
+0=
+0$c
+#11
+1#D
+1$&
+1#L
+b00000000000000000000000000000100 "l
+1$4
+b1111111 "r
+b00000000001101100011 $6
+b11111111000000010000000000000000 "t
+1$=
+b10000 "
+1%+
+b11111111000000010000000000000000 %,
+1#n
+0$Q
+b11111111000000010000000000000000 #u
+b11111111000000010000000000000000 %7
+b00010 3
+b11111111000000010000 #x
+b11110000000000001000000010010011 $\
+b11111111000000010000000000000000 %>
+b00000000000000000000000000000100 %?
+b11111111000000010000000000000000 %@
+1=
+b11111111000000010000000010110111 >
+1$c
+1%E
+b100 &'
+1"%
+1%I
+1&+
+1&,
+1G
+b11111111000000010000000000000000 "+
+1&/
+b0110111 $n
+1%P
+b00001 $p
+1%R
+b00000 $q
+b00000000000000000000000000001000 N
+b11111111000000010000000000000000 O
+1&5
+b0001 P
+1$v
+b11110000000000001000000010010011 Y
+1Z
+b11110000000000001000000010010011 "=
+b0001 %`
+1&B
+1%l
+1#,
+b11111111000000010000000000000000 #.
+1%p
+b00000000000000000000000000001000 %q
+1#0
+1#1
+b11111111000000010000000000000000 "P
+0o
+b11111111000000010000000000000000 "R
+b00000000000000000000000000001000 &V
+b00001 #4
+b11111111000000010000000000000000 &W
+b00000000001101100010 "T
+1#8
+1%z
+1&^
+b0110111 $!
+b0001 &e
+#16
+0%E
+0$&
+0"%
+0%I
+0&+
+0&,
+0G
+0#L
+0&/
+0%P
+0%R
+0&5
+0$4
+0$v
+0$=
+0&B
+0%+
+0#,
+0%p
+0#0
+0#1
+0#8
+0&^
+0=
+0$c
+#21
+0#D
+1$&
+b10000 $(
+b00010 $)
+1#L
+b00000000000000000000000000001000 "l
+b11110000 $.
+b11111111000000010000000000000000 $2
+1$4
+b1111000 "r
+b00000000001101100010 $6
+b11111111000000001111111100000000 "t
+1$=
+b00000 "
+b11111111000000010000000000000000 $H
+1%+
+b11111111000000001111111100000000 %,
+0#n
+b1111000000 1
+1%6
+b11111111111111111111111100000000 #u
+b11111111000000001111111100000000 %7
+b00001 3
+b11111111000000010000000000000000 %8
+b11111111000000001111 #x
+1$Z
+b11110000111100001110111100010011 $\
+b00000000000000000000000000000100 %=
+b11111111000000001111111100000000 %>
+b00000000000000000000000000001000 %?
+b11111111000000010000000000000000 &!
+b11111111000000001111111100000000 %@
+b00000 &"
+1=
+b11110000000000001000000010010011 >
+b1111000000 "!
+1$c
+1%E
+b0001 "#
+b001 &'
+1"%
+1%I
+1&+
+b00001 F
+1&,
+1G
+b11111111000000010000000000000000 H
+b11111111000000001111111100000000 "+
+1&/
+b0010011 $n
+1%P
+b11111111000000010000000000000000 L
+1%R
+b01111 $q
+b00000000000000000000000000001100 N
+b11111111000000001111111100000000 O
+1&5
+b0000 P
+1$v
+b1111000000 $x
+b11110000111100001110111100010011 Y
+b11110000111100001110111100010011 "=
+b0000 %`
+1&B
+b00000000000000000000000000000100 #'
+1#)
+b00001 %k
+b00001 g
+1#,
+b00001 "K
+b11111111111111111111111100000000 #.
+1%p
+b00001 &Q
+b00000000000000000000000000001100 %q
+1#0
+1#1
+b11111111111111111111111100000000 "P
+b11111111000000001111111100000000 "R
+b00000000000000000000000000001100 &V
+b011110000 "S
+b11111111000000001111000000000000 &W
+b00000000001101100001 "T
+b00000 #5
+b00000 s
+b00001 "V
+1#8
+1&^
+b011110000 &b
+1}
+b0010011 $!
+b11111111000000010000000000000000 &c
+1$"
+b1111000000 &d
+b0000 &e
+#26
+0%E
+0$&
+0"%
+0%I
+0&+
+0&,
+0G
+0#L
+0&/
+0%P
+0%R
+0&5
+0$4
+0$v
+0$=
+0&B
+0%+
+0#,
+0%p
+0#0
+0#1
+0#8
+0&^
+0=
+0$c
+#31
+b01111 "
+b11111111111111111111111100000000 $
+b11 0
+b1110000011 1
+18
+1=
+b11110000111100001110111100010011 >
+b1110000011 "!
+b00000000000000000000000000000100 @
+b0000 "#
+b1111000000 "$
+1"%
+1G
+b11111111000000001111111100000000 H
+b11111111000000010000000000000000 I
+b11111111000000001111111000001111 "+
+b11111111000000001111111100000000 L
+b00000000000000000000000000010000 N
+b11111111000000001111111000001111 O
+b1000 P
+b11110000111100000000111010010011 Y
+b11110000111100000000111010010011 "=
+b00000000000000000000000000001000 #'
+1#,
+b1111000000 #-
+b00000000000000000000000000000001 k
+b11111111111111111111111100001111 #.
+1#0
+1#1
+b11111111111111111111111100001111 "P
+b11111111000000001111111000001111 "R
+b11110 #4
+b011100000 "S
+b00000000001101100000 "T
+b01111 #5
+b01111 s
+b1111000000 #6
+1#7
+1#8
+0"Y
+b1111000000 "Z
+b1111000000 #A
+0$"
+b11111111000000010000000000000000 $#
+1$&
+b11111111000000010000000000000000 $'
+b00000 $(
+b00001 $)
+1#L
+b00000000000000000000000000001100 "l
+b11100000 $.
+b110 $/
+b11111111000000010000000000000000 #O
+b110 "o
+b11111111000000001111111100000000 $2
+b1111000000 $3
+1$4
+b00000000001101100001 $6
+b11111111000000001111111000001111 "t
+0#U
+b11111111000000010000000000000000 "v
+b11111111000000010000000000000000 $<
+1$=
+b110 $A
+b00000000000000000000000000000001 $C
+b11111111000000001111111100000000 $H
+1%+
+b11111111000000001111111000001111 %,
+b00001 %-
+b1111000000 #p
+b11111111111111111111111100001111 #u
+b11111111000000001111111000001111 %7
+b11111111111111111111111100000100 %8
+b00000000 #w
+b00000000 %:
+b00001 #z
+b11110000111100000000111010010011 $\
+b00000000000000000000000000001000 %=
+b11111111000000001111111000001111 %>
+b00000000000000000000000000001100 %?
+b11111111000000010000000000000000 #~
+b11111111000000001111111100000000 &!
+b11111111000000001111111000001111 %@
+b01111 &"
+b011110000 &#
+1$c
+1%E
+1%I
+1&+
+1&,
+b11111111000000001111111100000000 %L
+1&/
+1%P
+b1111000000 &2
+b11111111000000010000000000000000 %Q
+b00000 $p
+1%R
+b00000000 $r
+1&5
+1$v
+b11111111000000010000000000000000 &:
+b1110000011 $x
+1&<
+b1000 %`
+1&B
+b11111111000000010000000000000000 &N
+1%p
+b00000000000000000000000000010000 %q
+b00000000000000000000000000000000 &U
+b00000000000000000000000000010000 &V
+b1111000000 &X
+b1111000000 %x
+b11111111000000010000000000000000 %{
+1&^
+b1111000000 &`
+b1111000000 &a
+b011100000 &b
+b11111111111111111111111100000000 &c
+b1110000011 &d
+b1000 &e
+#36
+0%E
+0$&
+0"%
+0%I
+0&+
+0&,
+0G
+0#L
+0&/
+0%P
+0%R
+0&5
+0$4
+0$v
+0$=
+0&B
+0%+
+0#,
+0%p
+0#0
+0#1
+0#8
+0&^
+0=
+0$c
+#41
+b11111111111111111111111100001111 $
+b11 (
+b1111000011 1
+b00000 3
+1=
+b11110000111100000000111010010011 >
+b1111000011 "!
+b00000000000000000000000000001000 @
+b1000 "#
+b1110000011 "$
+1"%
+b11110 F
+1G
+b11111111111111111111111100001111 H
+b11111111000000001111111100000000 I
+b11111111111111111111111100001111 "+
+b11111111000000001111111000001111 L
+b00000000000000000000000000010100 N
+b11111111111111111111111100001111 O
+b0000 P
+b00000000001000000000000110010011 Y
+b00000000001000000000000110010011 "=
+b00000000000000000000000000001100 #'
+b11110 g
+1#,
+b00000 "K
+b1110000011 #-
+b00000000000000000000000000000000 k
+1#0
+1#1
+b11111111111111111111111100001111 "R
+b11101 #4
+b011110000 "S
+b00000000001101011111 "T
+b1110000011 #6
+b00000 "V
+1#8
+b110 #:
+b1110000011 "Z
+b1110000011 #A
+b00000000000000000000000000000000 $#
+1$&
+b00000000000000000000000000000000 $'
+b01111 $(
+1#L
+b00000000000000000000000000010000 "l
+b11110000 $.
+b000 $/
+b11111111000000001111111100000000 #O
+b000 "o
+b11111111111111111111111100001111 $2
+b1110000011 $3
+1$4
+1#T
+b00000000001101100000 $6
+b11111111111111111111111100001111 "t
+b11111111000000001111111100000000 "v
+b11111111000000001111111100000000 $<
+1$=
+b000 $A
+b00000000000000000000000000000000 $C
+b11111111000000010000000000000000 #b
+b11111111111111111111111100001111 $H
+1%+
+b11111111111111111111111100001111 %,
+b1110000011 #p
+b11111111111111111111111100001111 %7
+b11111111111111111111111100010111 %8
+b11111111111111111111 #x
+b00000000001000000000000110010011 $\
+b00000000000000000000000000001100 %=
+b11111111111111111111111100001111 %>
+b00000000000000000000000000010000 %?
+b11111111000000001111111100000000 #~
+b00000000000000000000000000000000 &!
+b11111111111111111111111100001111 %@
+b011100000 &#
+1$c
+1%E
+1%I
+1&+
+1&,
+b11111111111111111111111100001111 %L
+1&/
+1%P
+b1110000011 &2
+b00000000000000000000000000000000 %Q
+1%R
+b00010 $q
+1&5
+1$v
+b11111111000000001111111100000000 &:
+b1111000011 $x
+b0000 %`
+1&B
+b11110 %k
+b11111111000000001111111100000000 &N
+1%p
+b00000 &Q
+b00000000000000000000000000010100 %q
+b00000000000000000000000000010100 &V
+b11111111111111111111000000000000 &W
+b1110000011 &X
+b1110000011 %x
+b11111111000000001111111100000000 %{
+1&^
+b1110000011 &`
+b1110000011 &a
+b011110000 &b
+b11111111111111111111111100001111 &c
+b1111000011 &d
+b0000 &e
+#46
+0%E
+0$&
+0"%
+0%I
+0&+
+0&,
+0G
+0#L
+0&/
+0%P
+0%R
+0&5
+0$4
+0$v
+0$=
+0&B
+0%+
+0#,
+0%p
+0#0
+0#1
+0#8
+0&^
+0=
+0$c
+#51
+b00010 "
+b10 0
+b0000000000 1
+1=
+b00000000001000000000000110010011 >
+b0000000000 "!
+b00000000000000000000000000001100 @
+b0000 "#
+b1111000011 "$
+1"%
+b11101 F
+1G
+b11111111111111111111111100001111 I
+b00000000000000000000000000000010 "+
+b11111111111111111111111100001111 L
+b00000000000000000000000000011000 N
+b00000000000000000000000000000010 O
+b00000111110111110001110001100011 Y
+b11111111111111111111111100001111 ";
+b00000111110111110001110001100011 "=
+b00000000000000000000000000010000 #'
+b11101 g
+b11111111111111111111111100001111 h
+1#,
+b1111000011 #-
+b11111111111111111111111100001111 "L
+b00000000000000000000000000000010 #.
+1#0
+1#1
+b00000000000000000000000000000010 "P
+b00000000000000000000000000000010 "R
+b00011 #4
+b000000000 "S
+b00000000001101011110 "T
+b00010 #5
+b00010 s
+b1111000011 #6
+1#8
+b000 #:
+1"Y
+b1111000011 "Z
+b1111000011 #A
+1$&
+b00000 $)
+1#L
+b00000000000000000000000000010100 "l
+b00000000 $.
+b1111000011 $3
+1$4
+b0000000 "r
+1#S
+0#T
+b00000000001101011111 $6
+b00000000000000000000000000000010 "t
+b00000000000000000000000000000000 "v
+1$=
+b00000000000000000000000000000000 #b
+1%+
+b00000000000000000000000000000010 %,
+b11110 %-
+b1111000011 #p
+b11111111111111111111111100001111 #s
+b00000000000000000000000000000010 #u
+b00000000000000000000000000000010 %7
+b11111111111111111111111100011011 %8
+b00000000000000000000 #x
+b11110 #z
+b00000111110111110001110001100011 $\
+b00000000000000000000000000010000 %=
+b00000000000000000000000000000010 %>
+b00000000000000000000000000010100 %?
+b11111111111111111111111100001111 #~
+b00000000000000000000000000000010 %@
+b00010 &"
+b011110000 &#
+1$c
+1%E
+b11111111111111111111111100001111 $g
+1%I
+1&+
+1&,
+1&/
+1%P
+b1111000011 &2
+b11110 $p
+1%R
+b11101 $q
+1&5
+1$v
+b0000000000 $x
+1&B
+b11101 %k
+1%p
+b00000000000000000000000000011000 %q
+b00000000000000000000000000011000 &V
+b00000000000000000000000000000000 &W
+b1111000011 &X
+b1111000011 %x
+1&^
+b1111000011 &`
+b1111000011 &a
+b000000000 &b
+b0000000000 &d
+#56
+0%E
+0$&
+0"%
+0%I
+0&+
+0&,
+0G
+0#L
+0&/
+0%P
+0%R
+0&5
+0$4
+0$v
+0$=
+0&B
+0%+
+0#,
+0%p
+0#0
+0#1
+0#8
+0&^
+0=
+0$c
+#61
+b11101 "
+b00000000000000000000000000000010 $
+b10 (
+b11 0
+b1111100001 1
+b11110 3
+1=
+b00000111110111110001110001100011 >
+b1111100001 "!
+b00000000000000000000000000010000 @
+b0000000000 "$
+1"%
+b00011 F
+1G
+b00000000000000000000000000000010 H
+b11111111111111111111111110000111 "+
+b00000000000000000000000000000010 L
+b00000000000000000000000000011100 N
+b11111111111111111111111110000111 O
+b0010 P
+b11111111 W
+b11111111111111111111111100001111 X
+b11111111111111111111111100001111 ":
+b00001111111100000001000010110111 Y
+b00001111111100000001000010110111 "=
+b00000000000000000000000000010100 #'
+b11111111111111111111111100001111 f
+b11111111111111111111111100001111 "H
+b00011 g
+0i
+1#,
+b11110 "K
+b0000000000 #-
+b00000000000000000000000000000001 k
+b00000000000000000000000001111000 #.
+1#0
+1#1
+b00000000000000000000000001111000 "P
+b11111111111111111111111110000111 "R
+b11000 #4
+b011111000 "S
+b00000000001101011101 "T
+b11101 #5
+b11101 s
+b0000000000 #6
+b11110 "V
+1#8
+b0000000000 "Z
+b1100011 $!
+b0000000000 #A
+0#B
+b11111111111111111111111100001111 $#
+1$&
+b11111111111111111111111100001111 $'
+b00010 $(
+1$*
+b11111111111111111111111100001111 $,
+1#L
+b00000000000000000000000000011000 "l
+b11111000 $.
+b001 $/
+b001 "o
+b00000000000000000000000000000010 $2
+b0000000000 $3
+1$4
+b0000011 "r
+0#S
+b00000000001101011110 $6
+b11111111111111111111111110000111 "t
+1$=
+b11111111111111111111111100001111 #^
+b001 $A
+b11111111000000010000000010110111 $C
+b00001111 #c
+b00001111 $F
+b00000000000000000000000000000010 $H
+1%+
+b11111111111111111111111110000111 %,
+b11101 %-
+b0000000000 #p
+b11111111111111111111111100001111 #q
+b11111111 #t
+b11111111111111111111111100001111 $V
+b00000000000000000000000001111000 #u
+b11111111111111111111111110000111 %7
+b00000000000000000000000000010010 %8
+b10110111 #w
+b00000001 %:
+b11111111111111111111 #x
+b11111111111111111111111100001111 #y
+b11101 #z
+b00001111111100000001000010110111 $\
+b00000000000000000000000000010100 %=
+b11111111111111111111111110000111 %>
+b00000000000000000000000000011000 %?
+b11111111111111111111111100001111 &!
+b11111111111111111111111110000111 %@
+b11101 &"
+b000000000 &#
+1$c
+b11111111111111111111111100001111 &%
+1%E
+b011 &'
+1%I
+1&+
+1&,
+b00000000000000000000000000000010 %L
+b11111111 &-
+1&/
+b1100011 $n
+1%P
+b0000000000 &2
+b11111111111111111111111100001111 %Q
+b00000 $p
+1%R
+b11111 $q
+b11111111 $r
+1&5
+b11111111111111111111111100001111 %T
+1$v
+b1111100001 $x
+1$z
+b0010 %`
+1&B
+b11111111000011111111111100001111 %j
+b00011 %k
+1%p
+b11110 &Q
+b00000000000000000000000000011100 %q
+b11111111000000010000000010110111 &U
+b00000000000000000000000000011100 &V
+b11111111111111111111000000000000 &W
+b0000000000 &X
+b0000000000 %x
+b00001111 &Z
+1&^
+b0000000000 &`
+b0000000000 &a
+b011111000 &b
+b00000000000000000000000000000010 &c
+b1111100001 &d
+b0010 &e
+#66
+0%E
+0$&
+0"%
+0%I
+0&+
+0&,
+0G
+0#L
+0&/
+0%P
+0%R
+0&5
+0$4
+0$v
+0$=
+0&B
+0%+
+0#,
+0%p
+0#0
+0#1
+0#8
+0&^
+0=
+0$c
+#71
+b11111 "
+b00000000000000000000000001111000 $
+b11 (
+b00 0
+b0000000000 1
+b00000 3
+1=
+b00001111111100000001000010110111 >
+1?
+b0000000000 "!
+b00000000000000000000000000010100 @
+b0010 "#
+b1111100001 "$
+1"%
+b11000 F
+1G
+b00001111000000000000000000000000 H
+b00000000000000000000000000000010 I
+b00001111111100000001000000000000 "+
+b11111111111111111111111110000111 L
+b00000000000000000000000000100000 N
+b00001111111100000001000000000000 O
+b00000000 W
+b00000000000000000000000000000000 X
+b11111111000000001000000010010011 Y
+0Z
+b11111111000000001000000010010011 "=
+b00000000000000000000000000011000 #'
+0#)
+b11000 g
+1i
+1#,
+b00000 "K
+b1111100001 #-
+b00000000000000000000000000000000 k
+b00001111111100000001000000000000 #.
+1#0
+1#1
+b00001111111100000001000000000000 "P
+b00001111111100000001000000000000 "R
+b00001 #4
+b000000000 "S
+b00000000001101011100 "T
+b11111 #5
+b11111 s
+b1111100001 #6
+b00000 "V
+1#8
+b001 #:
+0"Y
+b1111100001 "Z
+0}
+b0110111 $!
+b11111111111111111111111100001111 ~
+b1111100001 #A
+1#B
+b00000000000000000000000000000000 $#
+1#D
+1$&
+b00000000000000000000000000000010 #F
+b00000000000000000000000000000000 $'
+b11101 $(
+b11110 $)
+0$*
+b00000000000000000000000000000000 $,
+1#L
+b00000000000000000000000000011100 "l
+b00000000 $.
+b00001111000000000000000000000000 $2
+b1111100001 $3
+1$4
+b0000111 "r
+b00000000001101011101 $6
+b00001111111100000001000000000000 "t
+1#U
+b11111111111111111111111100001111 "u
+1#V
+b11111111111111111111111100001111 "v
+1$=
+b00000000000000000000000000000010 $?
+b00000000000000000000000000000000 $C
+b11111111111111111111111100001111 #b
+b00000000 #c
+b00000000 $F
+b00001111000000000000000000000000 $H
+1%+
+b00001111111100000001000000000000 %,
+b00011 %-
+1#n
+b1111100001 #p
+b00000000000000000000000000000000 #q
+0%6
+b00000000 #t
+b00001111111100000001000000000000 #u
+b00001111111100000001000000000000 %7
+b00000000000000000000000010001100 %8
+b00000000 #w
+b00000000 %:
+b00001111111100000001 #x
+0$Z
+b00000000000000000000000000000000 #y
+b00011 #z
+b11111111000000001000000010010011 $\
+b00000000000000000000000000011000 %=
+b00001111111100000001000000000000 %>
+b00000000000000000000000000011100 %?
+b00000000000000000000000000000010 #~
+b00000000000000000000000000000000 &!
+b00001111111100000001000000000000 %@
+b11111 &"
+b011111000 &#
+1$c
+b00000000000000000000000000000000 &%
+1%E
+b100 &'
+1%I
+1&+
+b11111111 $j
+1&,
+b00001111000000000000000000000000 %L
+b00000000 &-
+1&/
+b0110111 $n
+1%P
+b1111100001 &2
+b00000000000000000000000000000000 %Q
+b00001 $p
+1%R
+b10000 $q
+b00000000 $r
+b00001111 %S
+1&5
+b00000000000000000000000000000000 %T
+1$v
+b0000000000 $x
+0$z
+b00000000000000000000000000000010 &@
+1&B
+b00000000000000000000000000000000 %j
+b00000000000000000000000000000010 &L
+b11000 %k
+b11111111 %m
+b11111111 %o
+1%p
+b00000 &Q
+b00000000000000000000000000100000 %q
+b00000000000000000000000000000000 &U
+b00000000000000000000000000100000 &V
+b00001111111100000001000000000000 &W
+b1111100001 &X
+b1111100001 %x
+b00000000 &Z
+0%z
+1&^
+b00000000000000000000000000000010 %}
+b1111100001 &`
+b1111100001 &a
+b000000000 &b
+b00000000000000000000000001111000 &c
+b0000000000 &d
+#76
+0%E
+0$&
+0"%
+0%I
+0&+
+0&,
+0G
+0#L
+0&/
+0%P
+0%R
+0&5
+0$4
+0$v
+0$=
+0&B
+0%+
+0#,
+0%p
+0#0
+0#1
+0#8
+0&^
+0=
+0$c
+#81
+b10000 "
+b00000000000000000000000000000000 $
+b00 (
+b1111111100 1
+b00001 3
+08
+1=
+b11111111000000001000000010010011 >
+0?
+b1111111100 "!
+b00000000000000000000000000011000 @
+b0000000000 "$
+1"%
+b00001 F
+1G
+b00001111111100000001000000000000 H
+b00001111000000000000000000000000 I
+b00001111111100000000111111110000 "+
+b00001111111100000001000000000000 L
+b00000000000000000000000000100100 N
+b00001111111100000000111111110000 O
+b0000 P
+b00001111000000001110111100010011 Y
+1Z
+b00001111000000001110111100010011 "=
+b00000000000000000000000000011100 #'
+1#)
+b00001 g
+1#,
+b00001 "K
+b0000000000 #-
+b00000000000000000000000010110111 k
+b11111111111111111111111111110000 #.
+1#0
+1#1
+b11111111111111111111111111110000 "P
+b00001111111100000000111111110000 "R
+b011111111 "S
+b00000000001101011011 "T
+b10000 #5
+b10000 s
+b0000000000 #6
+0#7
+b00001 "V
+1#8
+b0000000000 "Z
+1}
+b0010011 $!
+b00000000000000000000000000000000 ~
+b0000000000 #A
+1$"
+b11111111000000001111111100000000 $#
+0#D
+1$&
+b11111111000000001111111100000000 $'
+b11111 $(
+b00000 $)
+1#L
+b00000000000000000000000000100000 "l
+b11111111 $.
+b000 $/
+b000 "o
+b00001111111100000001000000000000 $2
+b0000000000 $3
+1$4
+b1111111 "r
+b00000000001101011100 $6
+b00001111111100000000111111110000 "t
+b00000000000000000000000000000000 "u
+0#V
+b00000000000000000000000000000000 "v
+1$=
+b000 $A
+b11111111000000010000000010110111 $C
+b00000000000000000000000000000000 #b
+b00001111111100000001000000000000 $H
+1%+
+b00001111111100000000111111110000 %,
+b11000 %-
+0#n
+b0000000000 #p
+1%6
+b11111111111111111111111111110000 #u
+b00001111111100000000111111110000 %7
+b00001111111100000001000000011000 %8
+b10110111 #w
+b00000001 %:
+b00001111111100000000 #x
+1$Z
+b11000 #z
+b00001111000000001110111100010011 $\
+b00000000000000000000000000011100 %=
+b00001111111100000000111111110000 %>
+b00000000000000000000000000100000 %?
+b00001111000000000000000000000000 #~
+b00001111111100000001000000000000 &!
+b00001111111100000000111111110000 %@
+b10000 &"
+b000000000 &#
+1$c
+1%E
+b001 &'
+1%I
+1&+
+b00000000 $j
+1&,
+b00000000000000000000000000000000 %L
+1&/
+b0010011 $n
+1%P
+b0000000000 &2
+b11111111000000001111111100000000 %Q
+1%R
+b11111111 $r
+b00000000 %S
+1&5
+1$v
+b1111111100 $x
+0&<
+b0000 %`
+1&B
+b00001 %k
+b00000000 %m
+b00000000 %o
+1%p
+b00001 &Q
+b00000000000000000000000000100100 %q
+b11111111000000010000000010110111 &U
+b00000000000000000000000000100100 &V
+b00001111111100000000000000000000 &W
+b0000000000 &X
+b0000000000 %x
+1%z
+1&^
+b0000000000 &`
+b0000000000 &a
+b011111111 &b
+b00001111111100000001000000000000 &c
+b1111111100 &d
+b0000 &e
+#86
+0%E
+0$&
+0"%
+0%I
+0&+
+0&,
+0G
+0#L
+0&/
+0%P
+0%R
+0&5
+0$4
+0$v
+0$=
+0&B
+0%+
+0#,
+0%p
+0#0
+0#1
+0#8
+0&^
+0=
+0$c
+#91
+b11111111111111111111111111110000 $
+b0000111000 1
+18
+1=
+b00001111000000001110111100010011 >
+b0000111000 "!
+b00000000000000000000000000011100 @
+b0000 "#
+b1111111100 "$
+1"%
+1G
+b00001111111100000000111111110000 H
+b00001111111100000001000000000000 I
+b00001111111100000001000011100000 "+
+b00001111111100000000111111110000 L
+b00000000000000000000000000101000 N
+b00001111111100000001000011100000 O
+b1000 P
+b00001111111100000001111010110111 Y
+b00001111111100000001111010110111 "=
+b00000000000000000000000000100000 #'
+1#,
+b1111111100 #-
+b00000000000000000000000000000000 k
+b00000000000000000000000011110000 #.
+1#0
+1#1
+b00000000000000000000000011110000 "P
+b00001111111100000001000011100000 "R
+b11110 #4
+b000001110 "S
+b00000000001101011010 "T
+b1111111100 #6
+1#7
+1#8
+b000 #:
+b1111111100 "Z
+b1111111100 #A
+0$"
+b00001111111100000001000000000000 $#
+1$&
+b00001111111100000001000000000000 $'
+b10000 $(
+b00001 $)
+1#L
+b00000000000000000000000000100100 "l
+b00001110 $.
+b110 $/
+b00001111111100000001000000000000 #O
+b110 "o
+b00001111111100000000111111110000 $2
+b1111111100 $3
+1$4
+b0000111 "r
+b00000000001101011011 $6
+b00001111111100000001000011100000 "t
+0#U
+b00001111111100000001000000000000 "v
+b00001111111100000001000000000000 $<
+1$=
+b110 $A
+b00000000000000000000000000000000 $C
+b11111111000000001111111100000000 #b
+b00001111111100000000111111110000 $H
+1%+
+b00001111111100000001000011100000 %,
+b00001 %-
+b1111111100 #p
+b00000000000000000000000011110000 #u
+b00001111111100000001000011100000 %7
+b00000000000000000000000000001100 %8
+b00000000 #w
+b00000000 %:
+b00001111111100000001 #x
+b00001 #z
+b00001111111100000001111010110111 $\
+b00000000000000000000000000100000 %=
+b00001111111100000001000011100000 %>
+b00000000000000000000000000100100 %?
+b00001111111100000001000000000000 #~
+b00001111111100000000111111110000 &!
+b00001111111100000001000011100000 %@
+b011111111 &#
+1$c
+1%E
+1%I
+1&+
+1&,
+b00001111111100000000111111110000 %L
+1&/
+1%P
+b1111111100 &2
+b00001111111100000001000000000000 %Q
+b00000 $p
+1%R
+b11111 $q
+b00000000 $r
+1&5
+1$v
+b00001111111100000001000000000000 &:
+b0000111000 $x
+1&<
+b1000 %`
+1&B
+b00001111111100000001000000000000 &N
+1%p
+b00000000000000000000000000101000 %q
+b00000000000000000000000000000000 &U
+b00000000000000000000000000101000 &V
+b00001111111100000001000000000000 &W
+b1111111100 &X
+b1111111100 %x
+b00001111111100000001000000000000 %{
+1&^
+b1111111100 &`
+b1111111100 &a
+b000001110 &b
+b11111111111111111111111111110000 &c
+b0000111000 &d
+b1000 &e
+#96
+0%E
+0$&
+0"%
+0%I
+0&+
+0&,
+0G
+0#L
+0&/
+0%P
+0%R
+0&5
+0$4
+0$v
+0$=
+0&B
+0%+
+0#,
+0%p
+0#0
+0#1
+0#8
+0&^
+0=
+0$c
+#101
+b11111 "
+b00000000000000000000000011110000 $
+b0000000000 1
+b00000 3
+1=
+b00001111111100000001111010110111 >
+b0000000000 "!
+b00000000000000000000000000100000 @
+b1000 "#
+b0000111000 "$
+1"%
+b11110 F
+1G
+b00001111111100000000111111110000 I
+b00001111111100000001000000000000 "+
+b00001111111100000001000011100000 L
+b00000000000000000000000000101100 N
+b00001111111100000001000000000000 O
+b0010 P
+b11111111000011101000111010010011 Y
+b11111111000011101000111010010011 "=
+b00000000000000000000000000100100 #'
+0#)
+b11110 g
+1#,
+b00000 "K
+b0000111000 #-
+b00001111111100000001000000000000 #.
+1#0
+1#1
+b00001111111100000001000000000000 "P
+b00001111111100000001000000000000 "R
+b11101 #4
+b000000000 "S
+b00000000001101011001 "T
+b11111 #5
+b11111 s
+b0000111000 #6
+b00000 "V
+1#8
+b110 #:
+b0000111000 "Z
+b0110111 $!
+b0000111000 #A
+b00000000000000000000000000000000 $#
+1#D
+1$&
+b00000000000000000000000000000000 $'
+1#L
+b00000000000000000000000000101000 "l
+b00000000 $.
+b001 $/
+b00001111111100000000111111110000 #O
+b001 "o
+b0000111000 $3
+1$4
+b00000000001101011010 $6
+b00001111111100000001000000000000 "t
+1#U
+1#V
+b00001111111100000000111111110000 "v
+b00001111111100000000111111110000 $<
+1$=
+b001 $A
+b00001111111100000001000000000000 #b
+1%+
+b00001111111100000001000000000000 %,
+1#n
+b0000111000 #p
+0%6
+b00001111111100000001000000000000 #u
+b00001111111100000001000000000000 %7
+b00000000000000000000000100010000 %8
+b11111111000011101000111010010011 $\
+b00000000000000000000000000100100 %=
+b00001111111100000001000000000000 %>
+b00000000000000000000000000101000 %?
+b00001111111100000000111111110000 #~
+b00000000000000000000000000000000 &!
+b00001111111100000001000000000000 %@
+b11111 &"
+b000001110 &#
+1$c
+1%E
+b100 &'
+1%I
+1&+
+1&,
+1&/
+b0110111 $n
+1%P
+b0000111000 &2
+b00000000000000000000000000000000 %Q
+b11101 $p
+1%R
+b10000 $q
+1&5
+1$v
+b00001111111100000000111111110000 &:
+b0000000000 $x
+b0010 %`
+1&B
+b11110 %k
+b00001111111100000000111111110000 &N
+1%p
+b00000 &Q
+b00000000000000000000000000101100 %q
+b00000000000000000000000000101100 &V
+b0000111000 &X
+b0000111000 %x
+b00001111111100000000111111110000 %{
+1&^
+b0000111000 &`
+b0000111000 &a
+b000000000 &b
+b00000000000000000000000011110000 &c
+b0000000000 &d
+b0010 &e
+#106
+0%E
+0$&
+0"%
+0%I
+0&+
+0&,
+0G
+0#L
+0&/
+0%P
+0%R
+0&5
+0$4
+0$v
+0$=
+0&B
+0%+
+0#,
+0%p
+0#0
+0#1
+0#8
+0&^
+0=
+0$c
+#111
+b10000 "
+b00000000000000000000000000000000 $
+b1111111100 1
+b11101 3
+1=
+b11111111000011101000111010010011 >
+b1111111100 "!
+b00000000000000000000000000100100 @
+b0010 "#
+b0000000000 "$
+1"%
+b11101 F
+1G
+b00001111111100000001000000000000 H
+b00001111111100000000111111110000 "+
+b00001111111100000001000000000000 L
+b00000000000000000000000000110000 N
+b00001111111100000000111111110000 O
+b0000 P
+b00000000001100000000000110010011 Y
+b00001111111100000000111111110000 ";
+b00000000001100000000000110010011 "=
+b00000000000000000000000000101000 #'
+1#)
+b11101 g
+b00001111111100000000111111110000 h
+1#,
+b11101 "K
+b0000000000 #-
+b00001111111100000000111111110000 "L
+b00000000000000000000000010110111 k
+b11111111111111111111111111110000 #.
+1#0
+1#1
+b11111111111111111111111111110000 "P
+b00001111111100000000111111110000 "R
+b011111111 "S
+b00000000001101011000 "T
+b10000 #5
+b10000 s
+b0000000000 #6
+0#7
+b11101 "V
+1#8
+b001 #:
+b0000000000 "Z
+b0010011 $!
+b0000000000 #A
+1$"
+b11111111111111111111111100001111 $#
+0#D
+1$&
+b11111111111111111111111100001111 $'
+b11111 $(
+b00000 $)
+1#L
+b00000000000000000000000000101100 "l
+b11111111 $.
+b000 $/
+b000 "o
+b00001111111100000001000000000000 $2
+b0000000000 $3
+1$4
+b1111111 "r
+b00000000001101011001 $6
+b00001111111100000000111111110000 "t
+0#V
+b00000000000000000000000000000000 "v
+1$=
+b000 $A
+b11111111000000010000000010110111 $C
+b00000000000000000000000000000000 #b
+b00001111111100000001000000000000 $H
+1%+
+b00001111111100000000111111110000 %,
+b11110 %-
+0#n
+b0000000000 #p
+b00001111111100000000111111110000 #s
+1%6
+b11111111111111111111111111110000 #u
+b00001111111100000000111111110000 %7
+b00001111111100000001000000100100 %8
+b10110111 #w
+b00000001 %:
+b00001111111100000000 #x
+b11110 #z
+b00000000001100000000000110010011 $\
+b00000000000000000000000000101000 %=
+b00001111111100000000111111110000 %>
+b00000000000000000000000000101100 %?
+b00001111111100000001000000000000 &!
+b00001111111100000000111111110000 %@
+b10000 &"
+b000000000 &#
+1$c
+1%E
+b001 &'
+b00001111111100000000111111110000 $g
+1%I
+1&+
+1&,
+b00000000000000000000000000000000 %L
+1&/
+b0010011 $n
+1%P
+b0000000000 &2
+b11111111111111111111111100001111 %Q
+b00000 $p
+1%R
+b00011 $q
+b11111111 $r
+1&5
+1$v
+b1111111100 $x
+b0000 %`
+1&B
+b11101 %k
+1%p
+b11101 &Q
+b00000000000000000000000000110000 %q
+b11111111000000010000000010110111 &U
+b00000000000000000000000000110000 &V
+b00001111111100000000000000000000 &W
+b0000000000 &X
+b0000000000 %x
+1&^
+b0000000000 &`
+b0000000000 &a
+b011111111 &b
+b00001111111100000001000000000000 &c
+b1111111100 &d
+b0000 &e
+#116
+0%E
+0$&
+0"%
+0%I
+0&+
+0&,
+0G
+0#L
+0&/
+0%P
+0%R
+0&5
+0$4
+0$v
+0$=
+0&B
+0%+
+0#,
+0%p
+0#0
+0#1
+0#8
+0&^
+0=
+0$c
+#121
+b00011 "
+b11111111111111111111111111110000 $
+b11 0
+b0000000000 1
+b00000 3
+1=
+b00000000001100000000000110010011 >
+b0000000000 "!
+b00000000000000000000000000101000 @
+b0000 "#
+b1111111100 "$
+1"%
+1G
+b00001111111100000000111111110000 H
+b00001111111100000001000000000000 I
+b00000000000000000000000000000011 "+
+b00001111111100000000111111110000 L
+b00000000000000000000000000110100 N
+b00000000000000000000000000000011 O
+b00000000000000000000000000000010 X
+b00001111111100000001000000000000 ":
+b00000101110111110001111001100011 Y
+b00000101110111110001111001100011 "=
+b00000000000000000000000000101100 #'
+b00001111111100000001000000000000 f
+b00001111111100000001000000000000 "H
+1#,
+b00000 "K
+b1111111100 #-
+b00000000000000000000000000000000 k
+b00000000000000000000000000000011 #.
+1#0
+1#1
+b00000000000000000000000000000011 "P
+b00000000000000000000000000000011 "R
+b00011 #4
+b000000000 "S
+b00000000001101010111 "T
+b00011 #5
+b00011 s
+b1111111100 #6
+1#7
+b00000 "V
+1#8
+b000 #:
+b1111111100 "Z
+b1111111100 #A
+0$"
+b00000000000000000000000000000000 $#
+1$&
+b00000000000000000000000000000000 $'
+b10000 $(
+b11101 $)
+b00000000000000000000000000000010 $,
+1#L
+b00000000000000000000000000110000 "l
+b00000000 $.
+b00001111111100000000111111110000 $2
+b1111111100 $3
+1$4
+b0000000 "r
+1#T
+b00000000001101011000 $6
+b00000000000000000000000000000011 "t
+0#U
+b00001111111100000001000000000000 "v
+1$=
+b00001111111100000001000000000000 #^
+b00000000000000000000000000000000 $C
+b11111111111111111111111100001111 #b
+b00000010 #c
+b00000010 $F
+b00001111111100000000111111110000 $H
+1%+
+b00000000000000000000000000000011 %,
+b11101 %-
+b1111111100 #p
+b00000000000000000000000000000010 #q
+b00001111111100000001000000000000 $V
+b00000000000000000000000000000011 #u
+b00000000000000000000000000000011 %7
+b00000000000000000000000000011000 %8
+b00000000 #w
+b00000000 %:
+b00000000000000000000 #x
+b00000000000000000000000000000010 #y
+b11101 #z
+b00000101110111110001111001100011 $\
+b00000000000000000000000000101100 %=
+b00000000000000000000000000000011 %>
+b00000000000000000000000000110000 %?
+b00001111111100000001000000000000 #~
+b00000000000000000000000000000000 &!
+b00000000000000000000000000000011 %@
+b00011 &"
+b011111111 &#
+1$c
+b00000000000000000000000000000010 &%
+1%E
+1%I
+1&+
+1&,
+b00001111111100000000111111110000 %L
+1&/
+1%P
+b1111111100 &2
+b00000000000000000000000000000000 %Q
+b11110 $p
+1%R
+b11101 $q
+b00000000 $r
+1&5
+b00000000000000000000000000000010 %T
+1$v
+b0000000000 $x
+1&B
+b00000010000000100000001000000010 %j
+1%p
+b00000 &Q
+b00000000000000000000000000110100 %q
+b00000000000000000000000000000000 &U
+b00000000000000000000000000110100 &V
+b00000000000000000000000000000000 &W
+b1111111100 &X
+b1111111100 %x
+b00000010 &Z
+1&^
+b1111111100 &`
+b1111111100 &a
+b000000000 &b
+b11111111111111111111111111110000 &c
+b0000000000 &d
+#126
+0%E
+0$&
+0"%
+0%I
+0&+
+0&,
+0G
+0#L
+0&/
+0%P
+0%R
+0&5
+0$4
+0$v
+0$=
+0&B
+0%+
+0#,
+0%p
+0#0
+0#1
+0#8
+0&^
+0=
+0$c
+#131
+b11101 "
+b00000000000000000000000000000011 $
+b11 (
+b00 0
+b0000010011 1
+b11110 3
+1=
+b00000101110111110001111001100011 >
+b0000010011 "!
+b00000000000000000000000000101100 @
+b0000000000 "$
+1"%
+b00011 F
+1G
+b00000000000000000000000000000011 H
+b00001111111100000000111111110000 I
+b00001111111100000001000001001100 "+
+b00000000000000000000000000000011 L
+b00000000000000000000000000111000 N
+b00001111111100000001000001001100 O
+b0010 P
+b00001111 W
+b00001111111100000000111111110000 X
+b00001111111100000000111111110000 ":
+b00000000111111110000000010110111 Y
+b00000000111111110000000010110111 "=
+b00000000000000000000000000110000 #'
+b00001111111100000000111111110000 f
+b00001111111100000000111111110000 "H
+b00011 g
+0i
+1#,
+b11110 "K
+b0000000000 #-
+b11111111111111111111111111111111 k
+b00000000000000000000000001011100 #.
+1#0
+1#1
+b00000000000000000000000001011100 "P
+b00001111111100000001000001001100 "R
+b11100 #4
+b000000100 "S
+b00000000001101010110 "T
+b11101 #5
+b11101 s
+b0000000000 #6
+b11110 "V
+1#8
+b0000000000 "Z
+b1100011 $!
+b00000000000000000000000000000010 ~
+b0000000000 #A
+0#B
+b00001111111100000000111111110000 $#
+1$&
+b00001111111100000000111111110000 $'
+b00011 $(
+b00000 $)
+1$*
+b00001111111100000000111111110000 $,
+1#L
+b00000000000000000000000000110100 "l
+b00000100 $.
+b001 $/
+b001 "o
+b00000000000000000000000000000011 $2
+b0000000000 $3
+1$4
+b0000010 "r
+0#T
+b00000000001101010111 $6
+b00001111111100000001000001001100 "t
+1#U
+b00000000000000000000000000000010 "u
+1#V
+b00000000000000000000000000000000 "v
+1$=
+b00001111111100000000111111110000 #^
+b001 $A
+b11111111000000010000000010110111 $C
+b00000000000000000000000000000000 #b
+b11110000 #c
+b11110000 $F
+b00000000000000000000000000000011 $H
+1%+
+b00001111111100000001000001001100 %,
+b0000000000 #p
+b00001111111100000000111111110000 #q
+b00001111 #t
+b00001111111100000000111111110000 $V
+b00000000000000000000000001011100 #u
+b00001111111100000001000001001100 %7
+b00000000000000000000000000101111 %8
+b10110111 #w
+b00000001 %:
+b00001111111100000001 #x
+b00001111111100000000111111110000 #y
+b00000000111111110000000010110111 $\
+b00000000000000000000000000110000 %=
+b00001111111100000001000001001100 %>
+b00000000000000000000000000110100 %?
+b00001111111100000000111111110000 #~
+b00001111111100000000111111110000 &!
+b00001111111100000001000001001100 %@
+b11101 &"
+b000000000 &#
+1$c
+b00001111111100000000111111110000 &%
+1%E
+b011 &'
+1%I
+1&+
+1&,
+b00000000000000000000000000000011 %L
+b11110000 &-
+1&/
+b1100011 $n
+1%P
+b0000000000 &2
+b00001111111100000000111111110000 %Q
+1%R
+b01111 $q
+b11111111 $r
+b00000010 %S
+1&5
+b00001111111100000000111111110000 %T
+1$v
+b0000010011 $x
+1$z
+b0010 %`
+1&B
+b00001111111100000000111111110000 %j
+b00011 %k
+1%p
+b11110 &Q
+b00000000000000000000000000111000 %q
+b11111111000000010000000010110111 &U
+b00000000000000000000000000111000 &V
+b00001111111100000001000000000000 &W
+b0000000000 &X
+b0000000000 %x
+b11110000 &Z
+1&^
+b0000000000 &`
+b0000000000 &a
+b000000100 &b
+b00000000000000000000000000000011 &c
+b0000010011 &d
+b0010 &e
+#136
+0%E
+0$&
+0"%
+0%I
+0&+
+0&,
+0G
+0#L
+0&/
+0%P
+0%R
+0&5
+0$4
+0$v
+0$=
+0&B
+0%+
+0#,
+0%p
+0#0
+0#1
+0#8
+0&^
+0=
+0$c
+#141
+b01111 "
+b00000000000000000000000001011100 $
+b00 (
+b1111111100 1
+b00010000 ;
+1=
+b00000000111111110000000010110111 >
+1?
+b1111111100 "!
+b00000000000000000000000000110000 @
+b0010 "#
+b0000010011 "$
+1"%
+b11100 F
+1G
+b00000000000000000000000000000000 H
+b00000000000000000000000000000011 I
+b00010000111011110000111111110000 "+
+b00001111111100000001000001001100 L
+b00000000000000000000000000111100 N
+b00010000111011110000111111110000 O
+b0000 P
+b00000000 W
+b00000000000000000000000000000000 X
+b00001111111100001000000010010011 Y
+0Z
+b00001111111100001000000010010011 "=
+b00000000000000000000000000110100 #'
+0#)
+b11100 g
+1i
+1#,
+b0000010011 #-
+b00000000000000000001000001100011 k
+b00000000111111110000000000000000 #.
+1#0
+1#1
+b00000000111111110000000000000000 "P
+b00010000111011110000111111110000 "R
+b00001 #4
+b011111111 "S
+b00000000001101010101 "T
+b01111 #5
+b01111 s
+b0000010011 #6
+1#8
+b001 #:
+b0000010011 "Z
+0}
+b0110111 $!
+b00001111111100000000111111110000 ~
+b0000010011 #A
+1#B
+1#D
+1$&
+b00000000000000000000000000000011 #F
+b11101 $(
+b11110 $)
+0$*
+b00000000000000000000000000000000 $,
+1#L
+b00000000000000000000000000111000 "l
+b11111111 $.
+b000 $/
+b000 "o
+b00000000000000000000000000000000 $2
+b0000010011 $3
+1$4
+b0000000 "r
+b00000000001101010110 $6
+b00010000111011110000111111110000 "t
+b00001111111100000000111111110000 "u
+0#V
+b00001111111100000000111111110000 "v
+1$=
+b00000000000000000000000000000011 $?
+b000 $A
+b00000101110111110001000001100011 $C
+b00001111111100000000111111110000 #b
+b00000000 #c
+b00000000 $F
+b00000000000000000000000000000000 $H
+1%+
+b00010000111011110000111111110000 %,
+b00011 %-
+1#n
+b0000010011 #p
+b00000000000000000000000000000000 #q
+0%6
+b00000000 #t
+b00000000111111110000000000000000 #u
+b00010000111011110000111111110000 %7
+b00000000000000000000000010001100 %8
+b01100011 #w
+b11011111 %:
+b00010000111011110000 #x
+0$Z
+b00000000000000000000000000000000 #y
+b00011 #z
+b00001111111100001000000010010011 $\
+b00000000000000000000000000110100 %=
+b00010000111011110000111111110000 %>
+b00000000000000000000000000111000 %?
+b00000000000000000000000000000011 #~
+b00010000111011110000111111110000 %@
+b01111 &"
+b000000100 &#
+1$c
+b00000000000000000000000000000000 &%
+1%E
+b100 &'
+1%I
+1&+
+b00001111 $j
+1&,
+b00000000000000000000000000000000 %L
+b00000000 &-
+1&/
+b0110111 $n
+1%P
+b0000010011 &2
+b00001 $p
+1%R
+b11111 $q
+b00000101 $r
+b11110000 %S
+1&5
+b00000000000000000000000000000000 %T
+1$v
+b1111111100 $x
+0$z
+b00000000000000000000000000000011 &@
+b0000 %`
+1&B
+b00000000000000000000000000000000 %j
+b00000000000000000000000000000011 &L
+b11100 %k
+b00001111 %m
+b11110000 %o
+1%p
+b00000000000000000000000000111100 %q
+b00000101110111110001000001100011 &U
+b00000000000000000000000000111100 &V
+b00010000111011110000000000000000 &W
+b0000010011 &X
+b0000010011 %x
+b00000000 &Z
+0%z
+1&^
+b00000000000000000000000000000011 %}
+b0000010011 &`
+b0000010011 &a
+b011111111 &b
+b00000000000000000000000001011100 &c
+b1111111100 &d
+b0000 &e
+#146
+0%E
+0$&
+0"%
+0%I
+0&+
+0&,
+0G
+0#L
+0&/
+0%P
+0%R
+0&5
+0$4
+0$v
+0$=
+0&B
+0%+
+0#,
+0%p
+0#0
+0#1
+0#8
+0&^
+0=
+0$c
+#151
+b11111 "
+b00000000000000000000000000000000 $
+b11 0
+b0000111111 1
+b00001 3
+08
+b00000000 ;
+1=
+b00001111111100001000000010010011 >
+0?
+b0000111111 "!
+b00000000000000000000000000110100 @
+b0000 "#
+b1111111100 "$
+1"%
+b00001 F
+1G
+b00000000111111110000000000000000 H
+b00000000000000000000000000000000 I
+b00000000111111110000000011111111 "+
+b00010000111011110000111111110000 L
+b00000000000000000000000001000000 N
+b00000000111111110000000011111111 O
+b01110000111100001110111100010011 Y
+1Z
+b01110000111100001110111100010011 "=
+b00000000000000000000000000111000 #'
+1#)
+b00001 g
+1#,
+b00001 "K
+b1111111100 #-
+b00000000000000000000000000000000 k
+b00000000000000000000000011111111 #.
+1#0
+1#1
+b00000000000000000000000011111111 "P
+b00000000111111110000000011111111 "R
+b000001111 "S
+b00000000001101010100 "T
+b11111 #5
+b11111 s
+b1111111100 #6
+0#7
+b00001 "V
+1#8
+b000 #:
+b1111111100 "Z
+1}
+b0010011 $!
+b00000000000000000000000000000000 ~
+b1111111100 #A
+1$"
+0#D
+1$&
+b01111 $(
+1#L
+b00000000000000000000000000111100 "l
+b00001111 $.
+b00000000111111110000000000000000 $2
+b1111111100 $3
+1$4
+b0000111 "r
+1#T
+b00000000001101010101 $6
+b00000000111111110000000011111111 "t
+0#U
+b00000000000000000000000000000000 "u
+1$=
+b00000000000000000000000000000000 $C
+b00000000111111110000000000000000 $H
+1%+
+b00000000111111110000000011111111 %,
+b11100 %-
+0#n
+b1111111100 #p
+1%6
+b00000000000000000000000011111111 #u
+b00000000111111110000000011111111 %7
+b00000000111111110000000000110100 %8
+b00000000 #w
+b00000000 %:
+b00000000111111110000 #x
+1$Z
+b11100 #z
+b01110000111100001110111100010011 $\
+b00000000000000000000000000111000 %=
+b00000000111111110000000011111111 %>
+b00000000000000000000000000111100 %?
+b00000000000000000000000000000000 #~
+b00000000111111110000000000000000 &!
+b00000000111111110000000011111111 %@
+b11111 &"
+b011111111 &#
+1$c
+1%E
+b001 &'
+1%I
+1&+
+b00000000 $j
+1&,
+b00001111111100000000111111110000 %L
+1&/
+b0010011 $n
+1%P
+b1111111100 &2
+1%R
+b01111 $q
+b00000000 $r
+b00000000 %S
+1&5
+1$v
+b0000111111 $x
+0&<
+1&B
+b00001 %k
+b00000000 %m
+b00000000 %o
+1%p
+b00001 &Q
+b00000000000000000000000001000000 %q
+b00000000000000000000000000000000 &U
+b00000000000000000000000001000000 &V
+b00000000111111110000000000000000 &W
+b1111111100 &X
+b1111111100 %x
+1%z
+1&^
+b1111111100 &`
+b1111111100 &a
+b000001111 &b
+b00000000111111110000000000000000 &c
+b0000111111 &d
+#156
+0%E
+0$&
+0"%
+0%I
+0&+
+0&,
+0G
+0#L
+0&/
+0%P
+0%R
+0&5
+0$4
+0$v
+0$=
+0&B
+0%+
+0#,
+0%p
+0#0
+0#1
+0#8
+0&^
+0=
+0$c
+#161
+b01111 "
+b00000000000000000000000011111111 $
+b11 (
+b10 0
+b1000000011 1
+18
+1=
+b01110000111100001110111100010011 >
+b1000000011 "!
+b00000000000000000000000000111000 @
+b0000111111 "$
+1"%
+1G
+b00000000111111110000000011111111 H
+b00000000111111110000000000000000 I
+b00000000111111110000100000001110 "+
+b00000000111111110000000011111111 L
+b00000000000000000000000001000100 N
+b00000000111111110000100000001110 O
+b1000 P
+b00000000111111110000111010110111 Y
+b00000000111111110000111010110111 "=
+b00000000000000000000000000111100 #'
+1#,
+b0000111111 #-
+b00000000000000000000011100001111 #.
+1#0
+1#1
+b00000000000000000000011100001111 "P
+b00000000111111110000100000001110 "R
+b11110 #4
+b010000000 "S
+b00000000001101010011 "T
+b01111 #5
+b01111 s
+b0000111111 #6
+1#7
+1#8
+b0000111111 "Z
+b0000111111 #A
+0$"
+b00000000111111110000000000000000 $#
+1$&
+b00000000111111110000000000000000 $'
+b11111 $(
+b00001 $)
+1#L
+b00000000000000000000000001000000 "l
+b10000000 $.
+b110 $/
+b00000000111111110000000000000000 #O
+b110 "o
+b00000000111111110000000011111111 $2
+b0000111111 $3
+1$4
+b0111000 "r
+0#T
+b00000000001101010100 $6
+b00000000111111110000100000001110 "t
+b00000000111111110000000000000000 "v
+b00000000111111110000000000000000 $<
+1$=
+b110 $A
+b00000000111111110000000011111111 $H
+1%+
+b00000000111111110000100000001110 %,
+b00001 %-
+b0000111111 #p
+b00000000000000000000011100001111 #u
+b00000000111111110000100000001110 %7
+b00000000000000000000000100110111 %8
+b00001 #z
+b00000000111111110000111010110111 $\
+b00000000000000000000000000111100 %=
+b00000000111111110000100000001110 %>
+b00000000000000000000000001000000 %?
+b00000000111111110000000000000000 #~
+b00000000111111110000000011111111 &!
+b00000000111111110000100000001110 %@
+b01111 &"
+b000001111 &#
+1$c
+1%E
+1%I
+1&+
+1&,
+b00000000111111110000000011111111 %L
+1&/
+1%P
+b0000111111 &2
+b00000000111111110000000000000000 %Q
+b11110 $p
+1%R
+1&5
+1$v
+b00000000111111110000000000000000 &:
+b1000000011 $x
+1&<
+b1000 %`
+1&B
+b00000000111111110000000000000000 &N
+1%p
+b00000000000000000000000001000100 %q
+b00000000000000000000000001000100 &V
+b0000111111 &X
+b0000111111 %x
+b00000000111111110000000000000000 %{
+1&^
+b0000111111 &`
+b0000111111 &a
+b010000000 &b
+b00000000000000000000000011111111 &c
+b1000000011 &d
+b1000 &e
+#166
+0%E
+0$&
+0"%
+0%I
+0&+
+0&,
+0G
+0#L
+0&/
+0%P
+0%R
+0&5
+0$4
+0$v
+0$=
+0&B
+0%+
+0#,
+0%p
+0#0
+0#1
+0#8
+0&^
+0=
+0$c
+#171
+b00000000000000000000011100001111 $
+b10 (
+b11 0
+b0111111111 1
+b11110 3
+1=
+b00000000111111110000111010110111 >
+b0111111111 "!
+b00000000000000000000000000111100 @
+b1000 "#
+b1000000011 "$
+1"%
+b11110 F
+1G
+b00000000111111110000011111111111 H
+b00000000111111110000000011111111 I
+b00000001111111100000011111111111 "+
+b00000000111111110000100000001110 L
+b00000000000000000000000001001000 N
+b00000001111111100000011111111111 O
+b0000 P
+b01111111111111101000111010010011 Y
+b01111111111111101000111010010011 "=
+b00000000000000000000000001000000 #'
+0#)
+b11110 g
+1#,
+b11110 "K
+b1000000011 #-
+b00000000111111110000000000000000 #.
+1#0
+1#1
+b00000000111111110000000000000000 "P
+b00000001111111100000011111111111 "R
+b11101 #4
+b001111111 "S
+b00000000001101010010 "T
+b1000000011 #6
+b11110 "V
+1#8
+b110 #:
+b1000000011 "Z
+b0110111 $!
+b1000000011 #A
+b00001111111100000000111111110000 $#
+1#D
+1$&
+b00001111111100000000111111110000 $'
+b01111 $(
+1#L
+b00000000000000000000000001000100 "l
+b01111111 $.
+b000 $/
+b00000000111111110000000011111111 #O
+b000 "o
+b00000000111111110000011111111111 $2
+b1000000011 $3
+1$4
+b0000000 "r
+1#T
+b00000000001101010011 $6
+b00000001111111100000011111111111 "t
+b00000000111111110000000011111111 "v
+b00000000111111110000000011111111 $<
+1$=
+b000 $A
+b00000000111111110000000000000000 #b
+b00000000111111110000011111111111 $H
+1%+
+b00000001111111100000011111111111 %,
+1#n
+b1000000011 #p
+0%6
+b00000000111111110000000000000000 #u
+b00000001111111100000011111111111 %7
+b00000000000000000000011101001011 %8
+b00000001111111100000 #x
+b01111111111111101000111010010011 $\
+b00000000000000000000000001000000 %=
+b00000001111111100000011111111111 %>
+b00000000000000000000000001000100 %?
+b00000000111111110000000011111111 #~
+b00000000111111110000011111111111 &!
+b00000001111111100000011111111111 %@
+b010000000 &#
+1$c
+1%E
+b100 &'
+1%I
+1&+
+1&,
+b00000000111111110000011111111111 %L
+1&/
+b0110111 $n
+1%P
+b1000000011 &2
+b00001111111100000000111111110000 %Q
+b11101 $p
+1%R
+b11111 $q
+1&5
+1$v
+b00000000111111110000000011111111 &:
+b0111111111 $x
+b0000 %`
+1&B
+b11110 %k
+b00000000111111110000000011111111 &N
+1%p
+b11110 &Q
+b00000000000000000000000001001000 %q
+b00000000000000000000000001001000 &V
+b00000001111111100000000000000000 &W
+b1000000011 &X
+b1000000011 %x
+b00000000111111110000000011111111 %{
+1&^
+b1000000011 &`
+b1000000011 &a
+b001111111 &b
+b00000000000000000000011100001111 &c
+b0111111111 &d
+b0000 &e
+#176
+0%E
+0$&
+0"%
+0%I
+0&+
+0&,
+0G
+0#L
+0&/
+0%P
+0%R
+0&5
+0$4
+0$v
+0$=
+0&B
+0%+
+0#,
+0%p
+0#0
+0#1
+0#8
+0&^
+0=
+0$c
+#181
+b11111 "
+b00000000000000000000000000000000 $
+b11 (
+b11101 3
+1=
+b01111111111111101000111010010011 >
+b00000000000000000000000001000000 @
+b0000 "#
+b0111111111 "$
+1"%
+b11101 F
+1G
+b00000000111111110000000000000000 H
+b00000000111111110000011111111111 I
+b00000000111111110000011111111111 "+
+b00000001111111100000011111111111 L
+b00000000000000000000000001001100 N
+b00000000111111110000011111111111 O
+b00000000010000000000000110010011 Y
+b00000000111111110000011111111111 ";
+b00000000010000000000000110010011 "=
+b00000000000000000000000001000100 #'
+1#)
+b11101 g
+b00000000111111110000011111111111 h
+1#,
+b11101 "K
+b0111111111 #-
+b00000000111111110000011111111111 "L
+b00000000000000000000011111111111 #.
+1#0
+1#1
+b00000000000000000000011111111111 "P
+b00000000111111110000011111111111 "R
+b00000000001101010001 "T
+b11111 #5
+b11111 s
+b0111111111 #6
+0#7
+b11101 "V
+1#8
+b000 #:
+b0111111111 "Z
+b0010011 $!
+b0111111111 #A
+1$"
+0#D
+1$&
+b11110 $)
+1#L
+b00000000000000000000000001001000 "l
+b00000000111111110000000000000000 $2
+b0111111111 $3
+1$4
+b0111111 "r
+b00000000001101010010 $6
+b00000000111111110000011111111111 "t
+b00000000111111110000011111111111 "v
+1$=
+b00001111111100000000111111110000 #b
+b00000000111111110000000000000000 $H
+1%+
+b00000000111111110000011111111111 %,
+b11110 %-
+0#n
+b0111111111 #p
+b00000000111111110000011111111111 #s
+1%6
+b00000000000000000000011111111111 #u
+b00000000111111110000011111111111 %7
+b00000000111111110000000001000000 %8
+b00000000111111110000 #x
+b11110 #z
+b00000000010000000000000110010011 $\
+b00000000000000000000000001000100 %=
+b00000000111111110000011111111111 %>
+b00000000000000000000000001001000 %?
+b00000000111111110000011111111111 #~
+b00000000111111110000000000000000 &!
+b00000000111111110000011111111111 %@
+b11111 &"
+b001111111 &#
+1$c
+1%E
+b001 &'
+b00000000111111110000011111111111 $g
+1%I
+1&+
+1&,
+1&/
+b0010011 $n
+1%P
+b0111111111 &2
+b00000 $p
+1%R
+b00100 $q
+1&5
+1$v
+1&B
+b11101 %k
+1%p
+b11101 &Q
+b00000000000000000000000001001100 %q
+b00000000000000000000000001001100 &V
+b00000000111111110000000000000000 &W
+b0111111111 &X
+b0111111111 %x
+1&^
+b0111111111 &`
+b0111111111 &a
+b00000000111111110000000000000000 &c
+#186
+0%E
+0$&
+0"%
+0%I
+0&+
+0&,
+0G
+0#L
+0&/
+0%P
+0%R
+0&5
+0$4
+0$v
+0$=
+0&B
+0%+
+0#,
+0%p
+0#0
+0#1
+0#8
+0&^
+0=
+0$c
+#191
+b00100 "
+b00000000000000000000011111111111 $
+b00 0
+b0000000001 1
+b00000 3
+1=
+b00000000010000000000000110010011 >
+b0000000001 "!
+b00000000000000000000000001000100 @
+1"%
+1G
+b00000000111111110000011111111111 H
+b00000000111111110000000000000000 I
+b00000000000000000000000000000100 "+
+b00000000111111110000011111111111 L
+b00000000000000000000000001010000 N
+b00000000000000000000000000000100 O
+b00000000111111110000000000000000 ":
+b00000101110111110001000001100011 Y
+b00000101110111110001000001100011 "=
+b00000000000000000000000001001000 #'
+b00000000111111110000000000000000 f
+b00000000111111110000000000000000 "H
+1#,
+b00000 "K
+b00000000000000000000000000000100 #.
+1#0
+1#1
+b00000000000000000000000000000100 "P
+b00000000000000000000000000000100 "R
+b00011 #4
+b000000000 "S
+b00000000001101010000 "T
+b00100 #5
+b00100 s
+1#7
+b00000 "V
+1#8
+0$"
+b00000000000000000000000000000000 $#
+1$&
+b00000000000000000000000000000000 $'
+b11111 $(
+b11101 $)
+1#L
+b00000000000000000000000001001100 "l
+b00000000 $.
+b00000000111111110000011111111111 $2
+1$4
+b0000000 "r
+0#T
+b00000000001101010001 $6
+b00000000000000000000000000000100 "t
+1#U
+b00000000111111110000000000000000 "v
+1$=
+b00000000111111110000000000000000 #^
+b00000000111111110000011111111111 $H
+1%+
+b00000000000000000000000000000100 %,
+b11101 %-
+b00000000111111110000000000000000 $V
+b00000000000000000000000000000100 #u
+b00000000000000000000000000000100 %7
+b00000000000000000000100001000011 %8
+b00000000000000000000 #x
+b11101 #z
+b00000101110111110001000001100011 $\
+b00000000000000000000000001001000 %=
+b00000000000000000000000000000100 %>
+b00000000000000000000000001001100 %?
+b00000000111111110000000000000000 #~
+b00000000000000000000000000000000 &!
+b00000000000000000000000000000100 %@
+b00100 &"
+1$c
+1%E
+1%I
+1&+
+1&,
+1&/
+1%P
+b00000000000000000000000000000000 %Q
+b11110 $p
+1%R
+b11101 $q
+1&5
+1$v
+b0000000001 $x
+1&B
+1%p
+b00000 &Q
+b00000000000000000000000001010000 %q
+b00000000000000000000000001010000 &V
+b00000000000000000000000000000000 &W
+1&^
+b000000000 &b
+b00000000000000000000011111111111 &c
+b0000000001 &d
+#196
+0%E
+0$&
+0"%
+0%I
+0&+
+0&,
+0G
+0#L
+0&/
+0%P
+0%R
+0&5
+0$4
+0$v
+0$=
+0&B
+0%+
+0#,
+0%p
+0#0
+0#1
+0#8
+0&^
+0=
+0$c
+#201
+b11101 "
+b00000000000000000000000000000100 $
+b00 (
+b11 0
+b1000001111 1
+b11110 3
+b10000000 ;
+1=
+b00000101110111110001000001100011 >
+b1000001111 "!
+b00000000000000000000000001001000 @
+b0000000001 "$
+1"%
+b00011 F
+1G
+b00000000000000000000000000000100 H
+b00000000111111110000011111111111 I
+b00000000111111110000100000111111 "+
+b00000000000000000000000000000100 L
+b00000000000000000000000001010100 N
+b00000000111111110000100000111111 O
+b0010 P
+b00000000111111110000011111111111 X
+b00000000111111110000011111111111 ":
+b11110000000011111111000010110111 Y
+b11110000000011111111000010110111 "=
+b00000000000000000000000001001100 #'
+b00000000111111110000011111111111 f
+b00000000111111110000011111111111 "H
+b00011 g
+0i
+1#,
+b11110 "K
+b0000000001 #-
+b11111111111111111111111110010011 k
+b00000000000000000000000001000000 #.
+1#0
+1#1
+b00000000000000000000000001000000 "P
+b00000000111111110000100000111111 "R
+b00000 #4
+b010000011 "S
+b00000000001101001111 "T
+b11101 #5
+b11101 s
+b0000000001 #6
+b11110 "V
+1#8
+1"Y
+b0000000001 "Z
+b1100011 $!
+b0000000001 #A
+0#B
+b00000000111111110000011111111111 $#
+1$&
+b00000000111111110000011111111111 $'
+b00100 $(
+b00000 $)
+1$*
+b00000000111111110000011111111111 $,
+1#L
+b00000000000000000000000001010000 "l
+b10000011 $.
+b001 $/
+b001 "o
+b00000000000000000000000000000100 $2
+b0000000001 $3
+1$4
+b0000010 "r
+b00000000001101010000 $6
+b00000000111111110000100000111111 "t
+0#U
+b00000000000000000000000000000000 "v
+1$=
+b00000000111111110000011111111111 #^
+b001 $A
+b11110000000000001000000010010011 $C
+b00000000000000000000000000000000 #b
+b11111111 #c
+b11111111 $F
+b00000000000000000000000000000100 $H
+1%+
+b00000000111111110000100000111111 %,
+b0000000001 #p
+b00000000111111110000011111111111 #q
+b00000111 #t
+b00000000111111110000011111111111 $V
+b00000000000000000000000001000000 #u
+b00000000111111110000100000111111 %7
+b00000000000000000000000001001100 %8
+b10010011 #w
+b00000000111111110000 #x
+b00000000111111110000011111111111 #y
+b11110000000011111111000010110111 $\
+b00000000000000000000000001001100 %=
+b00000000111111110000100000111111 %>
+b00000000000000000000000001010000 %?
+b00000000111111110000011111111111 #~
+b00000000111111110000011111111111 &!
+b00000000111111110000100000111111 %@
+b11101 &"
+b000000000 &#
+1$c
+b00000000111111110000011111111111 &%
+1%E
+b011 &'
+1%I
+1&+
+1&,
+b00000000000000000000000000000100 %L
+b11111111 &-
+1&/
+b1100011 $n
+1%P
+b0000000001 &2
+b00000000111111110000011111111111 %Q
+b11111 $p
+1%R
+b00000 $q
+b11110000 $r
+1&5
+b00000000111111110000011111111111 %T
+1$v
+b1000001111 $x
+1$z
+b0010 %`
+1&B
+b00000111111111110000011111111111 %j
+b00011 %k
+1%p
+b11110 &Q
+b00000000000000000000000001010100 %q
+b11110000000000001000000010010011 &U
+b00000000000000000000000001010100 &V
+b00000000111111110000000000000000 &W
+b0000000001 &X
+b0000000001 %x
+b11111111 &Z
+1&^
+b0000000001 &`
+b0000000001 &a
+b010000011 &b
+b00000000000000000000000000000100 &c
+b1000001111 &d
+b0010 &e
+#206
+0%E
+0$&
+0"%
+0%I
+0&+
+0&,
+0G
+0#L
+0&/
+0%P
+0%R
+0&5
+0$4
+0$v
+0$=
+0&B
+0%+
+0#,
+0%p
+0#0
+0#1
+0#8
+0&^
+0=
+0$c
+#211
+b00000 "
+b00000000000000000000000001000000 $
+b11 (
+b00 0
+b0000000000 1
+b11111 3
+b00000000 ;
+1=
+b11110000000011111111000010110111 >
+1?
+b0000000000 "!
+b00000000000000000000000001001100 @
+b0010 "#
+b1000001111 "$
+1"%
+b00000 F
+1G
+b00000000111111110000011111111111 H
+b00000000000000000000000000000100 I
+b11110000000011111111000000000000 "+
+b00000000111111110000100000111111 L
+b00000000000000000000000001011000 N
+b11110000000011111111000000000000 O
+b1001 P
+b00000000000000000000000000000000 X
+b00000000111100001000000010010011 Y
+0Z
+b00000000111100001000000010010011 "=
+b00000000000000000000000001010000 #'
+0#)
+b00000 g
+1i
+1#,
+b11111 "K
+b1000001111 #-
+b00000000000000000000000000000000 k
+b11110000000011111111000000000000 #.
+1#0
+1#1
+b11110000000011111111000000000000 "P
+b11110000000011111111000000000000 "R
+b00001 #4
+b000000000 "S
+b00000000001101001110 "T
+b00000 #5
+b00000 s
+b1000001111 #6
+b11111 "V
+1#8
+b001 #:
+0"Y
+b1000001111 "Z
+0}
+b0110111 $!
+b00000000111111110000011111111111 ~
+b1000001111 #A
+1#B
+b00000000000000000000000000000000 $#
+1#D
+1$&
+b00000000000000000000000000000100 #F
+b00000000000000000000000000000000 $'
+b11101 $(
+b11110 $)
+0$*
+b00000000000000000000000000000000 $,
+1#L
+b00000000000000000000000001010100 "l
+b00000000 $.
+b111 $/
+b111 "o
+b00000000111111110000011111111111 $2
+b1000001111 $3
+1$4
+b1111000 "r
+b00000000001101001111 $6
+b11110000000011111111000000000000 "t
+b00000000111111110000011111111111 "u
+b00000000111111110000011111111111 "v
+1$=
+b00000000000000000000000000000100 $?
+b111 $A
+b00000000000000000000000000000000 $C
+b00000000111111110000011111111111 #b
+b00000000 #c
+b00000000 $F
+b00000000111111110000011111111111 $H
+1%+
+b11110000000011111111000000000000 %,
+b00011 %-
+1#n
+b1000001111 #p
+b00000000000000000000000000000000 #q
+0%6
+b00000000 #t
+b11110000000011111111000000000000 #u
+b11110000000011111111000000000000 %7
+b00000000000000000000000010001100 %8
+b00000000 #w
+b11110000000011111111 #x
+0$Z
+b00000000000000000000000000000000 #y
+b00011 #z
+b00000000111100001000000010010011 $\
+b00000000000000000000000001010000 %=
+b11110000000011111111000000000000 %>
+b00000000000000000000000001010100 %?
+b00000000000000000000000000000100 #~
+b00000000000000000000000000000000 &!
+b11110000000011111111000000000000 %@
+b00000 &"
+b010000011 &#
+1$c
+b00000000000000000000000000000000 &%
+1%E
+b100 &'
+1%I
+1&+
+1&,
+b00000000111111110000011111111111 %L
+b00000000 &-
+1&/
+b0110111 $n
+1%P
+b1000001111 &2
+b00000000000000000000000000000000 %Q
+b00001 $p
+1%R
+b01111 $q
+b00000000 $r
+b11111111 %S
+1&5
+b00000000000000000000000000000000 %T
+1$v
+b0000000000 $x
+0$z
+b00000000000000000000000000000100 &@
+b1001 %`
+1&B
+b00000000000000000000000000000000 %j
+b00000000000000000000000000000100 &L
+b00000 %k
+b00000111 %m
+b11111111 %o
+1%p
+b11111 &Q
+b00000000000000000000000001011000 %q
+b00000000000000000000000000000000 &U
+b00000000000000000000000001011000 &V
+b11110000000011111111000000000000 &W
+b1000001111 &X
+b1000001111 %x
+b00000000 &Z
+0%z
+1&^
+b00000000000000000000000000000100 %}
+b1000001111 &`
+b1000001111 &a
+b000000000 &b
+b00000000000000000000000001000000 &c
+b0000000000 &d
+b1001 &e
+#216
+0%E
+0$&
+0"%
+0%I
+0&+
+0&,
+0G
+0#L
+0&/
+0%P
+0%R
+0&5
+0$4
+0$v
+0$=
+0&B
+0%+
+0#,
+0%p
+0#0
+0#1
+0#8
+0&^
+0=
+0$c
+#221
+b01111 "
+b00000000000000000000000000000000 $
+b00 (
+b11 0
+b0000000011 1
+b00001 3
+08
+1=
+b00000000111100001000000010010011 >
+0?
+b0000000011 "!
+b00000000000000000000000001010000 @
+b1001 "#
+b0000000000 "$
+1"%
+b00001 F
+1G
+b11110000000011111111000000000000 H
+b00000000111111110000011111111111 I
+b11110000000011111111000000001111 "+
+b11110000000011111111000000000000 L
+b00000000000000000000000001011100 N
+b11110000000011111111000000001111 O
+b0000 P
+b00001111000000001110111100010011 Y
+1Z
+b00001111000000001110111100010011 "=
+b00000000000000000000000001010100 #'
+1#)
+b00001 g
+1#,
+b00001 "K
+b0000000000 #-
+b11111111000000010000000010110111 k
+b00000000000000000000000000001111 #.
+1#0
+1#1
+b00000000000000000000000000001111 "P
+b11110000000011111111000000001111 "R
+b00000000001101001101 "T
+b01111 #5
+b01111 s
+b0000000000 #6
+0#7
+b00001 "V
+1#8
+b111 #:
+1"Y
+b0000000000 "Z
+1}
+b0010011 $!
+b00000000000000000000000000000000 ~
+b0000000000 #A
+1$"
+b00000000111111110000000011111111 $#
+0#D
+1$&
+b00000000111111110000000011111111 $'
+b00000 $(
+b11111 $)
+1#L
+b00000000000000000000000001011000 "l
+b000 $/
+b000 "o
+b11110000000011111111000000000000 $2
+b0000000000 $3
+1$4
+b0000000 "r
+1#T
+b00000000001101001110 $6
+b11110000000011111111000000001111 "t
+b00000000000000000000000000000000 "u
+b00000000000000000000000000000000 "v
+1$=
+b000 $A
+b11111111000000010000000010110111 $C
+b00000000000000000000000000000000 #b
+b11110000000011111111000000000000 $H
+1%+
+b11110000000011111111000000001111 %,
+b00000 %-
+0#n
+b0000000000 #p
+1%6
+b00000000000000000000000000001111 #u
+b11110000000011111111000000001111 %7
+b11110000000011111111000001010000 %8
+b10110111 #w
+b00000001 %:
+1$Z
+b00000 #z
+b00001111000000001110111100010011 $\
+b00000000000000000000000001010100 %=
+b11110000000011111111000000001111 %>
+b00000000000000000000000001011000 %?
+b00000000111111110000011111111111 #~
+b11110000000011111111000000000000 &!
+b11110000000011111111000000001111 %@
+b01111 &"
+b000000000 &#
+1$c
+1%E
+b001 &'
+1%I
+1&+
+1&,
+b00000000000000000000000000000000 %L
+1&/
+b0010011 $n
+1%P
+b0000000000 &2
+b00000000111111110000000011111111 %Q
+1%R
+b10000 $q
+b11111111 $r
+b00000000 %S
+1&5
+1$v
+b0000000011 $x
+0&<
+b0000 %`
+1&B
+b00001 %k
+b00000000 %m
+b00000000 %o
+1%p
+b00001 &Q
+b00000000000000000000000001011100 %q
+b11111111000000010000000010110111 &U
+b00000000000000000000000001011100 &V
+b0000000000 &X
+b0000000000 %x
+1%z
+1&^
+b0000000000 &`
+b0000000000 &a
+b11110000000011111111000000000000 &c
+b0000000011 &d
+b0000 &e
+#226
+0%E
+0$&
+0"%
+0%I
+0&+
+0&,
+0G
+0#L
+0&/
+0%P
+0%R
+0&5
+0$4
+0$v
+0$=
+0&B
+0%+
+0#,
+0%p
+0#0
+0#1
+0#8
+0&^
+0=
+0$c
+#231
+b10000 "
+b00000000000000000000000000001111 $
+b11 (
+b0000111111 1
+18
+b00001110 ;
+1=
+b00001111000000001110111100010011 >
+b0000111111 "!
+b00000000000000000000000001010100 @
+b0000 "#
+b0000000011 "$
+1"%
+1G
+b11110000000011111111000000001111 H
+b11110000000011111111000000000000 I
+b11110000000011111111000011111111 "+
+b11110000000011111111000000001111 L
+b00000000000000000000000001100000 N
+b11110000000011111111000011111111 O
+b1000 P
+b11110000000011111111111010110111 Y
+b11110000000011111111111010110111 "=
+b00000000000000000000000001011000 #'
+1#,
+b0000000011 #-
+b11111111111111111111111111110000 k
+b00000000000000000000000011110000 #.
+1#0
+1#1
+b00000000000000000000000011110000 "P
+b11110000000011111111000011111111 "R
+b11110 #4
+b000001111 "S
+b00000000001101001100 "T
+b10000 #5
+b10000 s
+b0000000011 #6
+1#7
+1#8
+b000 #:
+0"Y
+b0000000011 "Z
+b0000000011 #A
+0$"
+b11110000000011111111000000000000 $#
+1$&
+b11110000000011111111000000000000 $'
+b01111 $(
+b00001 $)
+1#L
+b00000000000000000000000001011100 "l
+b00001111 $.
+b110 $/
+b11110000000011111111000000000000 #O
+b110 "o
+b11110000000011111111000000001111 $2
+b0000000011 $3
+1$4
+b0000111 "r
+0#T
+b00000000001101001101 $6
+b11110000000011111111000011111111 "t
+b11110000000011111111000000000000 "v
+b11110000000011111111000000000000 $<
+1$=
+b110 $A
+b11110000111100000000111010010011 $C
+b00000000111111110000000011111111 #b
+b11110000000011111111000000001111 $H
+1%+
+b11110000000011111111000011111111 %,
+b00001 %-
+b0000000011 #p
+b00000000000000000000000011110000 #u
+b11110000000011111111000011111111 %7
+b00000000000000000000000001100011 %8
+b10010011 #w
+b11110000 %:
+b00001 #z
+b11110000000011111111111010110111 $\
+b00000000000000000000000001011000 %=
+b11110000000011111111000011111111 %>
+b00000000000000000000000001011100 %?
+b11110000000011111111000000000000 #~
+b11110000000011111111000000001111 &!
+b11110000000011111111000011111111 %@
+b10000 &"
+1$c
+1%E
+1%I
+1&+
+1&,
+b11110000000011111111000000001111 %L
+1&/
+1%P
+b0000000011 &2
+b11110000000011111111000000000000 %Q
+b11111 $p
+1%R
+b00000 $q
+b11110000 $r
+1&5
+1$v
+b11110000000011111111000000000000 &:
+b0000111111 $x
+1&<
+b1000 %`
+1&B
+b11110000000011111111000000000000 &N
+1%p
+b00000000000000000000000001100000 %q
+b11110000111100000000111010010011 &U
+b00000000000000000000000001100000 &V
+b0000000011 &X
+b0000000011 %x
+b11110000000011111111000000000000 %{
+1&^
+b0000000011 &`
+b0000000011 &a
+b000001111 &b
+b00000000000000000000000000001111 &c
+b0000111111 &d
+b1000 &e
+#236
+0%E
+0$&
+0"%
+0%I
+0&+
+0&,
+0G
+0#L
+0&/
+0%P
+0%R
+0&5
+0$4
+0$v
+0$=
+0&B
+0%+
+0#,
+0%p
+0#0
+0#1
+0#8
+0&^
+0=
+0$c
+#241
+b00000 "
+b00000000000000000000000011110000 $
+b00 0
+b0000000000 1
+b11111 3
+b00000000 ;
+1=
+b11110000000011111111111010110111 >
+b0000000000 "!
+b00000000000000000000000001011000 @
+b1000 "#
+b0000111111 "$
+1"%
+b11110 F
+1G
+b11110000000011111111000011111111 H
+b11110000000011111111000000001111 I
+b11110000000011111111000000000000 "+
+b11110000000011111111000011111111 L
+b00000000000000000000000001100100 N
+b11110000000011111111000000000000 O
+b1001 P
+b00001111111111101000111010010011 Y
+b00001111111111101000111010010011 "=
+b00000000000000000000000001011100 #'
+0#)
+b11110 g
+1#,
+b11111 "K
+b0000111111 #-
+b00000000000000000000000000000000 k
+b11110000000011111111000000000000 #.
+1#0
+1#1
+b11110000000011111111000000000000 "P
+b11110000000011111111000000000000 "R
+b11101 #4
+b000000000 "S
+b00000000001101001011 "T
+b00000 #5
+b00000 s
+b0000111111 #6
+b11111 "V
+1#8
+b110 #:
+b0000111111 "Z
+b0110111 $!
+b0000111111 #A
+b00000000000000000000000000000000 $#
+1#D
+1$&
+b00000000000000000000000000000000 $'
+b10000 $(
+1#L
+b00000000000000000000000001100000 "l
+b00000000 $.
+b111 $/
+b11110000000011111111000000001111 #O
+b111 "o
+b11110000000011111111000011111111 $2
+b0000111111 $3
+1$4
+b1111000 "r
+b00000000001101001100 $6
+b11110000000011111111000000000000 "t
+b11110000000011111111000000001111 "v
+b11110000000011111111000000001111 $<
+1$=
+b111 $A
+b00000000000000000000000000000000 $C
+b11110000000011111111000000000000 #b
+b11110000000011111111000011111111 $H
+1%+
+b11110000000011111111000000000000 %,
+1#n
+b0000111111 #p
+0%6
+b11110000000011111111000000000000 #u
+b11110000000011111111000000000000 %7
+b00000000000000000000000101001000 %8
+b00000000 #w
+b00000000 %:
+b00001111111111101000111010010011 $\
+b00000000000000000000000001011100 %=
+b11110000000011111111000000000000 %>
+b00000000000000000000000001100000 %?
+b11110000000011111111000000001111 #~
+b00000000000000000000000000000000 &!
+b11110000000011111111000000000000 %@
+b00000 &"
+b000001111 &#
+1$c
+1%E
+b100 &'
+1%I
+1&+
+1&,
+b11110000000011111111000011111111 %L
+1&/
+b0110111 $n
+1%P
+b0000111111 &2
+b00000000000000000000000000000000 %Q
+b11101 $p
+1%R
+b11111 $q
+b00000000 $r
+1&5
+1$v
+b11110000000011111111000000001111 &:
+b0000000000 $x
+b1001 %`
+1&B
+b11110 %k
+b11110000000011111111000000001111 &N
+1%p
+b11111 &Q
+b00000000000000000000000001100100 %q
+b00000000000000000000000000000000 &U
+b00000000000000000000000001100100 &V
+b0000111111 &X
+b0000111111 %x
+b11110000000011111111000000001111 %{
+1&^
+b0000111111 &`
+b0000111111 &a
+b000000000 &b
+b00000000000000000000000011110000 &c
+b0000000000 &d
+b1001 &e
+#246
+0%E
+0$&
+0"%
+0%I
+0&+
+0&,
+0G
+0#L
+0&/
+0%P
+0%R
+0&5
+0$4
+0$v
+0$=
+0&B
+0%+
+0#,
+0%p
+0#0
+0#1
+0#8
+0&^
+0=
+0$c
+#251
+b11111 "
+b00000000000000000000000000000000 $
+b00 (
+b11 0
+b0000111111 1
+b11101 3
+1=
+b00001111111111101000111010010011 >
+b0000111111 "!
+b00000000000000000000000001011100 @
+b1001 "#
+b0000000000 "$
+1"%
+b11101 F
+1G
+b11110000000011111111000000000000 H
+b11110000000011111111000011111111 I
+b11110000000011111111000011111111 "+
+b11110000000011111111000000000000 L
+b00000000000000000000000001101000 N
+b11110000000011111111000011111111 O
+b0000 P
+b00000000010100000000000110010011 Y
+b11110000000011111111000011111111 ";
+b00000000010100000000000110010011 "=
+b00000000000000000000000001100000 #'
+1#)
+b11101 g
+b11110000000011111111000011111111 h
+1#,
+b11101 "K
+b0000000000 #-
+b11110000000011111111000011111111 "L
+b11111111000000010000000010110111 k
+b00000000000000000000000011111111 #.
+1#0
+1#1
+b00000000000000000000000011111111 "P
+b11110000000011111111000011111111 "R
+b000001111 "S
+b00000000001101001010 "T
+b11111 #5
+b11111 s
+b0000000000 #6
+0#7
+b11101 "V
+1#8
+b111 #:
+1"Y
+b0000000000 "Z
+b0010011 $!
+b0000000000 #A
+1$"
+b00000000111111110000011111111111 $#
+0#D
+1$&
+b00000000111111110000011111111111 $'
+b00000 $(
+b11111 $)
+1#L
+b00000000000000000000000001100100 "l
+b00001111 $.
+b000 $/
+b000 "o
+b11110000000011111111000000000000 $2
+b0000000000 $3
+1$4
+b0000111 "r
+1#T
+b00000000001101001011 $6
+b11110000000011111111000011111111 "t
+b00000000000000000000000000000000 "v
+1$=
+b000 $A
+b11111111000000010000000010110111 $C
+b00000000000000000000000000000000 #b
+b11110000000011111111000000000000 $H
+1%+
+b11110000000011111111000011111111 %,
+b11110 %-
+0#n
+b0000000000 #p
+b11110000000011111111000011111111 #s
+1%6
+b00000000000000000000000011111111 #u
+b11110000000011111111000011111111 %7
+b11110000000011111111000001011100 %8
+b10110111 #w
+b00000001 %:
+b11110 #z
+b00000000010100000000000110010011 $\
+b00000000000000000000000001100000 %=
+b11110000000011111111000011111111 %>
+b00000000000000000000000001100100 %?
+b11110000000011111111000011111111 #~
+b11110000000011111111000000000000 &!
+b11110000000011111111000011111111 %@
+b11111 &"
+b000000000 &#
+1$c
+1%E
+b001 &'
+b11110000000011111111000011111111 $g
+1%I
+1&+
+1&,
+b00000000000000000000000000000000 %L
+1&/
+b0010011 $n
+1%P
+b0000000000 &2
+b00000000111111110000011111111111 %Q
+b00000 $p
+1%R
+b00101 $q
+b11111111 $r
+1&5
+1$v
+b0000111111 $x
+b0000 %`
+1&B
+b11101 %k
+1%p
+b11101 &Q
+b00000000000000000000000001101000 %q
+b11111111000000010000000010110111 &U
+b00000000000000000000000001101000 &V
+b0000000000 &X
+b0000000000 %x
+1&^
+b0000000000 &`
+b0000000000 &a
+b000001111 &b
+b11110000000011111111000000000000 &c
+b0000111111 &d
+b0000 &e
+#256
+0%E
+0$&
+0"%
+0%I
+0&+
+0&,
+0G
+0#L
+0&/
+0%P
+0%R
+0&5
+0$4
+0$v
+0$=
+0&B
+0%+
+0#,
+0%p
+0#0
+0#1
+0#8
+0&^
+0=
+0$c
+#261
+b00101 "
+b00000000000000000000000011111111 $
+b11 (
+b01 0
+b0000000001 1
+b00000 3
+1=
+b00000000010100000000000110010011 >
+b0000000001 "!
+b00000000000000000000000001100000 @
+b0000 "#
+b0000111111 "$
+1"%
+1G
+b11110000000011111111000011111111 H
+b11110000000011111111000000000000 I
+b00000000000000000000000000000101 "+
+b11110000000011111111000011111111 L
+b00000000000000000000000001101100 N
+b00000000000000000000000000000101 O
+b11110000000011111111000000000000 ":
+b00000011110111110001001001100011 Y
+b00000011110111110001001001100011 "=
+b00000000000000000000000001100100 #'
+b11110000000011111111000000000000 f
+b11110000000011111111000000000000 "H
+1#,
+b00000 "K
+b0000111111 #-
+b00000000000000000000000000000000 k
+b00000000000000000000000000000101 #.
+1#0
+1#1
+b00000000000000000000000000000101 "P
+b00000000000000000000000000000101 "R
+b00011 #4
+b000000000 "S
+b00000000001101001001 "T
+b00101 #5
+b00101 s
+b0000111111 #6
+1#7
+b00000 "V
+1#8
+b000 #:
+0"Y
+b0000111111 "Z
+b0000111111 #A
+0$"
+b00000000000000000000000000000000 $#
+1$&
+b00000000000000000000000000000000 $'
+b11111 $(
+b11101 $)
+1#L
+b00000000000000000000000001101000 "l
+b00000000 $.
+b11110000000011111111000011111111 $2
+b0000111111 $3
+1$4
+b0000000 "r
+0#T
+b00000000001101001010 $6
+b00000000000000000000000000000101 "t
+1#V
+b11110000000011111111000000000000 "v
+1$=
+b11110000000011111111000000000000 #^
+b00000000000000000000000000000000 $C
+b00000000111111110000011111111111 #b
+b11110000000011111111000011111111 $H
+1%+
+b00000000000000000000000000000101 %,
+b11101 %-
+b0000111111 #p
+b11110000000011111111000000000000 $V
+b00000000000000000000000000000101 #u
+b00000000000000000000000000000101 %7
+b00000000000000000000000101011111 %8
+b00000000 #w
+b00000000 %:
+b00000000000000000000 #x
+b11101 #z
+b00000011110111110001001001100011 $\
+b00000000000000000000000001100100 %=
+b00000000000000000000000000000101 %>
+b00000000000000000000000001101000 %?
+b11110000000011111111000000000000 #~
+b00000000000000000000000000000000 &!
+b00000000000000000000000000000101 %@
+b00101 &"
+b000001111 &#
+1$c
+1%E
+1%I
+1&+
+1&,
+b11110000000011111111000011111111 %L
+1&/
+1%P
+b0000111111 &2
+b00000000000000000000000000000000 %Q
+b11110 $p
+1%R
+b11101 $q
+b00000000 $r
+1&5
+1$v
+b0000000001 $x
+1&B
+1%p
+b00000 &Q
+b00000000000000000000000001101100 %q
+b00000000000000000000000000000000 &U
+b00000000000000000000000001101100 &V
+b00000000000000000000000000000000 &W
+b0000111111 &X
+b0000111111 %x
+1&^
+b0000111111 &`
+b0000111111 &a
+b000000000 &b
+b00000000000000000000000011111111 &c
+b0000000001 &d
+#266
+0%E
+0$&
+0"%
+0%I
+0&+
+0&,
+0G
+0#L
+0&/
+0%P
+0%R
+0&5
+0$4
+0$v
+0$=
+0&B
+0%+
+0#,
+0%p
+0#0
+0#1
+0#8
+0&^
+0=
+0$c
+#271
+b11101 "
+b00000000000000000000000000000101 $
+b01 (
+b11 0
+b0001001000 1
+b11110 3
+b10000000 ;
+1=
+b00000011110111110001001001100011 >
+b0001001000 "!
+b00000000000000000000000001100100 @
+b0000000001 "$
+1"%
+b00011 F
+1G
+b00000000000000000000000000000101 H
+b11110000000011111111000011111111 I
+b11110000000011111111000100100011 "+
+b00000000000000000000000000000101 L
+b00000000000000000000000001110000 N
+b11110000000011111111000100100011 O
+b0010 P
+b11110000 W
+b11110000000011111111000011111111 X
+b11110000000011111111000011111111 ":
+b11111111000000010000000010110111 Y
+b11111111000000010000000010110111 "=
+b00000000000000000000000001101000 #'
+b11110000000011111111000011111111 f
+b11110000000011111111000011111111 "H
+b00011 g
+0i
+1#,
+b11110 "K
+b0000000001 #-
+b11111111111111111111111110000000 k
+b00000000000000000000000000100100 #.
+1#0
+1#1
+b00000000000000000000000000100100 "P
+b11110000000011111111000100100011 "R
+b00100 #4
+b000010010 "S
+b00000000001101001000 "T
+b11101 #5
+b11101 s
+b0000000001 #6
+b11110 "V
+1#8
+1"Y
+b0000000001 "Z
+b1100011 $!
+b0000000001 #A
+0#B
+b11110000000011111111000011111111 $#
+1$&
+b11110000000011111111000011111111 $'
+b00101 $(
+b00000 $)
+1$*
+b11110000000011111111000011111111 $,
+1#L
+b00000000000000000000000001101100 "l
+b00010010 $.
+b001 $/
+b001 "o
+b00000000000000000000000000000101 $2
+b0000000001 $3
+1$4
+b0000001 "r
+b00000000001101001001 $6
+b11110000000011111111000100100011 "t
+0#V
+b00000000000000000000000000000000 "v
+1$=
+b11110000000011111111000011111111 #^
+b001 $A
+b11110000000000001000000010010011 $C
+b00000000000000000000000000000000 #b
+b11111111 #c
+b11111111 $F
+b00000000000000000000000000000101 $H
+1%+
+b11110000000011111111000100100011 %,
+b0000000001 #p
+b11110000000011111111000011111111 #q
+b11110000 #t
+b11110000000011111111000011111111 $V
+b00000000000000000000000000100100 #u
+b11110000000011111111000100100011 %7
+b00000000000000000000000001101001 %8
+b10010011 #w
+b11110000000011111111 #x
+b11110000000011111111000011111111 #y
+b11111111000000010000000010110111 $\
+b00000000000000000000000001101000 %=
+b11110000000011111111000100100011 %>
+b00000000000000000000000001101100 %?
+b11110000000011111111000011111111 #~
+b11110000000011111111000011111111 &!
+b11110000000011111111000100100011 %@
+b11101 &"
+b000000000 &#
+1$c
+b11110000000011111111000011111111 &%
+1%E
+b011 &'
+1%I
+1&+
+1&,
+b00000000000000000000000000000101 %L
+b00001111 &-
+1&/
+b1100011 $n
+1%P
+b0000000001 &2
+b11110000000011111111000011111111 %Q
+b00010 $p
+1%R
+b10000 $q
+b11110000 $r
+1&5
+b11110000000011111111000011111111 %T
+1$v
+b0001001000 $x
+1$z
+b0010 %`
+1&B
+b11110000111111111111000011111111 %j
+b00011 %k
+1%p
+b11110 &Q
+b00000000000000000000000001110000 %q
+b11110000000000001000000010010011 &U
+b00000000000000000000000001110000 &V
+b11110000000011111111000000000000 &W
+b0000000001 &X
+b0000000001 %x
+b11111111 &Z
+1&^
+b0000000001 &`
+b0000000001 &a
+b000010010 &b
+b00000000000000000000000000000101 &c
+b0001001000 &d
+b0010 &e
+#276
+0%E
+0$&
+0"%
+0%I
+0&+
+0&,
+0G
+0#L
+0&/
+0%P
+0%R
+0&5
+0$4
+0$v
+0$=
+0&B
+0%+
+0#,
+0%p
+0#0
+0#1
+0#8
+0&^
+0=
+0$c
+#281
+b10000 "
+b00000000000000000000000000100100 $
+b11 (
+b00 0
+b0000000000 1
+b00010 3
+b00000000 ;
+1=
+b11111111000000010000000010110111 >
+1?
+b0000000000 "!
+b00000000000000000000000001101000 @
+b0010 "#
+b0001001000 "$
+1"%
+b00100 F
+1G
+b00000000111111110000111111110000 H
+b00000000000000000000000000000101 I
+b11111111000000010000000000000000 "+
+b11110000000011111111000100100011 L
+b00000000000000000000000001110100 N
+b11111111000000010000000000000000 O
+b0001 P
+b00000000 W
+b00000000000000000000000000000000 X
+b11110000000000001000000010010011 Y
+0Z
+b11110000000000001000000010010011 "=
+b00000000000000000000000001101100 #'
+0#)
+b00100 g
+1i
+1#,
+b00010 "K
+b0001001000 #-
+b00000000000000000000000000000000 k
+b11111111000000010000000000000000 #.
+1#0
+1#1
+b11111111000000010000000000000000 "P
+b11111111000000010000000000000000 "R
+b00001 #4
+b000000000 "S
+b00000000001101000111 "T
+b10000 #5
+b10000 s
+b0001001000 #6
+b00010 "V
+1#8
+b001 #:
+0"Y
+b0001001000 "Z
+0}
+b0110111 $!
+b11110000000011111111000011111111 ~
+b0001001000 #A
+1#B
+b00000000000000000000000000000000 $#
+1#D
+1$&
+b00000000000000000000000000000101 #F
+b00000000000000000000000000000000 $'
+b11101 $(
+b11110 $)
+0$*
+b00000000000000000000000000000000 $,
+1#L
+b00000000000000000000000001110000 "l
+b00000000 $.
+b000 $/
+b000 "o
+b00000000111111110000111111110000 $2
+b0001001000 $3
+1$4
+b1111111 "r
+b00000000001101001000 $6
+b11111111000000010000000000000000 "t
+1#U
+b11110000000011111111000011111111 "u
+b11110000000011111111000011111111 "v
+1$=
+b00000000000000000000000000000101 $?
+b000 $A
+b00000000000000000000000000000000 $C
+b11110000000011111111000011111111 #b
+b00000000 #c
+b00000000 $F
+b00000000111111110000111111110000 $H
+1%+
+b11111111000000010000000000000000 %,
+b00011 %-
+1#n
+b0001001000 #p
+b00000000000000000000000000000000 #q
+0%6
+b00000000 #t
+b11111111000000010000000000000000 #u
+b11111111000000010000000000000000 %7
+b00000000000000000000000010001100 %8
+b00000000 #w
+b11111111000000010000 #x
+0$Z
+b00000000000000000000000000000000 #y
+b00011 #z
+b11110000000000001000000010010011 $\
+b00000000000000000000000001101100 %=
+b11111111000000010000000000000000 %>
+b00000000000000000000000001110000 %?
+b00000000000000000000000000000101 #~
+b00000000000000000000000000000000 &!
+b11111111000000010000000000000000 %@
+b10000 &"
+b000010010 &#
+1$c
+b00000000000000000000000000000000 &%
+1%E
+b100 &'
+1%I
+1&+
+b11110000 $j
+1&,
+b00000000111111110000111111110000 %L
+b00000000 &-
+1&/
+b0110111 $n
+1%P
+b0001001000 &2
+b00000000000000000000000000000000 %Q
+b00001 $p
+1%R
+b00000 $q
+b00000000 $r
+b11111111 %S
+1&5
+b00000000000000000000000000000000 %T
+1$v
+b0000000000 $x
+0$z
+b00000000000000000000000000000101 &@
+b0001 %`
+1&B
+b00000000000000000000000000000000 %j
+b00000000000000000000000000000101 &L
+b00100 %k
+b11110000 %m
+b00001111 %o
+1%p
+b00010 &Q
+b00000000000000000000000001110100 %q
+b00000000000000000000000000000000 &U
+b00000000000000000000000001110100 &V
+b11111111000000010000000000000000 &W
+b0001001000 &X
+b0001001000 %x
+b00000000 &Z
+0%z
+1&^
+b00000000000000000000000000000101 %}
+b0001001000 &`
+b0001001000 &a
+b000000000 &b
+b00000000000000000000000000100100 &c
+b0000000000 &d
+b0001 &e
+#286
+0%E
+0$&
+0"%
+0%I
+0&+
+0&,
+0G
+0#L
+0&/
+0%P
+0%R
+0&5
+0$4
+0$v
+0$=
+0&B
+0%+
+0#,
+0%p
+0#0
+0#1
+0#8
+0&^
+0=
+0$c
+#291
+b00000 "
+b00000000000000000000000000000000 $
+b00 (
+b1111000000 1
+b00001 3
+08
+1=
+b11110000000000001000000010010011 >
+0?
+b1111000000 "!
+b00000000000000000000000001101100 @
+b0001 "#
+b0000000000 "$
+1"%
+b00001 F
+1G
+b11111111000000010000000000000000 H
+b00000000111111110000111111110000 I
+b11111111000000001111111100000000 "+
+b11111111000000010000000000000000 L
+b00000000000000000000000001111000 N
+b11111111000000001111111100000000 O
+b0000 P
+b00001111000000001110000010010011 Y
+1Z
+b00001111000000001110000010010011 "=
+b00000000000000000000000001110000 #'
+1#)
+b00001 g
+1#,
+b00001 "K
+b0000000000 #-
+b11111111111111111111111110110111 k
+b11111111111111111111111100000000 #.
+1#0
+1#1
+b11111111111111111111111100000000 "P
+b11111111000000001111111100000000 "R
+b011110000 "S
+b00000000001101000110 "T
+b00000 #5
+b00000 s
+b0000000000 #6
+0#7
+b00001 "V
+1#8
+b000 #:
+1"Y
+b0000000000 "Z
+1}
+b0010011 $!
+b00000000000000000000000000000000 ~
+b0000000000 #A
+1$"
+b11110000000011111111000000001111 $#
+0#D
+1$&
+b11110000000011111111000000001111 $'
+b10000 $(
+b00010 $)
+1#L
+b00000000000000000000000001110100 "l
+b11110000 $.
+b11111111000000010000000000000000 $2
+b0000000000 $3
+1$4
+b1111000 "r
+b00000000001101000111 $6
+b11111111000000001111111100000000 "t
+b00000000000000000000000000000000 "u
+b00000000000000000000000000000000 "v
+1$=
+b11111111000000010000000010110111 $C
+b00000000000000000000000000000000 #b
+b11111111000000010000000000000000 $H
+1%+
+b11111111000000001111111100000000 %,
+b00100 %-
+0#n
+b0000000000 #p
+1%6
+b11111111111111111111111100000000 #u
+b11111111000000001111111100000000 %7
+b11111111000000010000000001101100 %8
+b10110111 #w
+b00000001 %:
+b11111111000000001111 #x
+1$Z
+b00100 #z
+b00001111000000001110000010010011 $\
+b00000000000000000000000001110000 %=
+b11111111000000001111111100000000 %>
+b00000000000000000000000001110100 %?
+b00000000111111110000111111110000 #~
+b11111111000000010000000000000000 &!
+b11111111000000001111111100000000 %@
+b00000 &"
+b000000000 &#
+1$c
+1%E
+b001 &'
+1%I
+1&+
+b00000000 $j
+1&,
+b00000000000000000000000000000000 %L
+1&/
+b0010011 $n
+1%P
+b0000000000 &2
+b11110000000011111111000000001111 %Q
+1%R
+b10000 $q
+b11111111 $r
+b00000000 %S
+1&5
+1$v
+b1111000000 $x
+0&<
+b0000 %`
+1&B
+b00001 %k
+b00000000 %m
+b00000000 %o
+1%p
+b00001 &Q
+b00000000000000000000000001111000 %q
+b11111111000000010000000010110111 &U
+b00000000000000000000000001111000 &V
+b11111111000000001111000000000000 &W
+b0000000000 &X
+b0000000000 %x
+1%z
+1&^
+b0000000000 &`
+b0000000000 &a
+b011110000 &b
+b11111111000000010000000000000000 &c
+b1111000000 &d
+b0000 &e
+#296
+0%E
+0$&
+0"%
+0%I
+0&+
+0&,
+0G
+0#L
+0&/
+0%P
+0%R
+0&5
+0$4
+0$v
+0$=
+0&B
+0%+
+0#,
+0%p
+0#0
+0#1
+0#8
+0&^
+0=
+0$c
+#301
+b10000 "
+b11111111111111111111111100000000 $
+b1111111100 1
+18
+1=
+b00001111000000001110000010010011 >
+b1111111100 "!
+b00000000000000000000000001110000 @
+b0000 "#
+b1111000000 "$
+1"%
+1G
+b11111111000000001111111100000000 H
+b11111111000000010000000000000000 I
+b11111111000000001111111111110000 "+
+b11111111000000001111111100000000 L
+b00000000000000000000000001111100 N
+b11111111000000001111111111110000 O
+b1000 P
+b11111111000000010000111010110111 Y
+b11111111000000010000111010110111 "=
+b00000000000000000000000001110100 #'
+1#,
+b1111000000 #-
+b00000000000000000000000000000001 k
+b00000000000000000000000011110000 #.
+1#0
+1#1
+b00000000000000000000000011110000 "P
+b11111111000000001111111111110000 "R
+b011111111 "S
+b00000000001101000101 "T
+b10000 #5
+b10000 s
+b1111000000 #6
+1#7
+1#8
+0"Y
+b1111000000 "Z
+b1111000000 #A
+0$"
+b11111111000000010000000000000000 $#
+1$&
+b11111111000000010000000000000000 $'
+b00000 $(
+b00001 $)
+1#L
+b00000000000000000000000001111000 "l
+b11111111 $.
+b110 $/
+b11111111000000010000000000000000 #O
+b110 "o
+b11111111000000001111111100000000 $2
+b1111000000 $3
+1$4
+b0000111 "r
+b00000000001101000110 $6
+b11111111000000001111111111110000 "t
+0#U
+b11111111000000010000000000000000 "v
+b11111111000000010000000000000000 $<
+1$=
+b110 $A
+b00000000000000000000000000000001 $C
+b11110000000011111111000000001111 #b
+b11111111000000001111111100000000 $H
+1%+
+b11111111000000001111111111110000 %,
+b00001 %-
+b1111000000 #p
+b00000000000000000000000011110000 #u
+b11111111000000001111111111110000 %7
+b11111111111111111111111101110000 %8
+b00000000 #w
+b00000000 %:
+b00001 #z
+b11111111000000010000111010110111 $\
+b00000000000000000000000001110100 %=
+b11111111000000001111111111110000 %>
+b00000000000000000000000001111000 %?
+b11111111000000010000000000000000 #~
+b11111111000000001111111100000000 &!
+b11111111000000001111111111110000 %@
+b10000 &"
+b011110000 &#
+1$c
+1%E
+1%I
+1&+
+1&,
+b11111111000000001111111100000000 %L
+1&/
+1%P
+b1111000000 &2
+b11111111000000010000000000000000 %Q
+b00010 $p
+1%R
+b00000000 $r
+1&5
+1$v
+b11111111000000010000000000000000 &:
+b1111111100 $x
+1&<
+b1000 %`
+1&B
+b11111111000000010000000000000000 &N
+1%p
+b00000000000000000000000001111100 %q
+b00000000000000000000000000000000 &U
+b00000000000000000000000001111100 &V
+b1111000000 &X
+b1111000000 %x
+b11111111000000010000000000000000 %{
+1&^
+b1111000000 &`
+b1111000000 &a
+b011111111 &b
+b11111111111111111111111100000000 &c
+b1111111100 &d
+b1000 &e
+#306
+0%E
+0$&
+0"%
+0%I
+0&+
+0&,
+0G
+0#L
+0&/
+0%P
+0%R
+0&5
+0$4
+0$v
+0$=
+0&B
+0%+
+0#,
+0%p
+0#0
+0#1
+0#8
+0&^
+0=
+0$c
+#311
+b00000000000000000000000011110000 $
+b0000000000 1
+b00010 3
+1=
+b11111111000000010000111010110111 >
+b0000000000 "!
+b00000000000000000000000001110100 @
+b1000 "#
+b1111111100 "$
+1"%
+1G
+b11111111000000001111111111110000 H
+b11111111000000001111111100000000 I
+b11111111000000010000000000000000 "+
+b11111111000000001111111111110000 L
+b00000000000000000000000010000000 N
+b11111111000000010000000000000000 O
+b0001 P
+b11111111000011101000111010010011 Y
+b11111111000011101000111010010011 "=
+b00000000000000000000000001111000 #'
+0#)
+1#,
+b00010 "K
+b1111111100 #-
+b11111111000000010000000000000000 #.
+1#0
+1#1
+b11111111000000010000000000000000 "P
+b11111111000000010000000000000000 "R
+b11101 #4
+b000000000 "S
+b00000000001101000100 "T
+b1111111100 #6
+b00010 "V
+1#8
+b110 #:
+b1111111100 "Z
+b0110111 $!
+b1111111100 #A
+b00000000000000000000000000000000 $#
+1#D
+1$&
+b00000000000000000000000000000000 $'
+b10000 $(
+1#L
+b00000000000000000000000001111100 "l
+b00000000 $.
+b000 $/
+b11111111000000001111111100000000 #O
+b000 "o
+b11111111000000001111111111110000 $2
+b1111111100 $3
+1$4
+b1111111 "r
+b00000000001101000101 $6
+b11111111000000010000000000000000 "t
+1#U
+b11111111000000001111111100000000 "v
+b11111111000000001111111100000000 $<
+1$=
+b000 $A
+b11111111000000010000000000000000 #b
+b11111111000000001111111111110000 $H
+1%+
+b11111111000000010000000000000000 %,
+1#n
+b1111111100 #p
+0%6
+b11111111000000010000000000000000 #u
+b11111111000000010000000000000000 %7
+b00000000000000000000000101100100 %8
+b11111111000000010000 #x
+b11111111000011101000111010010011 $\
+b00000000000000000000000001111000 %=
+b11111111000000010000000000000000 %>
+b00000000000000000000000001111100 %?
+b11111111000000001111111100000000 #~
+b00000000000000000000000000000000 &!
+b11111111000000010000000000000000 %@
+b011111111 &#
+1$c
+1%E
+b100 &'
+1%I
+1&+
+1&,
+b11111111000000001111111111110000 %L
+1&/
+b0110111 $n
+1%P
+b1111111100 &2
+b00000000000000000000000000000000 %Q
+b11101 $p
+1%R
+1&5
+1$v
+b11111111000000001111111100000000 &:
+b0000000000 $x
+b0001 %`
+1&B
+b11111111000000001111111100000000 &N
+1%p
+b00010 &Q
+b00000000000000000000000010000000 %q
+b00000000000000000000000010000000 &V
+b11111111000000010000000000000000 &W
+b1111111100 &X
+b1111111100 %x
+b11111111000000001111111100000000 %{
+1&^
+b1111111100 &`
+b1111111100 &a
+b000000000 &b
+b00000000000000000000000011110000 &c
+b0000000000 &d
+b0001 &e
+#316
+0%E
+0$&
+0"%
+0%I
+0&+
+0&,
+0G
+0#L
+0&/
+0%P
+0%R
+0&5
+0$4
+0$v
+0$=
+0&B
+0%+
+0#,
+0%p
+0#0
+0#1
+0#8
+0&^
+0=
+0$c
+#321
+b00000000000000000000000000000000 $
+b1111111100 1
+b11101 3
+1=
+b11111111000011101000111010010011 >
+b1111111100 "!
+b00000000000000000000000001111000 @
+b0001 "#
+b0000000000 "$
+1"%
+b11101 F
+1G
+b11111111000000010000000000000000 H
+b11111111000000001111111111110000 I
+b11111111000000001111111111110000 "+
+b11111111000000010000000000000000 L
+b00000000000000000000000010000100 N
+b11111111000000001111111111110000 O
+b0000 P
+b00000000011000000000000110010011 Y
+b00000000011000000000000110010011 "=
+b00000000000000000000000001111100 #'
+1#)
+b11101 g
+1#,
+b11101 "K
+b0000000000 #-
+b11111111111111111111111110110111 k
+b11111111111111111111111111110000 #.
+1#0
+1#1
+b11111111111111111111111111110000 "P
+b11111111000000001111111111110000 "R
+b011111111 "S
+b00000000001101000011 "T
+b0000000000 #6
+0#7
+b11101 "V
+1#8
+b000 #:
+1"Y
+b0000000000 "Z
+b0010011 $!
+b0000000000 #A
+1$"
+b11110000000011111111000011111111 $#
+0#D
+1$&
+b11110000000011111111000011111111 $'
+b00010 $)
+1#L
+b00000000000000000000000010000000 "l
+b11111111 $.
+b11111111000000001111111111110000 #O
+b11111111000000010000000000000000 $2
+b0000000000 $3
+1$4
+b00000000001101000100 $6
+b11111111000000001111111111110000 "t
+b00000000000000000000000000000000 "v
+b11111111000000001111111111110000 $<
+1$=
+b11111111000000010000000010110111 $C
+b00000000000000000000000000000000 #b
+b11111111000000010000000000000000 $H
+1%+
+b11111111000000001111111111110000 %,
+0#n
+b0000000000 #p
+1%6
+b11111111111111111111111111110000 #u
+b11111111000000001111111111110000 %7
+b11111111000000010000000001111000 %8
+b10110111 #w
+b00000001 %:
+b11111111000000001111 #x
+b00000000011000000000000110010011 $\
+b00000000000000000000000001111100 %=
+b11111111000000001111111111110000 %>
+b00000000000000000000000010000000 %?
+b11111111000000001111111111110000 #~
+b11111111000000010000000000000000 &!
+b11111111000000001111111111110000 %@
+b000000000 &#
+1$c
+1%E
+b001 &'
+1%I
+1&+
+1&,
+b00000000000000000000000000000000 %L
+1&/
+b0010011 $n
+1%P
+b0000000000 &2
+b11110000000011111111000011111111 %Q
+b00000 $p
+1%R
+b00110 $q
+b11111111 $r
+1&5
+1$v
+b11111111000000001111111111110000 &:
+b1111111100 $x
+b0000 %`
+1&B
+b11101 %k
+b11111111000000001111111111110000 &N
+1%p
+b11101 &Q
+b00000000000000000000000010000100 %q
+b11111111000000010000000010110111 &U
+b00000000000000000000000010000100 &V
+b11111111000000001111000000000000 &W
+b0000000000 &X
+b0000000000 %x
+b11111111000000001111111111110000 %{
+1&^
+b0000000000 &`
+b0000000000 &a
+b011111111 &b
+b11111111000000010000000000000000 &c
+b1111111100 &d
+b0000 &e
+#326
+0%E
+0$&
+0"%
+0%I
+0&+
+0&,
+0G
+0#L
+0&/
+0%P
+0%R
+0&5
+0$4
+0$v
+0$=
+0&B
+0%+
+0#,
+0%p
+0#0
+0#1
+0#8
+0&^
+0=
+0$c
+#331
+b00110 "
+b11111111111111111111111111110000 $
+b10 0
+b0000000001 1
+b00000 3
+1=
+b00000000011000000000000110010011 >
+b0000000001 "!
+b00000000000000000000000001111100 @
+b0000 "#
+b1111111100 "$
+1"%
+1G
+b11111111000000001111111111110000 H
+b11111111000000010000000000000000 I
+b00000000000000000000000000000110 "+
+b11111111000000001111111111110000 L
+b00000000000000000000000010001000 N
+b00000000000000000000000000000110 O
+b11111111000000010000000000000000 ":
+b00000001110100001001010001100011 Y
+b00000001110100001001010001100011 "=
+b00000000000000000000000010000000 #'
+b11111111000000010000000000000000 f
+b11111111000000010000000000000000 "H
+1#,
+b00000 "K
+b1111111100 #-
+b00000000000000000000000000000001 k
+b00000000000000000000000000000110 #.
+1#0
+1#1
+b00000000000000000000000000000110 "P
+b00000000000000000000000000000110 "R
+b00011 #4
+b000000000 "S
+b00000000001101000010 "T
+b00110 #5
+b00110 s
+b1111111100 #6
+1#7
+b00000 "V
+1#8
+0"Y
+b1111111100 "Z
+b1111111100 #A
+0$"
+b00000000000000000000000000000000 $#
+1$&
+b00000000000000000000000000000000 $'
+b11101 $)
+1#L
+b00000000000000000000000010000100 "l
+b00000000 $.
+b11111111000000001111111111110000 $2
+b1111111100 $3
+1$4
+b0000000 "r
+1#S
+b00000000001101000011 $6
+b00000000000000000000000000000110 "t
+0#U
+b11111111000000010000000000000000 "v
+1$=
+b11111111000000010000000000000000 #^
+b00000000000000000000000000000001 $C
+b11110000000011111111000011111111 #b
+b11111111000000001111111111110000 $H
+1%+
+b00000000000000000000000000000110 %,
+b11101 %-
+b1111111100 #p
+b11111111000000010000000000000000 $V
+b00000000000000000000000000000110 #u
+b00000000000000000000000000000110 %7
+b00000000000000000000000001101100 %8
+b00000000 #w
+b00000000 %:
+b00000000000000000000 #x
+b11101 #z
+b00000001110100001001010001100011 $\
+b00000000000000000000000010000000 %=
+b00000000000000000000000000000110 %>
+b00000000000000000000000010000100 %?
+b11111111000000010000000000000000 #~
+b00000000000000000000000000000000 &!
+b00000000000000000000000000000110 %@
+b00110 &"
+b011111111 &#
+1$c
+1%E
+1%I
+1&+
+1&,
+b11111111000000001111111111110000 %L
+1&/
+1%P
+b1111111100 &2
+b00000000000000000000000000000000 %Q
+b00001 $p
+1%R
+b11101 $q
+b00000000 $r
+1&5
+1$v
+b0000000001 $x
+1&B
+1%p
+b00000 &Q
+b00000000000000000000000010001000 %q
+b00000000000000000000000000000000 &U
+b00000000000000000000000010001000 &V
+b00000000000000000000000000000000 &W
+b1111111100 &X
+b1111111100 %x
+1&^
+b1111111100 &`
+b1111111100 &a
+b000000000 &b
+b11111111111111111111111111110000 &c
+b0000000001 &d
+#336
+0%E
+0$&
+0"%
+0%I
+0&+
+0&,
+0G
+0#L
+0&/
+0%P
+0%R
+0&5
+0$4
+0$v
+0$=
+0&B
+0%+
+0#,
+0%p
+0#0
+0#1
+0#8
+0&^
+0=
+0$c
+#341
+b11101 "
+b00000000000000000000000000000110 $
+b10 (
+b00 0
+b1111111110 1
+b00001 3
+b10000000 ;
+1=
+b00000001110100001001010001100011 >
+b1111111110 "!
+b00000000000000000000000010000000 @
+b0000000001 "$
+1"%
+b00011 F
+1G
+b00000000000000000000000000000110 H
+b11111111000000001111111111110000 I
+b11111111000000001111111111111000 "+
+b00000000000000000000000000000110 L
+b00000000000000000000000010001100 N
+b11111111000000001111111111111000 O
+b0010 P
+b11111111 W
+b11111111000000001111111111110000 X
+b11111111000000001111111111110000 ":
+b00000000001100000001100001100011 Y
+b00000000001100000001100001100011 "=
+b00000000000000000000000010000100 #'
+b11111111000000001111111111110000 f
+b11111111000000001111111111110000 "H
+b00011 g
+0i
+1#,
+b00001 "K
+b0000000001 #-
+b00000000000000000000000000000000 k
+b00000000000000000000000000001000 #.
+1#0
+1#1
+b00000000000000000000000000001000 "P
+b11111111000000001111111111111000 "R
+b01000 #4
+b011111111 "S
+b00000000001101000001 "T
+b11101 #5
+b11101 s
+b0000000001 #6
+b00001 "V
+1#8
+1"Y
+b0000000001 "Z
+b1100011 $!
+b0000000001 #A
+0#B
+b11111111000000001111111111110000 $#
+1$&
+b11111111000000001111111111110000 $'
+b00110 $(
+b00000 $)
+1$*
+b11111111000000001111111111110000 $,
+1#L
+b00000000000000000000000010001000 "l
+b11111111 $.
+b001 $/
+b001 "o
+b00000000000000000000000000000110 $2
+b0000000001 $3
+1$4
+0#S
+b00000000001101000010 $6
+b11111111000000001111111111111000 "t
+1#U
+1#V
+b00000000000000000000000000000000 "v
+1$=
+b11111111000000001111111111110000 #^
+b001 $A
+b11110000000000001000000010010011 $C
+b00000000000000000000000000000000 #b
+b11110000 #c
+b11110000 $F
+b00000000000000000000000000000110 $H
+1%+
+b11111111000000001111111111111000 %,
+b0000000001 #p
+b11111111000000001111111111110000 #q
+b11111111 #t
+b11111111000000001111111111110000 $V
+b00000000000000000000000000001000 #u
+b11111111000000001111111111111000 %7
+b00000000000000000000000010000110 %8
+b10010011 #w
+b11111111000000001111 #x
+b11111111000000001111111111110000 #y
+b00000000001100000001100001100011 $\
+b00000000000000000000000010000100 %=
+b11111111000000001111111111111000 %>
+b00000000000000000000000010001000 %?
+b11111111000000001111111111110000 #~
+b11111111000000001111111111110000 &!
+b11111111000000001111111111111000 %@
+b11101 &"
+b000000000 &#
+1$c
+b11111111000000001111111111110000 &%
+1%E
+b011 &'
+1%I
+1&+
+1&,
+b00000000000000000000000000000110 %L
+1&/
+b1100011 $n
+1%P
+b0000000001 &2
+b11111111000000001111111111110000 %Q
+b00000 $p
+1%R
+b00011 $q
+b11110000 $r
+1&5
+b11111111000000001111111111110000 %T
+1$v
+b1111111110 $x
+1$z
+b0010 %`
+1&B
+b11111111111100001111111111110000 %j
+b00011 %k
+1%p
+b00001 &Q
+b00000000000000000000000010001100 %q
+b11110000000000001000000010010011 &U
+b00000000000000000000000010001100 &V
+b11111111000000001111000000000000 &W
+b0000000001 &X
+b0000000001 %x
+b11110000 &Z
+1&^
+b0000000001 &`
+b0000000001 &a
+b011111111 &b
+b00000000000000000000000000000110 &c
+b1111111110 &d
+b0010 &e
+#346
+0%E
+0$&
+0"%
+0%I
+0&+
+0&,
+0G
+0#L
+0&/
+0%P
+0%R
+0&5
+0$4
+0$v
+0$=
+0&B
+0%+
+0#,
+0%p
+0#0
+0#1
+0#8
+0&^
+0=
+0$c
+#351
+b00011 "
+b00000000000000000000000000001000 $
+b00 (
+b0000000100 1
+b00000 3
+b00000000 ;
+1=
+b00000000001100000001100001100011 >
+1?
+b0000000100 "!
+b00000000000000000000000010000100 @
+b0010 "#
+b1111111110 "$
+1"%
+b01000 F
+1G
+b00000000111111111111000000000000 H
+b00000000000000000000000000000110 I
+b00000000000000000000000000010000 "+
+b11111111000000001111111111111000 L
+b00000000000000000000000010010000 N
+b00000000000000000000000000010000 O
+b00000000 W
+b00000000000000000000000000000110 X
+b00000000000100000000010100010011 Y
+0Z
+b00000000000100000000010100010011 "=
+b00000000000000000000000010001000 #'
+b01000 g
+1#,
+b00000 "K
+b1111111110 #-
+b00000000000000000000000000010000 #.
+1#0
+1#1
+b00000000000000000000000000010000 "P
+b00000000000000000000000000010000 "R
+b10000 #4
+b000000001 "S
+b00000000001101000000 "T
+b00011 #5
+b00011 s
+b1111111110 #6
+b00000 "V
+1#8
+b001 #:
+0"Y
+b1111111110 "Z
+0}
+b11111111000000001111111111110000 ~
+b1111111110 #A
+b00000000000000000000000000000000 $#
+1$&
+b00000000000000000000000000000110 #F
+b00000000000000000000000000000000 $'
+b11101 $(
+b00001 $)
+b00000000000000000000000000000110 $,
+1#L
+b00000000000000000000000010001100 "l
+b00000001 $.
+b00000000111111111111000000000000 $2
+b1111111110 $3
+1$4
+b00000000001101000001 $6
+b00000000000000000000000000010000 "t
+b11111111000000001111111111110000 "u
+b11111111000000001111111111110000 "v
+1$=
+b00000000000000000000000000000110 $?
+b00000000000000000000000000000000 $C
+b11111111000000001111111111110000 #b
+b00000110 #c
+b00000110 $F
+b00000000111111111111000000000000 $H
+1%+
+b00000000000000000000000000010000 %,
+b00011 %-
+b1111111110 #p
+b00000000000000000000000000000110 #q
+b00000000 #t
+b00000000000000000000000000010000 #u
+b00000000000000000000000000010000 %7
+b00000000000000000000000010001100 %8
+b00000000 #w
+b00000000000000000000 #x
+0$Z
+b00000000000000000000000000000110 #y
+b00011 #z
+b00000000000100000000010100010011 $\
+b00000000000000000000000010001000 %=
+b00000000000000000000000000010000 %>
+b00000000000000000000000010001100 %?
+b00000000000000000000000000000110 #~
+b00000000000000000000000000000000 &!
+b00000000000000000000000000010000 %@
+b00011 &"
+b011111111 &#
+1$c
+b00000000000000000000000000000110 &%
+1%E
+1%I
+1&+
+b11111111 $j
+1&,
+b00000000111111111111000000000000 %L
+1&/
+1%P
+b1111111110 &2
+b00000000000000000000000000000000 %Q
+1%R
+b00001 $q
+b00000000 $r
+b11110000 %S
+1&5
+b00000000000000000000000000000110 %T
+1$v
+b0000000100 $x
+b00000000000000000000000000000110 &@
+1&B
+b00000000000001100000000000000110 %j
+b00000000000000000000000000000110 &L
+b01000 %k
+b11111111 %m
+1%p
+b00000 &Q
+b00000000000000000000000010010000 %q
+b00000000000000000000000000000000 &U
+b00000000000000000000000010010000 &V
+b00000000000000000000000000000000 &W
+b1111111110 &X
+b1111111110 %x
+b00000110 &Z
+0%z
+1&^
+b00000000000000000000000000000110 %}
+b1111111110 &`
+b1111111110 &a
+b000000001 &b
+b00000000000000000000000000001000 &c
+b0000000100 &d
+#356
+0%E
+0$&
+0"%
+0%I
+0&+
+0&,
+0G
+0#L
+0&/
+0%P
+0%R
+0&5
+0$4
+0$v
+0$=
+0&B
+0%+
+0#,
+0%p
+0#0
+0#1
+0#8
+0&^
+0=
+0$c
+#361
+b00001 "
+b00000000000000000000000000010000 $
+b01 0
+b0000000000 1
+08
+b00000001 ;
+1=
+b00000000000100000000010100010011 >
+b0000000000 "!
+b00000000000000000000000010001000 @
+b0000000100 "$
+1"%
+b10000 F
+1G
+b00000000000000000000000000000000 H
+b00000000111111111111000000000000 I
+b00000000000000000000000000000001 "+
+b00000000000000000000000000010000 L
+b00000000000000000000000010011000 N
+b00000000000000000000000000000001 O
+b0000 P
+b11111111 W
+b11111111000000001111111111110000 X
+b00000101110100000000100010010011 Y
+b00000101110100000000100010010011 "=
+b00000000000000000000000010001100 #'
+b10000 g
+0"J
+1i
+1#,
+b0000000100 #-
+b00000000000000000000000110010011 k
+b00000000000000000000000000000001 #.
+1#0
+1#1
+b00000000000000000000000000000001 "P
+b00000000000000000000000000000001 "R
+b01010 #4
+b000000000 "S
+b00000000001100111111 "T
+b00001 #5
+b00001 s
+b0000000100 #6
+1#8
+1"Y
+b0000000100 "Z
+1#;
+b0010011 $!
+b00000000000000000000000000000110 ~
+b0000000100 #A
+1#B
+1$&
+b00011 $(
+b00000 $)
+0$*
+b11111111000000001111111111110000 $,
+1#L
+b00000000000000000000000010010000 "l
+b00000000 $.
+b000 $/
+b000 "o
+b00000000000000000000000000000000 $2
+b0000000100 $3
+1$4
+b00000000001101000000 $6
+b00000000000000000000000000000001 "t
+0#U
+b00000000000000000000000000000110 "u
+b00000000000000000000000000000000 "v
+1$=
+b000 $A
+b00000000001000000000000110010011 $C
+b00000000000000000000000000000000 #b
+b11110000 #c
+b11110000 $F
+b00000000000000000000000000000000 $H
+1%+
+b00000000000000000000000000000001 %,
+b01000 %-
+b0000000100 #p
+b11111111000000001111111111110000 #q
+b11111111 #t
+b00000000000000000000000000000001 #u
+b00000000000000000000000000000001 %7
+b00000000000000000000000010011000 %8
+b10010011 #w
+b00100000 %:
+b11111111000000001111111111110000 #y
+b01000 #z
+b00000101110100000000100010010011 $\
+b00000000000000000000000010001100 %=
+b00000000000000000000000000000001 %>
+b00000000000000000000000010010000 %?
+b00000000111111111111000000000000 #~
+b00000000000000000000000000000001 %@
+b00001 &"
+b000000001 &#
+1$c
+b11111111000000001111111111110000 &%
+1%E
+b001 &'
+1%I
+1&+
+b00000000 $j
+1&,
+b00000000000000000000000000000000 %L
+1&/
+b0010011 $n
+1%P
+b0000000100 &2
+1%R
+b11101 $q
+b00000110 %S
+1&5
+b11111111000000001111111111110000 %T
+1$v
+b0000000000 $x
+0$z
+0&<
+b0000 %`
+1&B
+b11110000111100001111000011110000 %j
+b10000 %k
+b00000000 %m
+1%p
+b00000000000000000000000010011000 %q
+b00000000001000000000000110010011 &U
+b00000000000000000000000010011000 &V
+b0000000100 &X
+b0000000100 %x
+b11110000 &Z
+1&^
+b0000000100 &`
+b0000000100 &a
+b000000000 &b
+b00000000000000000000000000010000 &c
+b0000000000 &d
+b0000 &e
+#366
+0%E
+0$&
+0"%
+0%I
+0&+
+0&,
+0G
+0#L
+0&/
+0%P
+0%R
+0&5
+0$4
+0$v
+0$=
+0&B
+0%+
+0#,
+0%p
+0#0
+0#1
+0#8
+0&^
+0=
+0$c
+#371
+b00000 "
+b00000000000000000000000000000001 $
+b01 (
+b00 0
+b00000000 ;
+1=
+b00000000000000000000000000110011 >
+0?
+b00000000000000000000000010001100 @
+b0000 "#
+b0000000000 "$
+1"%
+b01010 F
+1G
+b00000000000000000000000000000001 H
+b00000000000000000000000000000000 I
+b00000000000000000000000000000000 "+
+b00000000000000000000000000000001 L
+b00000000000000000000000010011100 N
+b00000000000000000000000000000000 O
+b00000000000000000000010100010011 Y
+1Z
+b00000000000000000000010100010011 "=
+b00000000000000000000000010010000 #'
+0#)
+b01010 g
+1"J
+1#,
+b0000000000 #-
+b00000000000000000000000000000000 k
+b00000000000000000000000000000000 #.
+1#0
+1#1
+b00000000000000000000000000000000 "P
+b00000000000000000000000000000000 "R
+b00000 #4
+b00000000001100111110 "T
+b11101 #5
+b11101 s
+b0000000000 #6
+1#8
+b000 #:
+0"Y
+b0000000000 "Z
+0#;
+b0110011 $!
+b11111111000000001111111111110000 ~
+b0000000000 #A
+1$&
+b00001 $(
+1#L
+b00000000000000000000000010011000 "l
+b00000000000000000000000000000001 $2
+b0000000000 $3
+1$4
+b00000000001100111111 $6
+b00000000000000000000000000000000 "t
+1#U
+b11111111000000001111111111110000 "u
+0#V
+1$=
+b11111111000000010000000010110111 $C
+b00000000000000000000000000000001 $H
+1%+
+b00000000000000000000000000000000 %,
+b10000 %-
+b0000000000 #p
+0%6
+b00000000000000000000000000000000 #u
+b00000000000000000000000000000000 %7
+b00000000000000000000000010001101 %8
+b10110111 #w
+b00000001 %:
+b10000 #z
+b00000000000000000000010100010011 $\
+b00000000000000000000000010010000 %=
+b00000000000000000000000000000000 %>
+b00000000000000000000000010011000 %?
+b00000000000000000000000000000000 #~
+b00000000000000000000000000000000 %@
+b11101 &"
+b000000000 &#
+1$c
+1%E
+b000 &'
+1%I
+1&+
+b11111111 $j
+1&,
+b00000000000000000000000000000001 %L
+1&/
+b0110011 $n
+1%P
+b0000000000 &2
+1%R
+b00000 $q
+b11111111 $r
+b11110000 %S
+1&5
+1$v
+1&B
+b01010 %k
+0%l
+b11111111 %m
+1%p
+b00000000000000000000000010011100 %q
+b11111111000000010000000010110111 &U
+b00000000000000000000000010011100 &V
+b0000000000 &X
+b0000000000 %x
+1&^
+b0000000000 &`
+b0000000000 &a
+b00000000000000000000000000000001 &c
+#376
+0%E
+0$&
+0"%
+0%I
+0&+
+0&,
+0G
+0#L
+0&/
+0%P
+0%R
+0&5
+0$4
+0$v
+0$=
+0&B
+0%+
+0#,
+0%p
+0#0
+0#1
+0#8
+0&^
+0=
+0$c
+#381
+1$&
+b00000 $(
+b00000000000000000000000000000000 $,
+1#L
+b00000000000000000000000010011100 "l
+b11111111000000001111111111110000 $2
+1$4
+b00000000001100111110 $6
+1$=
+b00000000 #c
+b00000000 $F
+b11111111000000001111111111110000 $
+b11111111000000001111111111110000 $H
+1%+
+b00 (
+b01010 %-
+b00000000000000000000000000000000 #q
+1%6
+b00000000 #t
+b00000000000000000000000010010000 %8
+b00000000000000000000000000000000 #y
+b01010 #z
+b00000101110100000000100010010011 $\
+b00000000000000000000000010011000 %=
+b00000000000000000000000010011100 %?
+b00000000000000000000000000000001 #~
+b00000 &"
+1=
+b00000000000000000000010100010011 >
+1$c
+b00000000000000000000000000000000 &%
+b00000000000000000000000010010000 @
+1%E
+b001 &'
+1"%
+1%I
+1&+
+b00000 F
+1&,
+1G
+b11111111000000001111111111110000 %L
+b11111111000000001111111111110000 H
+b00000000000000000000000000000001 I
+1&/
+b0010011 $n
+1%P
+b00000000000000000000000000000000 L
+1%R
+b11101 $q
+b00000000000000000000000010100000 N
+1&5
+b00000000000000000000000000000000 %T
+1$v
+b00000000 W
+b00000000000000000000000000000000 X
+b00000101110100000000100010010011 Y
+b00000101110100000000100010010011 "=
+1&B
+b00000000000000000000000010011000 #'
+b00000000000000000000000000000000 %j
+1#)
+b00000 %k
+b00000 g
+1%l
+1#,
+b11111111111111111111111110110111 k
+1%p
+b00000000000000000000000010100000 %q
+1#0
+1#1
+b00000000000000000000000010100000 &V
+b01010 #4
+b00000000001100111101 "T
+b00000 #5
+b00000 s
+0#7
+b00000000 &Z
+1#8
+1%z
+1&^
+b0010011 $!
+b00000000000000000000000000000000 &c
+#386
+0%E
+0$&
+0"%
+0%I
+0&+
+0&,
+0G
+0#L
+0&/
+0%P
+0%R
+0&5
+0$4
+0$v
+0$=
+0&B
+0%+
+0#,
+0%p
+0#0
+0#1
+0#8
+0&^
+0=
+0$c
+#391
+b11101 "
+b00000000000000000000000000000000 $
+b01 0
+b0000010111 1
+1=
+b00000101110100000000100010010011 >
+b0000010111 "!
+b00000000000000000000000010011000 @
+1"%
+b01010 F
+1G
+b00000000000000000000000000000000 H
+b11111111000000001111111111110000 I
+b00000000000000000000000001011101 "+
+b00000000000000000000000010100100 N
+b00000000000000000000000001011101 O
+b11111111 W
+b11111111000000001111111111110000 X
+b00000000000000000000000001110011 Y
+b00000000000000000000000001110011 "=
+b00000000000000000000000010011100 #'
+b01010 g
+1#,
+b00000000000000000000000001011101 #.
+1#0
+1#1
+b00000000000000000000000001011101 "P
+b00000000000000000000000001011101 "R
+b10001 #4
+b000000101 "S
+b00000000001100111100 "T
+b11101 #5
+b11101 s
+1#7
+1#8
+1"Y
+1}
+b00000000000000000000000000000000 ~
+1$&
+b11111111000000001111111111110000 $,
+1#L
+b00000000000000000000000010100000 "l
+b00000101 $.
+b00000000000000000000000000000000 $2
+1$4
+b0000010 "r
+b00000000001100111101 $6
+b00000000000000000000000001011101 "t
+0#U
+b00000000000000000000000000000000 "u
+1#V
+1$=
+b11110000 #c
+b11110000 $F
+b00000000000000000000000000000000 $H
+1%+
+b00000000000000000000000001011101 %,
+b00000 %-
+b11111111000000001111111111110000 #q
+b11111111 #t
+b00000000000000000000000001011101 #u
+b00000000000000000000000001011101 %7
+b00000000000000000000000010011000 %8
+1$Z
+b11111111000000001111111111110000 #y
+b00000 #z
+b00000000000000000000000001110011 $\
+b00000000000000000000000010011100 %=
+b00000000000000000000000001011101 %>
+b00000000000000000000000010100000 %?
+b11111111000000001111111111110000 #~
+b00000000000000000000000001011101 %@
+b11101 &"
+1$c
+b11111111000000001111111111110000 &%
+1%E
+1%I
+1&+
+b00000000 $j
+1&,
+b00000000000000000000000000000000 %L
+1&/
+1%P
+1%R
+b00000 $q
+b00000000 %S
+1&5
+b11111111000000001111111111110000 %T
+1$v
+b0000010111 $x
+1&B
+b11110000111100001111000011110000 %j
+b01010 %k
+b00000000 %m
+1%p
+b00000000000000000000000010100100 %q
+b00000000000000000000000010100100 &V
+b11110000 &Z
+1&^
+b000000101 &b
+b0000010111 &d
+#396
+0%E
+0$&
+0"%
+0%I
+0&+
+0&,
+0G
+0#L
+0&/
+0%P
+0%R
+0&5
+0$4
+0$v
+0$=
+0&B
+0%+
+0#,
+0%p
+0#0
+0#1
+0#8
+0&^
+0=
+0$c
+#401
+b00000 "
+b00000000000000000000000001011101 $
+b01 (
+b00 0
+b0000000000 1
+18
+b11111110 ;
+1=
+b00000000000000000000000001110011 >
+b0000000000 "!
+b00000000000000000000000010011100 @
+b0000010111 "$
+1"%
+b10001 F
+1G
+b00000000000000000000000001011101 H
+b00000000000000000000000000000000 I
+b00000000000000000000000000000000 "+
+b00000000000000000000000001011101 L
+b00000000000000000000000010101000 N
+b00000000000000000000000000000000 O
+b00000000 W
+b00000000000000000000000000000000 X
+b11111111000000010000000010110111 Y
+b11111111000000010000000010110111 "=
+1"@
+b00000000000000000000000010100000 #'
+0#)
+b10001 g
+0i
+1#,
+b0000010111 #-
+b11111111111111111111111111111110 k
+b00000000000000000000000000000000 #.
+1#0
+1#1
+b00000000000000000000000000000000 "P
+b00000000000000000000000000000000 "R
+b00000 #4
+b000000000 "S
+b00000000001100111011 "T
+b00000 #5
+b00000 s
+b0000010111 #6
+1#8
+0"Y
+b0000010111 "Z
+b1110011 $!
+b11111111000000001111111111110000 ~
+b0000010111 #A
+0#B
+1$&
+b11101 $(
+b00000000000000000000000000000000 $,
+1#L
+b00000000000000000000000010100100 "l
+b00000000 $.
+b00000000000000000000000001011101 $2
+b0000010111 $3
+1"q
+1$4
+b0000000 "r
+b00000000001100111100 $6
+b00000000000000000000000000000000 "t
+1#U
+b11111111000000001111111111110000 "u
+0#V
+1$=
+b11110000000011111111111010110111 $C
+b00000000 #c
+b00000000 $F
+b00000000000000000000000001011101 $H
+1%+
+b00000000000000000000000000000000 %,
+b01010 %-
+b0000010111 #p
+b00000000000000000000000000000000 #q
+0%6
+b00000000 #t
+b00000000000000000000000000000000 #u
+b00000000000000000000000000000000 %7
+b00000000000000000000000011111001 %8
+b00001111 %:
+b00000000000000000000000000000000 #y
+b01010 #z
+b11111111000000010000000010110111 $\
+b00000000000000000000000010100000 %=
+b00000000000000000000000000000000 %>
+b00000000000000000000000010100100 %?
+b00000000000000000000000000000000 #~
+b00000000000000000000000000000000 %@
+b00000 &"
+b000000101 &#
+1$c
+b00000000000000000000000000000000 &%
+1%E
+1%I
+1&+
+b11111111 $j
+1&,
+b00000000000000000000000001011101 %L
+1&/
+b1110011 $n
+1%P
+b0000010111 &2
+b00010 $p
+1%R
+b10000 $q
+b11110000 $r
+b11110000 %S
+1&5
+b00000000000000000000000000000000 %T
+1$v
+b0000000000 $x
+1&<
+1&B
+b00000000000000000000000000000000 %j
+b10001 %k
+b11111111 %m
+1%p
+b00000000000000000000000010101000 %q
+b11110000000011111111111010110111 &U
+b00000000000000000000000010101000 &V
+b0000010111 &X
+b0000010111 %x
+b00000000 &Z
+1&^
+b0000010111 &`
+b0000010111 &a
+b000000000 &b
+b00000000000000000000000001011101 &c
+b0000000000 &d
+#406
+0%E
+0$&
+0"%
+0%I
+0&+
+0&,
+0G
+0#L
+0&/
+0%P
+0%R
+0&5
+0$4
+0$v
+0$=
+0&B
+0%+
+0#,
+0%p
+0#0
+0#1
+0#8
+0&^
+0=
+0$c
+#411
+b10000 "
+b00000000000000000000000000000000 $
+b00 (
+b00000000000000000000000001011101 .
+b00010 3
+b00000000 ;
+1=
+b11111111000000010000000010110111 >
+b00000000000000000000000010100000 @
+b0000000000 "$
+1"%
+b00000 F
+1G
+b00000000000000000000000000000000 H
+b00000000000000000000000001011101 I
+b11111111000000010000000000000000 "+
+1J
+1K
+b00000000000000000000000000000000 L
+b00000000000000000000000010101100 N
+b11111111000000010000000000000000 O
+b0001 P
+0Z
+0"@
+1`
+b00000000000000000000000010100100 #'
+b00000 g
+1i
+1#,
+b00010 "K
+b0000000000 #-
+b11111111111111111111111110110111 k
+b11111111000000010000000000000000 #.
+1#0
+1#1
+b11111111000000010000000000000000 "P
+b11111111000000010000000000000000 "R
+b00001 #4
+b00000000001100111010 "T
+b10000 #5
+b10000 s
+b0000000000 #6
+0#7
+b00010 "V
+b00000000000000000000000001011101 u
+1#8
+1"Y
+b0000000000 "Z
+0}
+b0110111 $!
+b00000000000000000000000000000000 ~
+b0000000000 #A
+1#B
+1#D
+1$&
+b00000 $(
+1#L
+b00000000000000000000000010101000 "l
+b00000000000000000000000000000000 $2
+b0000000000 $3
+0"q
+1$4
+b1111111 "r
+b00000000001100111011 $6
+b11111111000000010000000000000000 "t
+b00000000000000000000000000000000 "u
+1$=
+b11111111000000010000000010110111 $C
+b00000000000000000000000000000000 $H
+b00000000000000000000000001011101 $I
+b00000000000000000000000001011101 #i
+1%+
+b11111111000000010000000000000000 %,
+b10001 %-
+1#n
+b0000000000 #p
+b11111111000000010000000000000000 #u
+b11111111000000010000000000000000 %7
+b00000000000000000000000010100000 %8
+b00000001 %:
+b11111111000000010000 #x
+0$Z
+b10001 #z
+b00000000000000000000000010100100 %=
+b11111111000000010000000000000000 %>
+b00000000000000000000000010101000 %?
+b00000000000000000000000001011101 #~
+b11111111000000010000000000000000 %@
+b10000 &"
+b000000000 &#
+1$c
+1%E
+b100 &'
+1%I
+1&+
+b00000000 $j
+1&,
+b00000000000000000000000000000000 %L
+1&/
+b0110111 $n
+1%P
+b0000000000 &2
+1&3
+1%R
+b11111111 $r
+b00000000 %S
+1&5
+1$v
+b00000000000000000000000001011101 %]
+b0001 %`
+1&B
+b00000 %k
+b00000000 %m
+1%n
+1%p
+b00010 &Q
+b00000000000000000000000010101100 %q
+b11111111000000010000000010110111 &U
+b00000000000000000000000010101100 &V
+b11111111000000010000000000000000 &W
+b0000000000 &X
+b0000000000 %x
+0%z
+1&^
+b0000000000 &`
+b0000000000 &a
+b00000000000000000000000000000000 &c
+b0001 &e
+#416
+0%E
+0$&
+0"%
+0%I
+0&+
+0&,
+0G
+0#L
+0&/
+0%P
+0%R
+0&5
+0$4
+0$v
+0$=
+0&B
+0%+
+0#,
+0%p
+0#0
+0#1
+0#8
+0&^
+0=
+0$c

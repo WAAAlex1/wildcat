@@ -29,10 +29,24 @@ class WildcatTop(file: String) extends Module {
   // val cpu = Module(new StandardFive())
   val dmem = Module(new ScratchPadMem(memory))
   cpu.io.dmem <> dmem.io
+
+  //Connecting cache
+  val SimpleCache = Module(new Caches.SimpleCache.CacheTop())
+  //cpu.io.dmem <> SimpleCache.io
+
+
+  SimpleCache.io.rdEnable := cpu.io.dmem.rdEnable
+  SimpleCache.io.wrEnable := cpu.io.dmem.wrEnable
+  SimpleCache.io.wrAddress := cpu.io.dmem.wrAddress
+  SimpleCache.io.rdAddress := cpu.io.dmem.rdAddress
+  SimpleCache.io.wrData := cpu.io.dmem.wrData
+
+
+
   val imem = Module(new InstructionROM(memory))
   imem.io.address := cpu.io.imem.address
   cpu.io.imem.data := imem.io.data
-  cpu.io.imem.stall := imem.io.stall
+  cpu.io.imem.stall := imem.io.stall //|| SimpleCache.io.stall
   // TODO: stalling
 
 
@@ -75,6 +89,7 @@ class WildcatTop(file: String) extends Module {
       ledReg := cpu.io.dmem.wrData(7, 0)
     }
     dmem.io.wrEnable := VecInit(Seq.fill(4)(false.B))
+    SimpleCache.io.wrEnable := VecInit(Seq.fill(4)(false.B))
   }
 
   io.led := 1.U ## 0.U(7.W) ## RegNext(ledReg)
