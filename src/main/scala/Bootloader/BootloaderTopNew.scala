@@ -1,11 +1,13 @@
 package Bootloader
 
 import chisel3._
-import chisel.lib.uart._
-import chisel3.util._
-import chisel3.experimental.ChiselEnum
-import wildcat.Util
-import wildcat.pipeline.ScratchPadMem
+
+/**
+ * This is a bootloader top module intended for testing the bootloader on an FPGA by itself with a test memory.
+ *
+ * @param frequ
+ * @param baudRate
+ */
 
 class BootloaderTop(frequ: Int, baudRate: Int = 115200) extends Module {
   val io = IO(new Bundle {

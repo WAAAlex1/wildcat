@@ -41,7 +41,7 @@ class BootloaderTestByte extends AnyFlatSpec with
       dut.io.rx.poke(1.U) //Last data bit
       dut.clock.step(100)
 
-      dut.io.instrData.expect("h0000aa".U)
+      dut.io.instrData.expect("h000000aa".U)
       dut.io.wrEnabled.expect(0.U)
 
       dut.io.sleep.poke(true.B) //Set InActive

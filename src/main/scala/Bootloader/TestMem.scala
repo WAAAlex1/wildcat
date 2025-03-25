@@ -2,11 +2,11 @@ package Bootloader
 
 import chisel3._
 import chisel3.util._
-import chisel3.util.experimental.loadMemoryFromFile
 import wildcat.pipeline.MemIO
 
 /**
- * On-chip memory with one clock cycle read timing and write forwarding
+ * Simplified memory originated from the Wildcat datamemory module.
+ * Created for testing the bootloader module.
  */
 class TestMem(nrBytes: Int = 4096) extends Module {
   val io = IO(Flipped(new MemIO()))

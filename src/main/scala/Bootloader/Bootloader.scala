@@ -23,7 +23,6 @@ class Bootloader(frequ: Int, baudRate: Int = 115200) extends Module {
     val sleep = Input(Bool())
   })
 
-  //val tx = Module(new BufferedTx(frequ, baudRate))
   val rx = Module(new Rx(frequ, baudRate))
   val buffer = Module(new BootBuffer())
 
@@ -43,15 +42,17 @@ class Bootloader(frequ: Int, baudRate: Int = 115200) extends Module {
     byteCount := byteCount + 1.U
   }
 
+  //Buffer connections
   buffer.io.saveCtrl := save
   buffer.io.dataIn := rx.io.channel.bits
 
+  //Default signals
   rx.io.channel.ready := false.B
   incr := 0.U
   save := 0.U
   wrEnabled := 0.U
 
-
+  //FSM
   switch(stateReg){
     is(Sleep){
       when(!io.sleep){
@@ -78,7 +79,7 @@ class Bootloader(frequ: Int, baudRate: Int = 115200) extends Module {
     }
   }
 
-
+  //IO connections
   io.wrEnabled := wrEnabled
   io.instrData := buffer.io.dataOut(31,0)
   io.instrAddr := buffer.io.dataOut(63,32)
