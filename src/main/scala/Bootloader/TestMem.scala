@@ -2,14 +2,23 @@ package Bootloader
 
 import chisel3._
 import chisel3.util._
-import wildcat.pipeline.MemIO
 
 /**
  * Simplified memory originated from the Wildcat datamemory module.
  * Created for testing the bootloader module.
  */
+
+class TestMemIO extends Bundle {
+  val rdAddress = Output(UInt(32.W))
+  val rdData = Input(UInt(32.W))
+  val rdEnable = Output(Bool())
+  val wrAddress = Output(UInt(32.W))
+  val wrData = Output(UInt(32.W))
+  val wrEnable = Output(Vec (4, Bool()))
+}
+
 class TestMem(nrBytes: Int = 4096) extends Module {
-  val io = IO(Flipped(new MemIO()))
+  val io = IO(Flipped(new TestMemIO()))
 
   val mems = Array(
     SyncReadMem(nrBytes/4, UInt(8.W), SyncReadMem.WriteFirst),
@@ -32,5 +41,4 @@ class TestMem(nrBytes: Int = 4096) extends Module {
   when(io.wrEnable(3)) {
     mems(3).write(io.wrAddress(idx+2, 2), io.wrData(31, 24))
   }
-  io.stall := false.B
 }
