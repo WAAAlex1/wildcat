@@ -25,9 +25,6 @@ class SRAM(words: Int, BW: Int) extends Module {
 
   val mem = SyncReadMem(words, UInt(BW.W), SyncReadMem.WriteFirst)
 
-
-
-
   when(io.rw && io.EN){
     io.DO := mem.read(io.ad)
   }.elsewhen(!io.rw && io.EN){
