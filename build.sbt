@@ -1,6 +1,6 @@
 scalaVersion := "2.13.10"
 
-javaHome := Some(file("E:/Code/jdk-19.0.1")) //for some reason I need this for compiling
+//javaHome := Some(file("E:/Code/jdk-19.0.1")) //for some reason I need this for compiling
 
 scalacOptions ++= Seq(
   "-feature",
