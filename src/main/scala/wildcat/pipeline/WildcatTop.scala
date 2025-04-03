@@ -50,10 +50,12 @@ class WildcatTop(file: String, dmemNrByte: Int = 4096) extends Module {
   // use lower bits to select IOs
 
   // UART:
-  // 0xf000_0000 status:
-  // bit 0 TX ready (TDE)
-  // bit 1 RX data available (RDF)
-  // 0xf000_0004 send and receive register
+  // For our uCLinux Kernel we need the wildcat to follow an existing UART driver, the simplest being liteuart.
+  // This means we have to alter the mmap addresses of the UART to match that.
+  // 0xf000_0000 send and receive register:
+  // 0xf000_0004 TX_FULL (Probably equivalent to ~tx.io.channel.ready)
+  // 0xf000_0008 RX_EMPTY (Probably equivalent to ~rx.io.channel.valid)
+  //This is not yet implemented
 
   val tx = Module(new BufferedTx(100000000, 115200))
   val rx = Module(new Rx(100000000, 115200))
