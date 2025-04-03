@@ -28,7 +28,7 @@ class MemoryController extends Module {
   io.memIO <> memory.io
 
   //Address mapping
-  when(io.memIO.rdAddress(31,28) === 0xf){
+  when(io.memIO.rdAddress(31,28) === "hf".U){
     //Do nothing cause memory mapped IO defined in Wildcattop?
   }.elsewhen(io.memIO.rdAddress(23) === 1.U){
     //DataMem.read addresser (23,0)
