@@ -1,77 +1,112 @@
 package Bootloader;
 
-import java.io.*;
-import java.nio.ByteBuffer;
-import java.nio.ByteOrder;
+import net.fornwall.jelf.*;
+
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 
 public class ELFHandler {
+
+
+    //Possible bugs / Dont really know how supposed to handle:
+        // 1. What happens when a section does not have a size divisible by 4?
+        //      Eg. .rodata size is 14. How should the last 32bit data look? should it be XX000000 or 000000XX ?
+        // 2. Wrong fields included / Not enough fields included.
+        //      Currently both .init_array and .fini_array included - are these needed? Should hold instructions
+        //      For program to run before and after execution, however they cannot be translated to RISVC instructions
+        //      This leads me to believe they should be excluded.
+        //      The bss field does not have any data, it only reserves some addresses which should all be 0.
+        //      currently it does exactly this, fill the addresses with 0, however is it needed if we already do this?
+        //      Do we already do this?
+        //  3.
+
     public static void main(String[] args) {
-        String elfFilePath = "test.elf"; // Replace with actual ELF file when time comes
+        if (args.length != 1) {
+            System.out.println("Usage: java ELFHandler <elf-file>");
+            return;
+        }
+
+        String filePath = args[0];
 
         try {
-            // Get loadable program headers
-            ProcessBuilder pb = new ProcessBuilder("readelf", "-l", elfFilePath); //This effective creates the bash readelf -l theElfFile.elf
-            Process process = pb.start(); //this effectively runs the bash
+            // Read ELF file into byte array
+            byte[] elfBytes = Files.readAllBytes(Paths.get(filePath));
+            ElfFile elf = ElfFile.from(elfBytes);
 
-            BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream())); //Get the output from running the bash
-            String line;
+            File outputFile = new File("output.txt");
+            FileOutputStream fos = new FileOutputStream(outputFile);
 
-            // Parse the program header output
-            //For each line in the output we run this
-            while ((line = reader.readLine()) != null) {
-                if (line.contains("LOAD")) {
-                    String[] parts = line.trim().split("\\s+"); // Regex magic, split when one or more whitespace characters
+            int numSections = elf.getSectionNameStringTable().numStrings;
 
-                    //Expect three parts - file offset - load address - file size (bytes)
-                    int fileOffset = Integer.decode(parts[1]);  // Extract file offset
-                    int physAddress = Integer.decode(parts[2]); // Extract load address
-                    int fileSize = Integer.decode(parts[3]);  // Extract file size
+            for(int i = 0; i < numSections; i++){
+                ElfSection section = elf.getSection(i);
+                String name = section.header.getName();
 
-                    //Useful debugging outputs
-                    System.out.printf("Loading Segment: Offset 0x%X -> Address 0x%X (%d bytes)%n",
-                            fileOffset, physAddress, fileSize);
+                // For why these sections have been selected see https://man7.org/linux/man-pages/man5/elf.5.html
+                // also see https://www.cs.cmu.edu/afs/cs/academic/class/15213-f00/docs/elf.pdf
+                // and lastly also see https://refspecs.linuxfoundation.org/LSB_3.1.1/LSB-Core-PPC64/LSB-Core-PPC64/specialsections.html
+                if(name != null && (name.equals(".text") | name.equals(".rodata") | name.equals(".bss") |
+                   name.equals(".sdata") | name.equals(".init_array") | name.equals(".fini_array") |
+                   name.equals(".data") | name.equals(".data1") | name.equals(".sbss") | name.equals(".rodata1"))){
 
-                    // Read the binary data
-                    // Use a custom function for this
-                    extractAndSendData(elfFilePath, fileOffset, physAddress, fileSize);
+                    long offset = section.header.sh_offset;
+                    int size = (int) section.header.sh_size;
+                    int address = (int) section.header.sh_addr;
+                    byte[] data = section.getData();
+
+                    // Print the details about the section to the console
+                    System.out.println("Processing section: " + name);
+                    System.out.println("  Section located at offset: " + offset);
+                    System.out.println("  Section size: " + size + " bytes");
+                    System.out.println("  Expected number of output lines: " + (size / 4) + " lines");
+                    System.out.println("  STARTING WRITE AT: " + String.format("0x%08X", address));
+
+                    //Debugging to gain insight into possible bug [1]
+                    /*
+                    if(name.equals(".rodata") | name.equals(".rodata1") ){
+                        System.out.printf("DATADUMP FOR .rodata: ");
+                        for(byte z : data){
+                            System.out.printf("%02X",z);
+                        }
+                        System.out.printf("\n");
+                    }
+                     */
+
+                    // Write data to output file in [address] [data] format
+                    for (int j = 0; j < size; j += 4) {
+                        // Format address as a 32-bit hexadecimal value
+                        String hexAddress = String.format("0x%08X", address + j);
+
+                        // Format the 4 bytes of data as a 32-bit hexadecimal value
+                        int dataValue = 0;
+                        for (int k = 0; k < 4 && j + k < data.length; k++) {
+                            dataValue |= (data[j + k] & 0xFF) << (8 * k); // Shift each byte into its correct position
+                        }
+
+                        String hexData = String.format("%08X", dataValue); // Format as 32-bit hex
+
+                        // Prepare the output line
+                        String outputLine = hexAddress + " " + hexData;
+
+                        // Write to output file (only the actual data)
+                        fos.write(outputLine.getBytes());
+                        fos.write("\n".getBytes());
+
+                        // Print to the console
+                        System.out.println(outputLine);
+                    }
+                    System.out.println("Finished processing section: " + name + "\n");
                 }
             }
 
-            process.waitFor();
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-    }
-
-    private static void extractAndSendData(String elfFilePath, int fileOffset, int physAddress, int fileSize) {
-        try (RandomAccessFile elfFile = new RandomAccessFile(elfFilePath, "r")) {
-            elfFile.seek(fileOffset); // Move to the segment's file offset
-            byte[] data = new byte[fileSize];
-            elfFile.readFully(data); // Read binary data
-
-            String filePath = "ELF_TRANSLATED.txt";
-
-            try (BufferedWriter writer = new BufferedWriter(new FileWriter(filePath))) {
-
-                // Step 4: Output [address] [data] pairs to file (also write to System.out.printf)
-                for (int i = 0; i < fileSize; i += 4) {
-
-                    int address = physAddress + i; //Generate correct address
-                    int value = ByteBuffer.wrap(data, i, 4).order(ByteOrder.LITTLE_ENDIAN).getInt(); //Generate data
-                    System.out.printf("0x%08X 0x%08X%n", address, value); //Print to console
-
-                    writer.write(address + "  " + value); // Writing to file with whitespace separator
-                    writer.newLine(); // Move to next line
-                }
-                System.out.println("Data written to " + filePath);
-
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
+            fos.close();
+            System.out.println("Data extraction complete. Output written to output.txt");
 
         } catch (IOException e) {
-            e.printStackTrace();
+            System.err.println("Error reading ELF file: " + e.getMessage());
         }
     }
 }
-

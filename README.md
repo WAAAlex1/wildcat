@@ -19,7 +19,7 @@ The day after, I started with the RV32I simulator.
 
 If you use Wildcat in your research or teaching, please cite:
 
-```
+```bibtex
 @InProceedings{wildcat:2024,
   author    = {Martin Schoeberl},
   booktitle = {Proceedings of the Sixth Workshop on Open-Source EDA Technology (WOSET)},
@@ -28,6 +28,19 @@ If you use Wildcat in your research or teaching, please cite:
 }
 ```
 Available at the [WOSET conference page](https://woset-workshop.github.io/WOSET2024.html).
+
+and
+```bibtex
+@misc{schoeberl2025wildcateducationalriscvmicroprocessors,
+      title={Wildcat: Educational RISC-V Microprocessors}, 
+      author={Martin Schoeberl},
+      year={2025},
+      eprint={2502.20197},
+      archivePrefix={arXiv},
+      primaryClass={cs.AR},
+      url={https://arxiv.org/abs/2502.20197}, 
+}
+```
 
 ## Setup
 
@@ -224,3 +237,39 @@ Scribbles related to RISC-V projects and tools:
 
  * [Collection of Notes](doc)
 
+## Rust integration
+**Note: This is still work-in-progress.**
+
+### Setup
+The Rust toolchain ([rustup](https://www.rust-lang.org/tools/install)) should be installed, as it is a
+prerequisite for running embedded Rust using the ISA simulator.
+
+Once ```rustup``` has been installed, the following components should be added by executing the following commands:
+#### Target for RV32I
+- ```rustup target add riscv32i-unknown-none-elf```
+##### LLVM tools
+- ```rustup component add llvm-tools-preview```
+- ```cargo install cargo-binutils```
+
+### Getting started
+Currently, a simple starter project has been setup at [rust/starter-project](rust/starter-project).
+To compile and run the starter project with the ISA simulator, 
+execute the following command from the root of the Wildcat project:
+- ```make rust-compile``` (compiles)
+- ```make rust-run``` (executes)
+
+Furthermore, the disassembly can be viewed by executing the following command:
+- ```make rust-disassemble``` (prints disassembly)
+
+### Creating new Rust projects
+To maintain an organized project structure, a new Rust project can be created by executing the following command
+from the root of the Wildcat project:
+- ```cargo new rust/[YOUR_PROJECT_NAME] --vcs=none```
+
+To compile and run the new project with the ISA simulator,
+execute the following command from the root of the Wildcat project:
+- ```make rust-compile RUST_PROJECT=[YOUR_PROJECT_NAME]``` (compiles target project)
+- ```make rust-run RUST_PROJECT=[YOUR_PROJECT_NAME]``` (executes target project)
+
+Furthermore, the disassembly for the new project can be viewed by executing the following command:
+- ```make rust-disassembly``` (prints disassembly)

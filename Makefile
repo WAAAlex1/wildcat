@@ -29,6 +29,8 @@ app:
 #	cat text.bin data.bin > a.bin # this does not make much sense
 #	hexdump -e '"%08x\n"' a.bin
 
+dump:
+	riscv64-unknown-elf-objdump -d a.out
 run:
 	sbt "runMain wildcat.isasim.SimRV a.out"
 
@@ -126,10 +128,29 @@ listen:
 
 # stop with Ctrl+A and Ctrl+\
 
+# Rust integration
+RUST_PROJECT = starter-project
+RUST_TARGET = riscv32i-unknown-none-elf
+PATH_TO_COMPILED_RUST = rust/$(RUST_PROJECT)/target/$(RUST_TARGET)/release
+
+rust-compile:
+	cd rust/$(RUST_PROJECT) && cargo build --target $(RUST_TARGET) --release
+	rust-objcopy $(PATH_TO_COMPILED_RUST)/$(RUST_PROJECT) -O binary -j .text $(PATH_TO_COMPILED_RUST)/text.bin
+	rust-objcopy $(PATH_TO_COMPILED_RUST)/$(RUST_PROJECT) -O binary -j .data $(PATH_TO_COMPILED_RUST)/data.bin
+	cat $(PATH_TO_COMPILED_RUST)/text.bin $(PATH_TO_COMPILED_RUST)/data.bin > $(PATH_TO_COMPILED_RUST)/$(RUST_APP).bin
+
+rust-run:
+	sbt "runMain wildcat.isasim.SimRV $(PATH_TO_COMPILED_RUST)/$(RUST_APP).bin"
+
+rust-disassemble:
+	rust-objdump --disassemble --arch=riscv32 $(PATH_TO_COMPILED_RUST)/$(RUST_PROJECT)
+
 clean:
 	git clean -fd
 #	rm -rf ./idea
 	rm -rf ./risc-v-lab
+	rm -rf ./rust/*/target
+	rm -rf ./target
 
 #### not (yet) used
 elf:
@@ -184,8 +205,5 @@ test-old:
 
 # rv32ui tests available:
 # add addi amoadd_w amoand_w amomax_w amomaxu_w amomin_w amominu_w amoor_w amoswap_w and andi auipc beq bge bgeu blt bltu bne div divu divuw divw fence_i j jal jalr lb lbu ld lh lhu lui lw mul mulh mulhsu mulhu mulw or ori rem remu sb sh simple sll slli slt slti sra srai srl srli sub sw xor xori	
-
-
-
 
 

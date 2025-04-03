@@ -15,7 +15,7 @@ import chisel.lib.uart._
  * Edited by Georg and Alexander to test our Bootloader
  *
  */
-class WildcatTop(file: String) extends Module {
+class WildcatTop(file: String, dmemNrByte: Int = 4096) extends Module {
 
   val io = IO(new Bundle {
     val led = Output(UInt(16.W))
@@ -31,16 +31,15 @@ class WildcatTop(file: String) extends Module {
   val cpu = Module(new ThreeCats())
   // val cpu = Module(new WildFour())
   // val cpu = Module(new StandardFive())
-  val dmem = Module(new ScratchPadMem(memory))
+  val dmem = Module(new ScratchPadMem(memory, nrBytes = dmemNrByte))
   cpu.io.dmem <> dmem.io
   val imem = Module(new InstructionROM(memory))
   imem.io.address := cpu.io.imem.address
   cpu.io.imem.data := imem.io.data
 
-  //Implement quick and dirty stalling:
+  //Implement quick stalling:
   val pcStallReg = RegInit(true.B)
   cpu.io.imem.stall := pcStallReg
-  // TODO: stalling
 
   //Bootloader module initialization
   //Frequency set to 100MHz
@@ -89,15 +88,21 @@ class WildcatTop(file: String) extends Module {
 
   //Bootloader IO
   //Map bootloader sleep bit to 0xf100_0000, write 0x00 to set bootloader active or 0x01 to set it to sleep
-  // TODO: Test this WildcatTop with Bootloader
   bootloader.io.rx := io.rx //Connect bootloader UART to toplevel UART rx
   val bootSleepReg = RegInit(0.U(8.W))
   when(bootSleepReg === 1.U){
     pcStallReg := false.B
   }.elsewhen(true.B){
+    //Cannot implement bootloader on instrROM, because its ROM
+    /*
     imem.io.address := bootloader.io.instrAddr
-    //imem.io.
+    imem.io.data := bootloader.io.instrData
+    imem.io.
+
+     */
   }
+
+  //Memory mapped bootloader toggling
   bootloader.io.sleep := bootSleepReg(0).asBool
   when((cpu.io.dmem.wrAddress(31,28) === 0xf.U) && cpu.io.dmem.wrEnable(0)){
     when(cpu.io.dmem.wrAddress(27,24) === 1.U){
