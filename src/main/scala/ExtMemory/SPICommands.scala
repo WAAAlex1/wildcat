@@ -8,6 +8,7 @@ object SPICommands {
   val QPI_FAST_QUAD_READ = "hEB".U(8.W)
   val QPI_WRITE = "h02".U(8.W)
   val QUAD_MODE_EXIT = "hF5".U(8.W)
+  val WRAP_BOUNDARY_TOGGLE = "hC0".U(8.W)
 
   // Commands for Flash
   val WRITE_ENABLE = "h06".U(8.W)

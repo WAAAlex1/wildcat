@@ -26,7 +26,7 @@ class PSRAM_Model (nbytes: Int) extends Module{
   val mem = SyncReadMem(nbytes, UInt(8.W))
   val command = WireInit(0.U(8.W))
   val address = RegInit(0.U(24.W))
-  val mode = RegInit(0.U(1.W)) // mode register: 0 = SPI, 1 = QPI
+  val mode = RegInit(0.U(2.W)) // mode(0): 0 = SPI, 1 = QPI, mode(1): 0 = LINEAR BURST, 1 = WRAP
   val idx = RegInit(0.U(3.W))
   val lastRead = RegInit(0.U(24.W))
   val rw = RegInit(true.B) // read/write mode register
@@ -35,8 +35,9 @@ class PSRAM_Model (nbytes: Int) extends Module{
   val val2Write = WireInit(0.U(8.W))
   val lastCommand = RegInit(0.U(8.W))
 
+
+
   lastRead := io.IN
-  io.dir := DontCare
   io.OUT := 0.U
 
   object State extends ChiselEnum {
@@ -87,11 +88,21 @@ class PSRAM_Model (nbytes: Int) extends Module{
         }
         lastCommand := command
 
-      }.elsewhen(io.CS && lastCommand === QUAD_MODE_ENABLE){
-        mode := 1.U
-      }.elsewhen(io.CS && lastCommand === QUAD_MODE_EXIT) {
-        mode := 0.U
+      }.otherwise {
+        switch(lastCommand) {
+          is(QUAD_MODE_ENABLE) {
+            mode(0) := 1.U
+          }
+          is(QUAD_MODE_EXIT){
+            mode(0) := 0.U
+          }
+          is(WRAP_BOUNDARY_TOGGLE){
+            mode(1) := ~mode(1)
+          }
+        }
       }
+
+
     }
     is(getAddress){
       when(!io.CS) {
