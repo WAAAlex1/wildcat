@@ -39,10 +39,8 @@ handle_ecall:
     mret                   # Return from exception
 
 handle_illegal:
-    # You can log the illegal instruction here if desired
-    # Example: read the faulting instruction
     csrr a2, mtval         # mtval contains the instruction bits
     # Optionally skip or crash
-    addi a1, a1, 4         # Try skipping (be careful!)
+    addi a1, a1, 4         # Try skipping (another solution could be to terminate)
     csrw mepc, a1
     mret
