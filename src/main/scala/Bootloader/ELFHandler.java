@@ -21,7 +21,6 @@ public class ELFHandler {
         //      The bss field does not have any data, it only reserves some addresses which should all be 0.
         //      currently it does exactly this, fill the addresses with 0, however is it needed if we already do this?
         //      Do we already do this?
-        //  3.
 
     public static void main(String[] args) {
         if (args.length != 1) {
