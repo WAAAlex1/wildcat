@@ -31,15 +31,7 @@ class WildcatTop(file: String) extends Module {
   cpu.io.dmem <> dmem.io
 
   //Connecting cache
-  val SimpleCache = Module(new Caches.SimpleCache.CacheTop())
-  //cpu.io.dmem <> SimpleCache.io
 
-
-  SimpleCache.io.rdEnable := cpu.io.dmem.rdEnable
-  SimpleCache.io.wrEnable := cpu.io.dmem.wrEnable
-  SimpleCache.io.wrAddress := cpu.io.dmem.wrAddress
-  SimpleCache.io.rdAddress := cpu.io.dmem.rdAddress
-  SimpleCache.io.wrData := cpu.io.dmem.wrData
 
 
 
@@ -89,7 +81,6 @@ class WildcatTop(file: String) extends Module {
       ledReg := cpu.io.dmem.wrData(7, 0)
     }
     dmem.io.wrEnable := VecInit(Seq.fill(4)(false.B))
-    SimpleCache.io.wrEnable := VecInit(Seq.fill(4)(false.B))
   }
 
   io.led := 1.U ## 0.U(7.W) ## RegNext(ledReg)

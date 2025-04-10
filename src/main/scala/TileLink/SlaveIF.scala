@@ -7,7 +7,7 @@ import chisel3._
 class SlaveIF (implicit val conf: TLConfig) extends Module{
   val io = IO(new Bundle {
     // TL-UH interface
-    val chA_i = Flipped(new ChannelA())
+    val chA_i = Flipped(new MasterPorts())
     val chD_o = new SlavePorts()
 
     // Peripheral interface

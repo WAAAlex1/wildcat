@@ -48,6 +48,11 @@ object CacheFunctions {
     }
   }
 
+  def expectVec(actual: Vec[Bool], expected: Seq[Boolean]): Unit = {
+    expected.zipWithIndex.foreach { case (exp, i) =>
+      actual(actual.length - 1 - i).expect(exp.B)
+    }
+  }
 
 
 }

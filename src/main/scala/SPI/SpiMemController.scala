@@ -4,6 +4,8 @@
  * Autor: Sofus Hammelsø
  */
 
+package SPI
+
 import chisel3._
 import chisel3.util._
 

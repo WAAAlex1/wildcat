@@ -24,7 +24,7 @@ class PSRAM_ModelTestTop extends Module {
   })
   val model = Module(new PSRAM_Model(1024))
   io.OUT := model.io.OUT
-  io.dir := model.io.dir
+  //io.dir := model.io.dir
   model.io.IN := io.IN
   model.io.CS := io.CS
   io.command := DontCare
