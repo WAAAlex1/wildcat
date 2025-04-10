@@ -84,11 +84,37 @@ object CSR {
   val INSTRET = 0xc02
   val INSTRETH = 0xc82
 
-
   val HARTID = 0xf10
   val MARCHID = 0xf12
   val WILDCAT_MARCHID = 47 // see https://github.com/riscv/riscv-isa-manual/blob/main/marchid.md
 
   val MINSTRET = 0xb02
   val MINSTRETH = 0xb82
+
+  //Extra registers with special settings or explicitly called registers
+
+  val MSTATUS = 0x300    // Machine status register
+  val MSTATUSH = 0x310   // The 32 MSB of MSTATUS
+
+  val MISA = 0x301       // Machine ISA and extensions register
+  val WILDCAT_MISA = 0x40000081 // Only A, I extensions. MXL = 1, MXLEN = 32.
+
+  val MEPC = 0x341       // Machine exception Program counter
+  val MTVEC = 0x305      // Machine trap-handler base address
+  val MCAUSE = 0x342     // Machine trap cause (encoded)
+  val MTVAL = 0x343      // Machine bad address or instruction
+
+  val MVENDORID = 0xF11  // VENDOR ID - (Should be 0)
+  val WILDCAT_VENDORID = 0x0
+
+  val MEDELEG = 0x302     // Should not exist when S mode not supported
+  val MIDELEG = 0x303     // Should not exist when S mode not supported
+
+  val MIP = 0x344         // Interrupt pending Register
+  val MIE = 0x304         // Interrupt enable Register
+
+  val MCONFIGPTR = 0xF15  // Pointer to configuration data structure (not used)
+
+  val MENVCFG = 0x30A     // Environment Configuration Register
+  val MENVCFGH = 0x31A
 }
