@@ -50,6 +50,20 @@ class MemoryController(implicit val config:TilelinkConfig) extends Module {
 
 
 
+
+  val dReqAck = io.dCacheReqOut.valid && io.dCacheReqOut.ready // Request acknowledged
+  val iReqAck = io.iCacheReqOut.valid && io.iCacheReqOut.ready
+  val currentReq = Reg(new TLRequest()) // TileLink request format
+  val writeSize = WireInit(UInt(3.W)) // Number of bytes to write
+  val rspPending = WireInit(false.B)
+  val data2write = Wire(UInt(32.W))
+  val readData = WireInit(0.U(32.W))
+  val SPI0 = Module(new SpiMemController)
+  val SPI1 = Module(new SpiMemController)
+  val masterID = RegInit(false.B) // Master (cache) identifier
+  val rspValid = WireInit(false.B)
+
+
   // Arbitration on ready for requests. Data cache has priority
   io.dCacheReqOut.ready := Mux(io.dCacheReqOut.valid, true.B, false.B)
   io.iCacheReqOut.ready := Mux(!io.dCacheReqOut.valid && io.iCacheReqOut.valid, true.B, false.B)
@@ -62,18 +76,6 @@ class MemoryController(implicit val config:TilelinkConfig) extends Module {
   io.dCacheRspIn.valid := false.B
   io.iCacheRspIn.valid := false.B
 
-
-  val dReqAck = io.dCacheReqOut.valid && io.dCacheReqOut.ready // Request acknowledged
-  val iReqAck = io.iCacheReqOut.valid && io.iCacheReqOut.ready
-  val currentReq = Reg(new TLRequest())
-  val writeSize = WireInit(UInt(3.W)) // Number of bytes to write
-  val rspPending = WireInit(false.B)
-  val data2write = Wire(UInt(32.W))
-  val readData = WireInit(0.U(32.W))
-  val SPI0 = Module(new SpiMemController)
-  val SPI1 = Module(new SpiMemController)
-  val masterID = RegInit(false.B) // Master (cache) identifier
-  val rspValid = WireInit(false.B)
 
   // Default settings for SPI controllers
   SPI0.io.en := false.B
@@ -103,7 +105,7 @@ class MemoryController(implicit val config:TilelinkConfig) extends Module {
     masterID := 1.U
   }
 
-  // Modify data to write (
+  // Modify data to write
   when(currentReq.isWrite){
       switch(currentReq.activeByteLane){
         // Store word
@@ -142,6 +144,7 @@ class MemoryController(implicit val config:TilelinkConfig) extends Module {
       }
   }
 
+  // Address decoding
   when(rspPending){
     //Address mapping
     when(currentReq.addrRequest(31, 28) === "hf".U) {
