@@ -33,6 +33,12 @@ class WildcatTop(file: String, dmemNrByte: Int = 4096) extends Module {
   // val cpu = Module(new StandardFive())
   val dmem = Module(new ScratchPadMem(memory, nrBytes = dmemNrByte))
   cpu.io.dmem <> dmem.io
+
+  //TODO: stalling
+
+
+
+
   val imem = Module(new InstructionROM(memory))
   imem.io.address := cpu.io.imem.address
   cpu.io.imem.data := imem.io.data
