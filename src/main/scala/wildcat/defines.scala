@@ -71,50 +71,127 @@ object CSRFunct3 {
 }
 
 object CSR {
-  val CYCLE = 0xc00
-  val CYCLEH = 0xc80
-  val TIME = 0xc01
-  val TIMEH = 0xc81
-  val MCYCLE = 0xb00
-  val MCYCLEH = 0xb80
+  val CYCLE           = 0xc00
+  val CYCLEH          = 0xc80
+  val TIME            = 0xc01
+  val TIMEH           = 0xc81
+  val MCYCLE          = 0xb00
+  val MCYCLEH         = 0xb80
   // Disassembler does not know them
-  val MTIME = 0xb01
-  val MTIMEH = 0xb81
+  val MTIME           = 0xb01
+  val MTIMEH          = 0xb81
 
-  val INSTRET = 0xc02
-  val INSTRETH = 0xc82
+  val INSTRET         = 0xc02
+  val INSTRETH        = 0xc82
 
-  val HARTID = 0xf10
-  val MARCHID = 0xf12
-  val WILDCAT_MARCHID = 47 // see https://github.com/riscv/riscv-isa-manual/blob/main/marchid.md
+  val HARTID          = 0xf10
+  val MARCHID         = 0xf12
+  val WILDCAT_MARCHID = 47       // see https://github.com/riscv/riscv-isa-manual/blob/main/marchid.md
 
-  val MINSTRET = 0xb02
-  val MINSTRETH = 0xb82
+  val MINSTRET        = 0xb02
+  val MINSTRETH       = 0xb82
 
   //Extra registers with special settings or explicitly called registers
 
-  val MSTATUS = 0x300    // Machine status register
-  val MSTATUSH = 0x310   // The 32 MSB of MSTATUS
+  val MSTATUS         = 0x300     // Machine status register
+  val MSTATUSH        = 0x310     // The 32 MSB of MSTATUS
 
-  val MISA = 0x301       // Machine ISA and extensions register
-  val WILDCAT_MISA = 0x40000081 // Only A, I extensions. MXL = 1, MXLEN = 32.
+  val MISA            = 0x301     // Machine ISA and extensions register
+  val WILDCAT_MISA    = 0x40000081// Only A, I extensions. MXL = 1, MXLEN = 32.
 
-  val MEPC = 0x341       // Machine exception Program counter
-  val MTVEC = 0x305      // Machine trap-handler base address
-  val MCAUSE = 0x342     // Machine trap cause (encoded)
-  val MTVAL = 0x343      // Machine bad address or instruction
+  val MEPC            = 0x341     // Machine exception Program counter
+  val MTVEC           = 0x305     // Machine trap-handler base address
+  val MCAUSE          = 0x342     // Machine trap cause (encoded)
+  val MTVAL           = 0x343     // Machine bad address or instruction
 
-  val MVENDORID = 0xF11  // VENDOR ID - (Should be 0)
-  val WILDCAT_VENDORID = 0x0
+  val MVENDORID       = 0xF11     // VENDOR ID - (Should be 0)
+  val WILDCAT_VENDORID= 0x0
 
-  val MEDELEG = 0x302     // Should not exist when S mode not supported
-  val MIDELEG = 0x303     // Should not exist when S mode not supported
+  val MEDELEG         = 0x302     // Should not exist when S mode not supported
+  val MIDELEG         = 0x303     // Should not exist when S mode not supported
 
-  val MIP = 0x344         // Interrupt pending Register
-  val MIE = 0x304         // Interrupt enable Register
+  val MIP             = 0x344     // Interrupt pending Register
+  val MIE             = 0x304     // Interrupt enable Register
 
-  val MCONFIGPTR = 0xF15  // Pointer to configuration data structure (not used)
+  val MCONFIGPTR      = 0xF15     // Pointer to configuration data structure (not used)
 
-  val MENVCFG = 0x30A     // Environment Configuration Register
-  val MENVCFGH = 0x31A
+  val MENVCFG         = 0x30A     // Environment Configuration Register
+  val MENVCFGH        = 0x31A
+
+
+  // Add write mask definitions extracted from the simulator
+  // Defines which bits are writable for each CSR (1 = writable, 0 = read-only)
+  val MSTATUS_MASK    = 0x000018aa // MPRV, MXR, SUM, SBE, UBE, TVM, TW, TSR, FS, VS, XS, SD, all WPRI = 0 (read only)
+  val MSTATUSH_MASK   = 0x00000000 // No fields used.
+  val MISA_MASK       = 0x03888888 // 0-25 writeable, 26-29 constant 0 (read only), 30-31 read-only (should be 01)
+  val MTVEC_MASK      = 0xFFFFFFFC // 0-1 read only 0 (Always want direct MODE)
+  val MEPC_MASK       = 0xFFFFFFFC // 0-1 always zero (no unaligned address access).
+  val MARCHID_MASK    = 0x00000000
+  val HARTID_MASK     = 0x00000000
+  val MVENDORID_MASK  = 0x00000000
+  val MEDELEG_MASK    = 0x00000000
+  val MIDELEG_MASK    = 0x00000000
+  val MIE_MASK        = 0x00000000
+  val MIP_MASK        = 0x00000000
+  val MCONFIGPTR_MASK = 0x00000000
+  val MENVCFG_MASK    = 0x00000000
+  val MENVCFGH_MASK   = 0x00000000
+
+  /**
+   * Get the write mask for a CSR address.
+   * Returns a mask where 1 bits are writable, 0 bits are read-only.
+   * Returns 0x00000000 (fully protected) for standard read-only CSR ranges.
+   */
+  def getWriteMask(csrAddr: Int): Int = {
+    // Check if CSR is in standard read-only range based on bits [11:8]
+    val csr11_8 = (csrAddr >> 8) & 0xF
+
+    // Check if register is in read-only ranges
+    // 0xC00-0xCFF (Unprivileged, read-only)
+    // 0xD00-0xDFF (Supervisor, read-only)
+    if (csr11_8 == 0xC || csr11_8 == 0xD) {
+      return 0x00000000 // Fully read-only
+    }
+
+    // Check for specific CSRs with custom write masks
+    csrAddr match {
+      case MSTATUS => MSTATUS_MASK
+      case MSTATUSH => MSTATUSH_MASK
+      case MISA => MISA_MASK
+      case MTVEC => MTVEC_MASK
+      case MEPC => MEPC_MASK
+      case MARCHID => MARCHID_MASK
+      case HARTID => HARTID_MASK
+      case MVENDORID => MVENDORID_MASK
+      case MEDELEG => MEDELEG_MASK
+      case MIDELEG => MIDELEG_MASK
+      case MIE => MIE_MASK
+      case MIP => MIP_MASK
+      case MCONFIGPTR => MCONFIGPTR_MASK
+      case MENVCFG => MENVCFG_MASK
+      case MENVCFGH => MENVCFGH_MASK
+      case _ => 0xFFFFFFFF // Default, fully writable
+    }
+  }
+
+  /**
+   * Check if a CSR register is completely read-only.
+   * Returns true if the register cannot be written to at all.
+   */
+  def isReadOnly(csrAddr: Int): Boolean = {
+    getWriteMask(csrAddr) == 0
+  }
+
+  /**
+   * Check if a CSR register is a counter register that needs special handling.
+   * Returns true for CYCLE, CYCLEH, MCYCLE, MCYCLEH, INSTRET, INSTRETH, etc.
+   */
+  def isCounterRegister(csrAddr: Int): Boolean = {
+    csrAddr match {
+      case CYCLE | CYCLEH | TIME | TIMEH | MCYCLE | MCYCLEH |
+           INSTRET | INSTRETH | MINSTRET | MINSTRETH => true
+      case _ => false
+    }
+  }
+
 }

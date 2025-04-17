@@ -197,6 +197,7 @@ class SimRV(mem: Array[Int], start: Int, stop: Int) {
 
         case ESYS =>
           if (csrAddr == 0) { // ECALL
+            handleException(11)
             println("ecall")
             run = false
             (0, false, pcNext)
@@ -310,6 +311,14 @@ class SimRV(mem: Array[Int], start: Int, stop: Int) {
       println(f"Atomic instruction at pc=0x${pc}%08x: rs1=x${rs1}%d(0x${rs1Val}%08x) rs2=x${rs2}%d(0x${rs2Val}%08x) rd=x${rd}%d funct7=0x${funct7}%02x")
     }
 
+    // Check for illegal instruction
+    val illegalInstr = opcode match {
+      case AluImm | Alu | Branch | Load | Store | Lui | AuiPc | Jal | JalR | Fence | System => false
+      case _ => true
+    }
+    if (illegalInstr) {
+      return handleException(2) // Illegal instruction
+    }
     // Execute the instruction and return a tuple for the result:
     //   (ALU result, writeBack, next PC)
     val result = opcode match {
@@ -353,6 +362,27 @@ class SimRV(mem: Array[Int], start: Int, stop: Int) {
     pc != oldPc && run && pc < stop // detect endless loop or go beyond code to stop simulation
   }
 
+  //Handling exceptions
+  def handleException(cause: Int): Boolean = {
+    // Save current PC to MEPC
+    csrFile.write(CSR.MEPC, pc)
+
+    // Save cause to MCAUSE
+    csrFile.write(CSR.MCAUSE, cause)
+
+    // Update MSTATUS: save current interrupt enable bit
+    val currentStatus = csrFile.read(CSR.MSTATUS)
+    val mie = (currentStatus >> 3) & 0x1
+    val newStatus = (currentStatus & ~0x1888) |
+      (mie << 7) // MPIE = MIE
+    csrFile.write(CSR.MSTATUS, newStatus)
+
+    // Jump to trap handler
+    pc = csrFile.read(CSR.MTVEC)
+
+    true // Continue execution
+  }
+
   var cont = true
   while (cont) {
     cont = execute(mem(pc >> 2))
@@ -364,6 +394,8 @@ class SimRV(mem: Array[Int], start: Int, stop: Int) {
 }
 
 object SimRV {
+
+
 
   def runSimRV(file: String) = {
     val mem = new Array[Int](1024 * 256) // 1 MB, also check masking in load and store

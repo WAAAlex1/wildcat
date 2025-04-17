@@ -1,3 +1,4 @@
+/*
 package Software;
 
 import net.fornwall.jelf.*;
@@ -63,16 +64,6 @@ public class ELFHandler {
                     System.out.println("  Expected number of output lines: " + (size / 4) + " lines");
                     System.out.println("  STARTING WRITE AT: " + String.format("0x%08X", address));
 
-                    //Debugging to gain insight into possible bug [1]
-                    /*
-                    if(name.equals(".rodata") | name.equals(".rodata1") ){
-                        System.out.printf("DATADUMP FOR .rodata: ");
-                        for(byte z : data){
-                            System.out.printf("%02X",z);
-                        }
-                        System.out.printf("\n");
-                    }
-                     */
 
                     // Write data to output file in [address] [data] format
                     for (int j = 0; j < size; j += 4) {
@@ -109,3 +100,4 @@ public class ELFHandler {
         }
     }
 }
+*/

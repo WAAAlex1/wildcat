@@ -16,6 +16,11 @@ object Functions {
 
     val opcode = instruction(6, 0)
     val func3 = instruction(14, 12)
+    val func7 = instruction(31, 25)
+    val rs1 = instruction(19, 15)
+    val rs2 = instruction(24, 20)
+    val rd = instruction(11, 7)
+
     val decOut = Wire(new DecodedInstr())
     decOut.instrType := R.id.U
     decOut.isImm := false.B
@@ -27,12 +32,23 @@ object Functions {
     decOut.isJal := false.B
     decOut.isJalr := false.B
     decOut.rfWrite := false.B
-    decOut.isECall := false.B
-    decOut.isCssrw := false.B
     decOut.rs1Valid := false.B
     decOut.rs2Valid := false.B
     decOut.isLr := false.B
     decOut.isSc := false.B
+
+    //Added for CSR / SYS Instructions
+    decOut.isECall := false.B
+    decOut.isMret := false.B
+    decOut.isCsrrw := false.B
+    decOut.isCsrrs := false.B
+    decOut.isCsrrc := false.B
+    decOut.isCsrrwi := false.B
+    decOut.isCsrrsi := false.B
+    decOut.isCsrrci := false.B
+
+    //Added for exception handling
+    decOut.isImm := true.B //Default to illegal, set false if legal instruction encountered
 
     switch(opcode) {
       is(AluImm.U) {
@@ -40,26 +56,47 @@ object Functions {
         decOut.isImm := true.B
         decOut.rfWrite := true.B
         decOut.rs1Valid := true.B
+        decOut.isIllegal := false.B  // Valid instruction
       }
       is(Alu.U) {
         decOut.instrType := R.id.U
         decOut.rfWrite := true.B
         decOut.rs1Valid := true.B // TODO: do I need this?
         decOut.rs2Valid := true.B
+        decOut.isIllegal := false.B  // Valid instruction
       }
       is(Branch.U) {
         decOut.instrType := SBT.id.U
         decOut.isImm := true.B
         decOut.isBranch := true.B
+
+        // Check for valid funct3 values
+        when(func3 === 0.U || func3 === 1.U || // BEQ, BNE
+          func3 === 4.U || func3 === 5.U || // BLT, BGE
+          func3 === 6.U || func3 === 7.U) { // BLTU, BGEU
+          decOut.isIllegal := false.B
+        }
       }
       is(Load.U) {
         decOut.instrType := I.id.U
-        decOut.rfWrite := true.B
         decOut.isLoad := true.B
+        decOut.rfWrite := true.B
+
+        // Check for valid funct3 values
+        when(func3 === 0.U || func3 === 1.U ||  // LB, LH
+             func3 === 2.U || func3 === 4.U ||  // LW, LBU
+             func3 === 5.U ) {                   // LHU
+          decOut.isIllegal := false.B
+        }
       }
       is(Store.U) {
         decOut.instrType := S.id.U
         decOut.isStore := true.B
+
+        // Check for valid funct3 values
+        when(func3 === 0.U || func3 === 1.U || func3 === 2.U) { // SB, SH, SW
+          decOut.isIllegal := false.B
+        }
       }
       is(Lui.U) {
         decOut.instrType := U.id.U
@@ -77,27 +114,74 @@ object Functions {
         decOut.isJal := true.B
       }
       is(JalR.U) {
-        decOut.instrType := I.id.U
-        decOut.isImm := true.B
-        decOut.rfWrite := true.B
-        decOut.isJalr := true.B
+        when(func3 === 0.U) { // JALR requires func3 to be 0
+          decOut.instrType := I.id.U
+          decOut.isJalr := true.B
+          decOut.rfWrite := true.B
+          decOut.isIllegal := false.B
+        }
       }
       is(System.U) {
         decOut.instrType := I.id.U
         when (func3 === 0.U) {
-          decOut.isECall := true.B
+          when(instruction(31, 20) === 0.U) {
+            decOut.isECall := true.B
+            decOut.isIllegal := false.B  // Valid instruction
+          }.elsewhen(instruction(31, 20) === 0x302.U && rs1 === 0.U && rd === 0.U) {
+            decOut.isMret := true.B
+            decOut.isIllegal := false.B  // Valid instruction
+          }
         } .otherwise {
-          decOut.isCssrw := true.B
-          decOut.rfWrite := true.B
+          switch(func3) {
+            is(1.U) { // CSRRW
+              decOut.isCsrrw := true.B
+              decOut.rfWrite := true.B
+              decOut.isIllegal := false.B  // Valid instruction
+            }
+            is(2.U) { // CSRRS
+              decOut.isCsrrs := true.B
+              decOut.rfWrite := true.B
+              decOut.isIllegal := false.B  // Valid instruction
+            }
+            is(3.U) { // CSRRC
+              decOut.isCsrrc := true.B
+              decOut.rfWrite := true.B
+              decOut.isIllegal := false.B  // Valid instruction
+            }
+            is(5.U) { // CSRRWI
+              decOut.isCsrrwi := true.B
+              decOut.rfWrite := true.B
+              decOut.isIllegal := false.B  // Valid instruction
+            }
+            is(6.U) { // CSRRSI
+              decOut.isCsrrsi := true.B
+              decOut.rfWrite := true.B
+              decOut.isIllegal := false.B  // Valid instruction
+            }
+            is(7.U) { // CSRRCI
+              decOut.isCsrrci := true.B
+              decOut.rfWrite := true.B
+              decOut.isIllegal := false.B  // Valid instruction
+            }
+          }
         }
       }
-      is("b0101111".U) {
-        decOut.rfWrite := true.B
-        when(instruction(31,27) === "b00010".U) {
-          decOut.isLr := true.B
-        }
-        when(instruction(31,27) === "b00011".U) {
-          decOut.isSc := true.B
+      // For Load Reserved and Store Conditional instructions
+      is(0x2F.U) { // AMO operations
+        when(func3 === 2.U) { // Word size operations
+          val funct5 = func7(6, 2)
+          when(funct5 === 2.U) { // LR.W
+            when(rs2 === 0.U) { // LR.W requires rs2=0
+              decOut.isLr := true.B
+              decOut.rfWrite := true.B
+              decOut.isIllegal := false.B
+            }
+          }.elsewhen(funct5 === 3.U) { // SC.W
+            decOut.isSc := true.B
+            decOut.rfWrite := true.B
+            decOut.isIllegal := false.B
+          }
+          // Other funct5 values remain marked as illegal
         }
       }
     }
