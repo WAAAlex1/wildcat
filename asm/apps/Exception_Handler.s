@@ -35,6 +35,7 @@ fatal_trap:
 
 handle_ecall:
     addi a1, a1, 4         # Skip the 'ecall' instruction
+    li t2, 42              # Marker to see that ecall actually was processed (for testing)
     csrw mepc, a1          # Write updated return address
     mret                   # Return from exception
 
