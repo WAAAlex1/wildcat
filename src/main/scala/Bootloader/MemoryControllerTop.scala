@@ -8,7 +8,7 @@ import chisel3._
 import chisel3.util.Decoupled
 
 /**
- * First draft of a top level memory controller  + SPI controller module for the Wildcat
+ * First draft of a top level of memory controller  + SPI controller module for the Wildcat
  *
 
  * By Gustav Philip Junker

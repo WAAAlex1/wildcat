@@ -2,16 +2,16 @@
 
 module IOBUFFER_tb;
   reg dir;
-  reg out;
+  reg out_data;
   wire io;
-  wire in;
+  wire in_data;
   
-  // Instantiate the IOBUF module
+  // Instantiate the IOBUFFER module
   IOBUFFER uut (
     .io(io),
     .dir(dir),
-    .out(out),
-    .in(in)
+    .out_data(out_data),
+    .in_data(in_data)
   );
 
   initial begin
@@ -19,18 +19,18 @@ module IOBUFFER_tb;
     $dumpvars(0, IOBUFFER_tb);
 
     // Test Output Mode (Drive io)
-    dir = 1; out = 1;
+    dir = 1; out_data = 1;
     #10;
     if (io !== 1) $display("FAIL: io should be 1");
     
-    out = 0;
+    out_data = 0;
     #10;
     if (io !== 0) $display("FAIL: io should be 0");
 
     // Test Input Mode (High-Z)
     dir = 0;
     #10;
-    if (in !== io) $display("FAIL: in should match io");
+    if (in_data !== io) $display("FAIL: in should match io");
 
     $display("Test Complete.");
     $finish;
