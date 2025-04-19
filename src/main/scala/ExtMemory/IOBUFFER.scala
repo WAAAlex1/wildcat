@@ -3,7 +3,9 @@ package ExtMemory
 import chisel3._
 import chisel3.experimental._
 
-class IOBufferBlackBox extends ExtModule {
+class IOBUFFER extends ExtModule(Map("DIFF_TERM" -> "TRUE", // Verilog parameters
+  "IOSTANDARD" -> "DEFAULT"
+)) {
   val io = IO(new Bundle {
     val io  = Analog(1.W)  // Bidirectional QSPI pin
     val dir = Input(Bool()) // 1 = Output, 0 = Input

@@ -1,4 +1,5 @@
-module IOBUFFER (
+module IOBUFFER (.DIFF_TERM("TRUE"),
+                          .IOSTANDARD("DEFAULT")
     inout wire io,   // QSPI bidirectional line
     input wire dir,  // 1 = Output mode, 0 = Input mode
     input wire out,  // Data to drive when output
