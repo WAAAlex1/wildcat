@@ -5,10 +5,8 @@ import chisel3.util._
 import wildcat.CSR._
 
 /**
- * Control and Status Registers File - Clean Implementation Without Debug Registers
- *
- * This version addresses the None.get() exception by safely handling bit extraction
- * and removes all debug register support for better hardware efficiency.
+ * Control and Status Registers File - Simple Implementation without masking
+ * and also with simple exception handling (No reason for editing MSTATUS).
  */
 class Csr() extends Module {
   val io = IO(new Bundle {
@@ -104,24 +102,8 @@ class Csr() extends Module {
     }.elsewhen(isReadOnly(io.address)) {
       // Empty : Don't write to read-only registers
     }.otherwise {
-      // For all other CSRs, apply appropriate write masks
-      val oldValue = csrMem.read(io.address)
-      val writeMask = MuxLookup(io.address, Fill(32, 1.U), Array(
-        MSTATUS.U     -> MSTATUS_MASK.asUInt,
-        MSTATUSH.U    -> MSTATUSH_MASK.asUInt,
-        MISA.U        -> MISA_MASK.asUInt,
-        MTVEC.U       -> MTVEC_MASK.asUInt,
-        MEPC.U        -> MEPC_MASK.asUInt,
-        MIP.U         -> MIP_MASK.asUInt,
-        MIE.U         -> MIE_MASK.asUInt,
-        MEDELEG.U     -> MEDELEG_MASK.asUInt,
-        MIDELEG.U     -> MIDELEG_MASK.asUInt,
-        MCONFIGPTR.U  -> MCONFIGPTR_MASK.asUInt,
-        MENVCFG.U     -> MENVCFG_MASK.asUInt,
-        MENVCFGH.U    -> MENVCFGH_MASK.asUInt
-      ))
-      val newValue = (oldValue & (~writeMask).asUInt) | (io.writeData & writeMask)
-      csrMem.write(io.address, newValue)
+      // For all other CSRs, write directly - for a minimal RISC-V this is sufficient
+      csrMem.write(io.address, io.writeData)
     }
   }
 
@@ -136,21 +118,6 @@ class Csr() extends Module {
     csrMem.write(MCAUSE.asUInt, io.exceptionCause)
     // Save instr to MTVAL
     csrMem.write(MTVAL.asUInt, io.instruction)
-
-    // Update MSTATUS: save current interrupt enable bit
-    val currentStatus = csrMem.read(MSTATUS.asUInt)
-    // Extract the MIE bit (bit 3) safely using bit extraction
-    val mie = currentStatus(3)
-
-    // Create new status value:
-    // 1. Clear bits in MSTATUS at positions: MIE (3), MPIE (7), MPP (12:11) [0x1888]
-    // 2. Set MPIE (7) to current MIE
-    // 3. Set MPP (12:11) to 3 (M-mode)
-    val newStatus = (currentStatus & (~0x1888.U).asUInt) |
-      (mie << 7).asUInt |  // Set MPIE to old MIE
-      (3.U << 11).asUInt   // Set MPP to 11 (M-mode)
-
-    csrMem.write(MSTATUS.asUInt, newStatus)
   }
 
   // Trap vector address
