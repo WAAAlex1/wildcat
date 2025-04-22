@@ -5,9 +5,10 @@ import chisel3.util._
 import wildcat.CSR._
 
 /**
- * Control and Status Registers File
+ * Control and Status Registers File - Clean Implementation Without Debug Registers
  *
- * Implements CSR registers as a memory to support the full range of CSRs.
+ * This version addresses the None.get() exception by safely handling bit extraction
+ * and removes all debug register support for better hardware efficiency.
  */
 class Csr() extends Module {
   val io = IO(new Bundle {
@@ -33,14 +34,6 @@ class Csr() extends Module {
   // Create a CSR file supporting the entire range of registers (4096)
   val csrMem = SyncReadMem(4096, UInt(32.W))
 
-  // For debugging and initialization
-  val debugCsrs = RegInit(VecInit(Seq.fill(4096)(0.U(32.W))))
-
-  // Initialize commonly used registers with default values
-  debugCsrs(MARCHID.U) := WILDCAT_MARCHID.U
-  debugCsrs(MVENDORID.U) := WILDCAT_VENDORID.U
-  debugCsrs(MISA.U) := WILDCAT_MISA.U
-
   // Special registers for counters
   val cycle = RegInit(0.U(32.W))
   val cycleh = RegInit(0.U(32.W))
@@ -53,7 +46,7 @@ class Csr() extends Module {
     cycleh := cycleh + 1.U
   }
 
-  // Update Intruction complete counter
+  // Update Instruction complete counter
   when(io.instrComplete) {
     instret := instret + 1.U
     when(instret === 0.U) {
@@ -62,91 +55,104 @@ class Csr() extends Module {
   }
 
   // Read operation
-  val readData =Wire(UInt(32.W))
+  val readData = Wire(UInt(32.W))
   readData := 0.U
-  // Read operation - special handling for certain registers
-  when(io.readEnable){
+  when(io.readEnable) {
     readData := csrMem.read(io.address)
-    switch(io.address) { //Special cases
-      is(CYCLE.U)     {readData := cycle}
-      is(CYCLEH.U)    {readData := cycleh}
-      is(TIME.U)      {readData := cycle}
-      is(TIMEH.U)     {readData := cycleh}
-      is(MCYCLE.U)    {readData := cycle}
-      is(MCYCLEH.U)   {readData := cycleh}
-      is(INSTRET.U)   {readData := instret}
-      is(INSTRETH.U)  {readData := instreth}
-      is(MINSTRET.U)  {readData := instret}
-      is(MINSTRETH.U) {readData := instreth}
-      is(MARCHID.U)   {readData := WILDCAT_MARCHID.U}
-      is(MVENDORID.U) {readData := WILDCAT_VENDORID.U}
-      is(MISA.U)      {readData := WILDCAT_MISA.U}
-    }
+    // Special cases for specific CSR addresses
+    when(io.address === CYCLE.U)     { readData := cycle }
+    when(io.address === CYCLEH.U)    { readData := cycleh }
+    when(io.address === TIME.U)      { readData := cycle }
+    when(io.address === TIMEH.U)     { readData := cycleh }
+    when(io.address === MCYCLE.U)    { readData := cycle }
+    when(io.address === MCYCLEH.U)   { readData := cycleh }
+    when(io.address === INSTRET.U)   { readData := instret }
+    when(io.address === INSTRETH.U)  { readData := instreth }
+    when(io.address === MINSTRET.U)  { readData := instret }
+    when(io.address === MINSTRETH.U) { readData := instreth }
+    when(io.address === MARCHID.U)   { readData := WILDCAT_MARCHID.U }
+    when(io.address === MVENDORID.U) { readData := WILDCAT_VENDORID.U }
+    when(io.address === MISA.U)      { readData := WILDCAT_MISA.U }
   }
   io.data := readData
 
+  // Helper function to determine if a CSR is read-only
+  def isReadOnly(addr: UInt): Bool = {
+    // Check address ranges 0xC00-0xCFF and 0xD00-0xDFF (read-only ranges)
+    val upperBits = addr(11, 8)
+    val isStandardReadOnly = (upperBits === "b1100".U) || (upperBits === "b1101".U)
+
+    // Check specific read-only registers
+    val specificReadOnly = (addr === MARCHID.asUInt) ||
+      (addr === MVENDORID.asUInt) ||
+      (addr === HARTID.asUInt)
+
+    isStandardReadOnly || specificReadOnly
+  }
+
   // Write operation
   when(io.writeEnable) {
-    // Convert address to Int for using with our helper methods
-    val addr = io.address.litValue.toInt
-
-    // Only perform write if not read-only (using our helper method)
-    when(!isReadOnly(addr).B) {
-      // Special handling for counter registers
-      val isCounter = isCounterRegister(addr).B
-      when(isCounter) {
-        switch(io.address) {
-          is(CYCLE.U) { cycle := io.writeData }
-          is(CYCLEH.U) { cycleh := io.writeData }
-          is(TIME.U) { cycle := io.writeData }
-          is(TIMEH.U) { cycleh := io.writeData }
-          is(MCYCLE.U) { cycle := io.writeData }
-          is(MCYCLEH.U) { cycleh := io.writeData }
-          is(INSTRET.U) { instret := io.writeData }
-          is(INSTRETH.U) { instreth := io.writeData }
-          is(MINSTRET.U) { instret := io.writeData }
-          is(MINSTRETH.U) { instreth := io.writeData }
-        }
-      }.otherwise {
-        // Regular CSR registers with write masks
-        val writeMask = getWriteMask(addr).U
-        val oldValue = csrMem.read(io.address)
-        val newValue = (oldValue & (~writeMask).asUInt) | (io.writeData & writeMask)
-        csrMem.write(io.address, newValue)
-        debugCsrs(io.address) := newValue
-      }
+    // Special handling for counter registers
+    when(io.address === CYCLE.asUInt || io.address === TIME.asUInt || io.address === MCYCLE.asUInt) {
+      cycle := io.writeData
+    }.elsewhen(io.address === CYCLEH.asUInt || io.address === TIMEH.asUInt || io.address === MCYCLEH.asUInt) {
+      cycleh := io.writeData
+    }.elsewhen(io.address === INSTRET.asUInt || io.address === MINSTRET.asUInt) {
+      instret := io.writeData
+    }.elsewhen(io.address === INSTRETH.asUInt || io.address === MINSTRETH.asUInt) {
+      instreth := io.writeData
+    }.elsewhen(isReadOnly(io.address)) {
+      // Empty : Don't write to read-only registers
+    }.otherwise {
+      // For all other CSRs, apply appropriate write masks
+      val oldValue = csrMem.read(io.address)
+      val writeMask = MuxLookup(io.address, Fill(32, 1.U), Array(
+        MSTATUS.U     -> MSTATUS_MASK.asUInt,
+        MSTATUSH.U    -> MSTATUSH_MASK.asUInt,
+        MISA.U        -> MISA_MASK.asUInt,
+        MTVEC.U       -> MTVEC_MASK.asUInt,
+        MEPC.U        -> MEPC_MASK.asUInt,
+        MIP.U         -> MIP_MASK.asUInt,
+        MIE.U         -> MIE_MASK.asUInt,
+        MEDELEG.U     -> MEDELEG_MASK.asUInt,
+        MIDELEG.U     -> MIDELEG_MASK.asUInt,
+        MCONFIGPTR.U  -> MCONFIGPTR_MASK.asUInt,
+        MENVCFG.U     -> MENVCFG_MASK.asUInt,
+        MENVCFGH.U    -> MENVCFGH_MASK.asUInt
+      ))
+      val newValue = (oldValue & (~writeMask).asUInt) | (io.writeData & writeMask)
+      csrMem.write(io.address, newValue)
     }
   }
 
   // Provide MEPC content for MRET instruction
-  io.mretTarget := csrMem.read(MEPC.U)
+  io.mretTarget := csrMem.read(MEPC.asUInt)
 
   // Handle exceptions
   when(io.exception) {
     // Save PC to MEPC
-    csrMem.write(MEPC.U, io.exceptionPC)
-    debugCsrs(MEPC.U) := io.exceptionPC
-
+    csrMem.write(MEPC.asUInt, io.exceptionPC)
     // Save cause to MCAUSE
-    csrMem.write(MCAUSE.U, io.exceptionCause)
-    debugCsrs(MCAUSE.U) := io.exceptionCause
-
+    csrMem.write(MCAUSE.asUInt, io.exceptionCause)
     // Save instr to MTVAL
-    csrMem.write(MTVAL.U, io.instruction)
-    debugCsrs(MTVAL.U) := io.instruction
+    csrMem.write(MTVAL.asUInt, io.instruction)
 
     // Update MSTATUS: save current interrupt enable bit
-    // we are not supporting interrupts, this will always save 0 to this field, but it is protocol
-    val currentStatus = csrMem.read(MSTATUS.U)
-    val mie = (currentStatus >> 3)(0)
-    val newStatus = (currentStatus & (~0x1888.U).asUInt) | // Clear MIE, MPIE, MPP
-                    (mie << 7).asUInt | // Set MPIE to old MIE
-                    (3 << 11).asUInt // Set MPP to 11 (M-mode)
-    csrMem.write(MSTATUS.U, newStatus)
-    debugCsrs(MSTATUS.U) := newStatus
+    val currentStatus = csrMem.read(MSTATUS.asUInt)
+    // Extract the MIE bit (bit 3) safely using bit extraction
+    val mie = currentStatus(3)
+
+    // Create new status value:
+    // 1. Clear bits in MSTATUS at positions: MIE (3), MPIE (7), MPP (12:11) [0x1888]
+    // 2. Set MPIE (7) to current MIE
+    // 3. Set MPP (12:11) to 3 (M-mode)
+    val newStatus = (currentStatus & (~0x1888.U).asUInt) |
+      (mie << 7).asUInt |  // Set MPIE to old MIE
+      (3.U << 11).asUInt   // Set MPP to 11 (M-mode)
+
+    csrMem.write(MSTATUS.asUInt, newStatus)
   }
 
   // Trap vector address
-  io.trapVector := csrMem.read(MTVEC.U)
-
+  io.trapVector := csrMem.read(MTVEC.asUInt)
 }
