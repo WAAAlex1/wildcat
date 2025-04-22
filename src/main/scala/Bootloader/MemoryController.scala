@@ -1,6 +1,5 @@
 package Bootloader
 
-import SPI.SpiMemController
 import caravan.bus.tilelink.{TLRequest, TLResponse, TilelinkConfig}
 import chisel3._
 import chisel3.util._
@@ -33,7 +32,7 @@ class MemoryController(implicit val config:TilelinkConfig) extends Module {
     val iCacheRspIn = Decoupled(new TLResponse)
 
     // To/Form SPI controllers
-    val SPIctrl = Vec(2, Flipped(new SpiIO))
+    val SPIctrl = Vec(2, Flipped(new SpiCTRLIO)) // SPI0 is RAM0, SPI1 is RAM1, SPI2 is Flash
   })
 
   val memory = Module(new TestMem(4096))
@@ -57,7 +56,7 @@ class MemoryController(implicit val config:TilelinkConfig) extends Module {
   val dReqAck = io.dCacheReqOut.valid && io.dCacheReqOut.ready // Request acknowledged
   val iReqAck = io.iCacheReqOut.valid && io.iCacheReqOut.ready
   val currentReq = Reg(new TLRequest()) // TileLink request format
-  val writeSize = WireInit(0.U(3.W)) // Number of bytes to write
+  val dataSize = WireInit(4.U(3.W)) // Number of bytes to transfer
   val rspPending = RegInit(false.B)
   val data2write = WireInit(0.U(32.W))
   val readData = WireInit(0.U(32.W))
@@ -86,7 +85,7 @@ class MemoryController(implicit val config:TilelinkConfig) extends Module {
     io.SPIctrl(i).rst := false.B
     io.SPIctrl(i).addr := currentReq.addrRequest(23, 0)
     io.SPIctrl(i).dataIn := data2write
-    io.SPIctrl(i).size := writeSize
+    io.SPIctrl(i).size := dataSize
   }
 
 
@@ -104,8 +103,8 @@ class MemoryController(implicit val config:TilelinkConfig) extends Module {
 
   // Modify data to write
   when(currentReq.isWrite){
-    // Compute writeSize based on number of active bits in the lane mask
-    writeSize := MuxLookup(currentReq.activeByteLane, 1.U, Seq(
+    // Compute dataSize based on number of active bits in the lane mask
+    dataSize := MuxLookup(currentReq.activeByteLane, 1.U, Seq(
       15.U -> 4.U,
       12.U -> 2.U,
       3.U -> 2.U
@@ -115,11 +114,12 @@ class MemoryController(implicit val config:TilelinkConfig) extends Module {
     val shiftAmount = PriorityEncoder(currentReq.activeByteLane)
     data2write := (currentReq.dataRequest >> (shiftAmount * 8.U))
 
+  }.otherwise{
+    dataSize := 4.U // Standard for read
   }
 
-  // Address decoding
+  // Address decoding on response
   when(rspPending){
-    //Address mapping
     when(currentReq.addrRequest(31, 28) === "hf".U) {
       //Do nothing cause memory mapped IO defined in Wildcattop?
     }.elsewhen(currentReq.addrRequest(24)) {
@@ -136,7 +136,7 @@ class MemoryController(implicit val config:TilelinkConfig) extends Module {
   }
 
   // Process responses
-  for(i <- 0 until 1) {
+  for(i <- 0 until 2) {
     when(io.SPIctrl(i).done) {
       rspPending := false.B
       when(!currentReq.isWrite) {

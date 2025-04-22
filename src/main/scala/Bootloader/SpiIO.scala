@@ -2,7 +2,7 @@ package Bootloader
 
 import chisel3._
 
-class SpiIO extends Bundle{
+class SpiCTRLIO extends Bundle{
   val rst = Input(Bool())
   val rw = Input(Bool())
   val en = Input(Bool())

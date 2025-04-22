@@ -20,13 +20,13 @@ class MemoryControllerTester (implicit val config:TilelinkConfig) extends Module
     val iCacheRspIn = Decoupled(new TLResponse)
 
     // To/Form SPI controllers
-    val SPIctrl = Vec(2, Flipped(new SpiIO))
+    val SPIctrl = Vec(2, Flipped(new SpiCTRLIO))
 
 
     // Debugging
     val dReqAck = Output(Bool())
     val iReqAck = Output(Bool())
-
+    val masterID = Output(Bool())
   })
   val CTRL = Module(new MemoryController())
   CTRL.io.bootloading := false.B
@@ -42,16 +42,17 @@ class MemoryControllerTester (implicit val config:TilelinkConfig) extends Module
   io.SPIctrl <>  CTRL.io.SPIctrl
   io.dReqAck := DontCare
   io.iReqAck := DontCare
+  io.masterID := DontCare
 
   BoringUtils.bore(CTRL.dReqAck,Seq(io.dReqAck))
   BoringUtils.bore(CTRL.iReqAck,Seq(io.iReqAck))
-
+  BoringUtils.bore(CTRL.masterID, Seq(io.masterID))
 }
 
 class MemoryControllerTest extends AnyFlatSpec with ChiselScalatestTester {
   implicit val config = TilelinkConfig()
 
-  "Bus" should "init" in {
+  "Controller" should "init" in {
     test(new MemoryControllerTester()) { dut =>
       dut.io.dReqAck.expect(false.B)
       dut.io.iReqAck.expect(false.B)
@@ -59,7 +60,7 @@ class MemoryControllerTest extends AnyFlatSpec with ChiselScalatestTester {
     }
   }
 
-  "Bus" should "Store word in RAM0 and store half in RAM1" in {
+  "Controller" should "Store" in {
     test(new MemoryControllerTester()) { dut =>
       def step(n: Int = 1): Unit = {
         dut.clock.step(n)
@@ -98,6 +99,44 @@ class MemoryControllerTest extends AnyFlatSpec with ChiselScalatestTester {
       dut.io.SPIctrl(1).size.expect(2.U)
       dut.io.SPIctrl(1).dataIn.expect("hBEEF".U)
       dut.io.SPIctrl(0).en.expect(false.B)
+    }
+  }
+
+  "Controller" should "Load" in {
+    test(new MemoryControllerTester()) { dut =>
+      def step(n: Int = 1): Unit = {
+        dut.clock.step(n)
+      }
+
+      dut.io.dReqAck.expect(false.B)
+      dut.io.iReqAck.expect(false.B)
+
+      // Read address 40 from RAM1 (b 1...00101000, h 1000028)  (Request from iCache)
+      dut.io.iCacheReqOut.bits.addrRequest.poke("h1000028".U)
+      dut.io.iCacheReqOut.bits.isWrite.poke(false.B)
+      dut.io.iCacheReqOut.bits.activeByteLane.poke(15.U)
+      dut.io.iCacheReqOut.valid.poke(true.B)
+      step()
+      dut.io.iReqAck.expect(true.B)
+      dut.io.SPIctrl(1).en.expect(true.B)
+      dut.io.SPIctrl(1).addr.expect(40.U)
+      dut.io.SPIctrl(1).rw.expect(false.B)
+      dut.io.SPIctrl(1).size.expect(4.U)
+      dut.io.SPIctrl(1).dataIn.expect(0.U)
+      dut.io.SPIctrl(0).en.expect(false.B)
+
+      step()
+      dut.io.SPIctrl(1).dataOut.poke("hBEEBBEEB".U)
+      dut.io.SPIctrl(1).done.poke(true.B)
+      dut.io.masterID.expect(true.B)
+      step()
+      dut.io.iCacheRspIn.valid.expect(true.B)
+      dut.io.iCacheRspIn.bits.dataResponse.expect("hBEEBBEEB".U)
+      dut.io.SPIctrl(1).done.poke(false.B)
+      step()
+      dut.io.iCacheRspIn.valid.expect(false.B)
+      dut.io.iCacheRspIn.bits.dataResponse.expect(0.U)
+
     }
   }
 
