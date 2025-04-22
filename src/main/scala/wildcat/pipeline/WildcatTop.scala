@@ -23,9 +23,11 @@ class WildcatTop(file: String, dmemNrByte: Int = 4096) extends Module {
     val rx = Input(UInt(1.W))
   })
 
+  //For testing
+  val (memory, start) = Util.getCode(file)
+
   //No file loading necessary when using the bootloader. Instead pass empty int array.
-  //val (memory, start) = Util.getCode(file)
-  val memory = new Array [Int](100)
+  //val memory = new Array [Int](100)
 
   // Here switch between different designs
   val cpu = Module(new ThreeCats())
@@ -35,9 +37,6 @@ class WildcatTop(file: String, dmemNrByte: Int = 4096) extends Module {
   cpu.io.dmem <> dmem.io
 
   //TODO: stalling
-
-
-
 
   val imem = Module(new InstructionROM(memory))
   imem.io.address := cpu.io.imem.address
