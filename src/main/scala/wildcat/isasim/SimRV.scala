@@ -19,8 +19,7 @@ import wildcat.BranchFunct3._
 import wildcat.LoadStoreFunct3._
 import wildcat.CSRFunct3._
 import wildcat.InstrType._
-import wildcat.{CSR, Util}
-import wildcat.CSRFile
+import wildcat.{CSR, CSRFile, CSRFunct3, Util}
 
 class SimRV(mem: Array[Int], start: Int, stop: Int) {
 
@@ -43,7 +42,7 @@ class SimRV(mem: Array[Int], start: Int, stop: Int) {
   var instrCnt = 0
 
   def execute(instr: Int): Boolean = {
-
+    //println("EXECUTING INSTRUCTION: " + f"${instr}%08x" )
     // Do some decoding: extraction of decoded fields
     val opcode = instr & 0x7f
     val rd = (instr >> 7) & 0x01f
@@ -197,10 +196,9 @@ class SimRV(mem: Array[Int], start: Int, stop: Int) {
 
         case ESYS =>
           if (csrAddr == 0) { // ECALL
-            handleException(11)
+            val ex = handleException(11, instr)
             println("ecall")
-            run = false
-            (0, false, pcNext)
+            (0, false, ex._2)
           } else if (csrAddr == 0x302 && rs1 == 0x0 && rd == 0x0) { // MRET
             println("mret")
             val mepc = csrFile.read(CSR.MEPC)
@@ -224,25 +222,33 @@ class SimRV(mem: Array[Int], start: Int, stop: Int) {
           }
 
         case CSRRW | CSRRS | CSRRC =>
+          //println("HANDLING NORMAL CSR: " + CSRFunct3.name(funct3))
           var result = 0 // Standard value
           if (funct3 == CSRRW) {
             result = csrFile.exchange(csrAddr, rs1Val, rd)
+            //println(f"RESULT: 0x$result%08X")
           } else if (funct3 == CSRRS) {
             result = csrFile.setBits(csrAddr, rs1Val, rs1)
+            //println(f"RESULT: 0x$result%08X")
           } else if (funct3 == CSRRC) {
             result = csrFile.clearBits(csrAddr, rs1Val, rs1)
+            //println(f"RESULT: 0x$result%08X")
           }
           (result, true, pcNext)
 
         case CSRRWI | CSRRSI | CSRRCI =>
+          //println("HANDLING IMM CSR: " + CSRFunct3.name(funct3))
           val zimm = rs1 // For immediate variants, rs1 field contains zimm
           var result = 0
           if (funct3 == CSRRWI) {
             result = csrFile.exchange(csrAddr, zimm, rd) // pass rd to check for nonzero imm
+            //println(f"RESULT: 0x$result%08X")
           } else if (funct3 == CSRRSI) {
             result = csrFile.setBits(csrAddr, zimm, zimm) // Use zimm as rd for checking non-zero
+            //println(f"RESULT: 0x$result%08X")
           } else if (funct3 == CSRRCI) {
             result = csrFile.clearBits(csrAddr, zimm, zimm) // Use zimm as rd for checking non-zero
+            //println(f"RESULT: 0x$result%08X")
           }
           (result, true, pcNext)
         case _ =>
@@ -317,8 +323,11 @@ class SimRV(mem: Array[Int], start: Int, stop: Int) {
       case _ => true
     }
     if (illegalInstr) {
-      return handleException(2) // Illegal instruction
+      var ex = handleException(2, instr)
+      pc = ex._2
+      return ex._1// Illegal instruction
     }
+
     // Execute the instruction and return a tuple for the result:
     //   (ALU result, writeBack, next PC)
     val result = opcode match {
@@ -363,12 +372,19 @@ class SimRV(mem: Array[Int], start: Int, stop: Int) {
   }
 
   //Handling exceptions
-  def handleException(cause: Int): Boolean = {
+  def handleException(cause: Int, instr: Int): (Boolean, Int) = {
     // Save current PC to MEPC
     csrFile.write(CSR.MEPC, pc)
 
+    // Helper variable for new PC
+    var newPC = pc
+
     // Save cause to MCAUSE
     csrFile.write(CSR.MCAUSE, cause)
+    //println("Handling Exception #: " + csrFile.read(CSR.MCAUSE))
+
+    // Save instr to MTVAL
+    csrFile.write(CSR.MTVAL, instr)
 
     // Update MSTATUS: save current interrupt enable bit
     val currentStatus = csrFile.read(CSR.MSTATUS)
@@ -378,9 +394,10 @@ class SimRV(mem: Array[Int], start: Int, stop: Int) {
     csrFile.write(CSR.MSTATUS, newStatus)
 
     // Jump to trap handler
-    pc = csrFile.read(CSR.MTVEC)
+    newPC = csrFile.read(CSR.MTVEC)
+    //println("Jumping to: " + f"${newPC}%08x")
 
-    true // Continue execution
+    (true, newPC) // Continue execution
   }
 
   var cont = true
@@ -395,14 +412,12 @@ class SimRV(mem: Array[Int], start: Int, stop: Int) {
 
 object SimRV {
 
-
-
   def runSimRV(file: String) = {
     val mem = new Array[Int](1024 * 256) // 1 MB, also check masking in load and store
 
     val (code, start) = Util.getCode(file)
 
-    for (i <- 0 until code.length) {
+    for (i <- code.indices) {
       mem(i) = code(i)
     }
 

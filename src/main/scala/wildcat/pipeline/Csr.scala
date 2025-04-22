@@ -17,6 +17,7 @@ class Csr() extends Module {
     val writeData     = Input(UInt(32.W))
     val readEnable    = Input(Bool())
     val instrComplete = Input(Bool())
+
     // OUTPUTS
     val data        = Output(UInt(32.W))
     val mretTarget  = Output(UInt(32.W))   // For MRET instruction
@@ -25,6 +26,7 @@ class Csr() extends Module {
     val exception = Input(Bool())
     val exceptionCause = Input(UInt(32.W))
     val exceptionPC = Input(UInt(32.W))
+    val instruction   = Input(UInt(32.W))
     val trapVector = Output(UInt(32.W))
   })
 
@@ -50,6 +52,7 @@ class Csr() extends Module {
   when(cycle === 0.U) {
     cycleh := cycleh + 1.U
   }
+
   // Update Intruction complete counter
   when(io.instrComplete) {
     instret := instret + 1.U
@@ -61,7 +64,7 @@ class Csr() extends Module {
   // Read operation
   val readData =Wire(UInt(32.W))
   readData := 0.U
-  // Read operation - with special handling for certain registers
+  // Read operation - special handling for certain registers
   when(io.readEnable){
     readData := csrMem.read(io.address)
     switch(io.address) { //Special cases
@@ -127,6 +130,10 @@ class Csr() extends Module {
     // Save cause to MCAUSE
     csrMem.write(MCAUSE.U, io.exceptionCause)
     debugCsrs(MCAUSE.U) := io.exceptionCause
+
+    // Save instr to MTVAL
+    csrMem.write(MTVAL.U, io.instruction)
+    debugCsrs(MTVAL.U) := io.instruction
 
     // Update MSTATUS: save current interrupt enable bit
     // we are not supporting interrupts, this will always save 0 to this field, but it is protocol

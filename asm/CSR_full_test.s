@@ -1,67 +1,48 @@
-# CSR Test - Testing all CSR instructions
-# This test verifies proper operation of all CSR instructions by:
-# 1. Writing to various CSRs
-# 2. Reading back the values
-# 3. Verifying results in regular registers
+    .section .text
+    .globl _start
 
 _start:
-    # Initialize test registers
-    li x1, 0x55555555   # Pattern for testing set bits
-    li x2, 0xAAAAAAAA   # Pattern for testing clear bits
-    li x3, 0x0         # Will hold results
-    li x4, 0x0         # Will hold more results
-    li x5, 0x0         # Will hold even more results
-    li x6, 0x0         # Expected value for validation
-    li x7, 0x0         # Expected value for validation
+    # Initialize test patterns
+    li x1, 0x55555555         # Test pattern 1 (not directly used here)
+    li x2, 0xAAAAAAAA         # Test pattern 2 (not directly used here)
+    li x3, 0x0                # Will hold result of CSRRW
+    li x4, 0x0                # Will hold result of CSRRS
+    li x5, 0x0                # Will hold result of CSRRC
+    li x6, 0x0                # Will hold result of CSRRWI
+    li x7, 0x0                # Will hold result of CSRRSI
+    li x8, 0x0                # Will hold result of CSRRCI
 
-    # Test 1: CSRRW - Write to mstatus and read previous value
-    li x1, 0x1888       # Value to write (appropriate bits for mstatus)
-    csrrw x3, mstatus, x1
-    # Since mstatus has default 0, x3 should be 0
+    # Test 1: CSRRW — write x1 to MCAUSE, read previous value into x3
+    li x1, 0x1880             # New MCAUSE value (MPP bits set)
+    csrrw x3, mcause, x1     # x3 ← old MCAUSE, MCAUSE ← x1
 
-    # Test 2: CSRRS - Set bits in mstatus and read
-    li x1, 0x8          # Set MPP to machine mode (bits 11-12)
-    csrrs x4, mstatus, x1
-    # x4 should now have 0x1888
+    # Test 2: CSRRS — set bits in MCAUSE (OR with x1), result in x4
+    li x1, 0x8                # Only bit 3 (no change to MPP)
+    csrrs x4, mcause, x1     # x4 ← old MCAUSE, MCAUSE |= 0x8
 
-    # Test 3: CSRRC - Clear bits and read
-    li x2, 0x1000       # Clear bit 12 of MPP
-    csrrc x5, mstatus, x2
-    # x5 should have 0x1888 (previous value)
+    # Test 3: CSRRC — clear bit 12 of MCAUSE, result in x5
+    li x2, 0x1000             # Clear MPP high bit (bit 12)
+    csrrc x5, mcause, x2     # x5 = MCAUSE before, MCAUSE &= ~0x1000
 
-    # Test 4: CSRRWI - Write immediate value
-    csrrwi x6, mstatus, 0x1F    # Write immediate 0x1F
-    # x6 should have 0x888 (previous value with MPP partially cleared)
+    # Test 4: CSRRWI — write immediate (0x1C) to MCAUSE, x6 gets old value
+    csrrwi x6, mcause, 0x1C  # MCAUSE ← 0x1C, x6 = old MCAUSE
 
-    # Test 5: CSRRSI - Set bits with immediate
-    csrrsi x7, mstatus, 0x3     # Set lowest 2 bits
-    # x7 should have 0x1F (previous value)
+    # Test 5: CSRRSI — set bits 0 and 1 (0x3), x7 gets old value
+    csrrsi x7, mcause, 0x3   # MCAUSE |= 0x3, x7 = old MCAUSE (0x1C)
 
-    # Test 6: CSRRCI - Clear bits with immediate
-    csrrci x8, mstatus, 0x3     # Clear lowest 2 bits
-    # x8 should have value in x7 with the 2 extra bits set
+    # Test 6: CSRRCI — clear bits 3 and 4, x8 gets old value
+    csrrci x8, mcause, 0xC  # MCAUSE &= ~0xC, x8 = old MCAUSE
+    csrrw x9, mcause, x0     # x9 ← MCAUSE, MCAUSE not changed
 
-    # Test 7: Write to MEPC and read back
+    # Test 7: Write to mepc and read back
     li x1, 0xABCDEF00
-    csrrw x0, mepc, x1         # Write without reading previous value
-    csrr x9, mepc              # Read back what we wrote
-    # x9 should be 0xABCDEF00
+    csrrw x0, mepc, x1        # mepc ← 0xABCDEF00 (no dest reg)
+    csrrs x10, mepc, x0       # x9 = mepc
 
-    # Test 8: Check read-only CSRs
-    csrr x10, mvendorid        # Read vendor ID
-    csrr x11, marchid          # Read architecture ID
+    # Test 8: Read read-only CSRs
+    csrrs x11, mvendorid, x0  # x11 = mvendorid (platform-specific)
+    csrrs x12, marchid, x0    # x12 = marchid (should be 0x2F or 47 decimal)
 
-    # Test result should be in registers x3-x11
-    # Test is successful if:
-    # x3 = 0 (original mstatus)
-    # x4 = 0x1888 (original value after CSRRW)
-    # x5 = 0x1888 (value after CSRRS)
-    # x6 = 0x888 (value after CSRRC)
-    # x7 = 0x1F (value after CSRRWI)
-    # x8 = 0x1F with bits [1:0] set
-    # x9 = 0xABCDEF00 (MEPC value)
-    # x10 = VENDOR_ID (read-only)
-    # x11 = MARCHID (read-only, should be 47)
-
-    # End of test
-    ecall
+# End of test — infinite loop for inspection
+end:
+    j end

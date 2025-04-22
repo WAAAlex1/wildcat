@@ -8,6 +8,8 @@ class CSRFile {
   // Initialize commonly used CSRs with default values
   csrMap(CSR.MARCHID) = CSR.WILDCAT_MARCHID           // = 47
   csrMap(CSR.HARTID) = 0                              // "At least one hart must have a hart ID of zero."
+  csrMap(CSR.MISA) = CSR.WILDCAT_MISA
+
 
   // Counter for instruction retirement
   private var instRetCounter: Long = 0

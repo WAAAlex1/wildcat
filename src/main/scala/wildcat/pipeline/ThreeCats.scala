@@ -61,6 +61,7 @@ class ThreeCats() extends Wildcat() {
 
   val csr = Module(new Csr())
   csr.io.address := instrReg(31, 20)// CSR address field
+  csr.io.instruction := instrReg
   val csrVal = csr.io.data          // Read data from CSR
 
   val decOut = decode(instrReg)

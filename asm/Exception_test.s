@@ -1,64 +1,68 @@
-# Exception Test - Testing exception handling and MRET
-# This test verifies proper exception handling by:
-# 1. Setting up trap vector
-# 2. Triggering an exception
-# 3. Verifying the exception handler was executed
-# 4. Verifying proper return via MRET
+    .section .text
+    .globl _start
 
 _start:
-    # Set trap vector address
-    la t0, _trap_vector
-    csrw mtvec, t0
+    # Set trap vector
+    la x5, _trap_vector
+    csrrw x0, mtvec, x5
 
-    # Initialize test registers
-    li a0, 0
-    li t2, 0            # This will be set to 42 by the handler (if success)
+    # Clear key registers
+    li x10, 0          # x10: test result
+    li x7, 0           # x7 : will be set to 42 by ecall handler
 
-    # Test 1: Trigger ECALL exception
-    ecall               # This should jump to _trap_vector and return
+    # Trigger ECALL exception
+    ecall
 
-    # Test 2: Check if trap handler executed properly
-    li t0, 42
-    bne t2, t0, fail    # t2 should be 42 now if handler ran
+    # Check if x7 == 42 (ecall handler success)
+    li x5, 42
+    bne x7, x5, fail
 
-    # Test 3: Trigger illegal instruction exception
-    .word 0xFEFEFEFE    # Illegal instruction (not a valid RISC-V opcode)
+    # Trigger illegal instruction
+    .word 0xFEFEFEFE
 
-    # If we get here, the handler for illegal instruction worked
-    li t3, 0x55         # Mark successful illegal instruction handling
+    # If we reach here, illegal instruction was handled
+    li x28, 0x55       # x28 (t3): marker for successful illegal inst handler
 
-    # End of test with success
-    li a0, 1            # Success code
-    ecall               # Exit
+    # Move important values to preserved registers
+    mv x21, x10        # x21 = final a0 result (should be 1)
+    mv x22, x7         # x22 = marker from ecall handler (should be 42)
+    mv x23, x12        # x23 = mtval (should be 0xFEFEFEFE)
+    mv x24, x28        # x24 = marker from illegal handler (should be 0x55)
+    mv x25, x11        # x25 = final mepc (instruction after illegal inst)
+
+    li x10, 1          # Success code
+_success_end:
+    j _success_end
 
 fail:
-    li a0, 0            # Failure code
-    ecall               # Exit
+    li x10, 0
+    mv x21, x10        # Store failure code
+    ecall
 
-# Trap handler - using your provided code
+# Trap handler
 _trap_vector:
-    csrr a0, mcause        # Read trap cause
-    csrr a1, mepc          # Read return address
+    csrrs x10, mcause, x0    # x10 = mcause
+    csrrs x11, mepc, x0      # x11 = mepc
 
-    li   t0, 11            # Machine-mode ECALL
-    beq  a0, t0, handle_ecall
+    li x5, 11
+    beq x10, x5, handle_ecall
 
-    li   t0, 2             # Illegal instruction
-    beq  a0, t0, handle_illegal
+    li x5, 2
+    beq x10, x5, handle_illegal
 
-    # Unknown trap — hang or print via UART
-fatal_trap:
     j fatal_trap
 
 handle_ecall:
-    addi a1, a1, 4         # Skip the 'ecall' instruction
-    li t2, 42              # Marker to see that ecall actually was processed (for testing)
-    csrw mepc, a1          # Write updated return address
-    mret                   # Return from exception
+    addi x11, x11, 4
+    li x7, 42                # x7 = test marker for ecall
+    csrrw x0, mepc, x11
+    mret
 
 handle_illegal:
-    csrr a2, mtval         # mtval contains the instruction bits
-    # Optionally skip or crash
-    addi a1, a1, 4         # Try skipping (another solution could be to terminate)
-    csrw mepc, a1
+    csrrs x12, mtval, x0     # x12 = offending instruction
+    addi x11, x11, 4
+    csrrw x0, mepc, x11
     mret
+
+fatal_trap:
+    j fatal_trap

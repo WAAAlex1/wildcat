@@ -68,6 +68,19 @@ object CSRFunct3 {
   val CSRRWI = 0x05
   val CSRRSI = 0x06
   val CSRRCI = 0x07
+
+  //FOR DEBUGGING:
+  def name(funct3: Int): String = funct3 match {
+    case ESYS => "ESYS"
+    case CSRRW => "CSRRW"
+    case CSRRS => "CSRRS"
+    case CSRRC => "CSRRC"
+    case CSRRWI => "CSRRWI"
+    case CSRRSI => "CSRRSI"
+    case CSRRCI => "CSRRCI"
+    case _ => f"Unknown(0x${funct3.toHexString})"
+  }
+
 }
 
 object CSR {
@@ -97,7 +110,7 @@ object CSR {
   val MSTATUSH        = 0x310     // The 32 MSB of MSTATUS
 
   val MISA            = 0x301     // Machine ISA and extensions register
-  val WILDCAT_MISA    = 0x40000081// Only A, I extensions. MXL = 1, MXLEN = 32.
+  val WILDCAT_MISA    = 0x40000101// Only A, I extensions. MXL = 1, MXLEN = 32.
 
   val MEPC            = 0x341     // Machine exception Program counter
   val MTVEC           = 0x305     // Machine trap-handler base address
@@ -123,7 +136,7 @@ object CSR {
   // Defines which bits are writable for each CSR (1 = writable, 0 = read-only)
   val MSTATUS_MASK    = 0x000018aa // MPRV, MXR, SUM, SBE, UBE, TVM, TW, TSR, FS, VS, XS, SD, all WPRI = 0 (read only)
   val MSTATUSH_MASK   = 0x00000000 // No fields used.
-  val MISA_MASK       = 0x03888888 // 0-25 writeable, 26-29 constant 0 (read only), 30-31 read-only (should be 01)
+  val MISA_MASK       = 0x00000101 // Only allow A (bit 0) and I (bit 8) to be writable
   val MTVEC_MASK      = 0xFFFFFFFC // 0-1 read only 0 (Always want direct MODE)
   val MEPC_MASK       = 0xFFFFFFFC // 0-1 always zero (no unaligned address access).
   val MARCHID_MASK    = 0x00000000
@@ -194,4 +207,75 @@ object CSR {
     }
   }
 
+}
+
+object REGS {
+  // Standard ABI names
+  val zero = 0   // Hard-wired zero
+  val ra   = 1   // Return address
+  val sp   = 2   // Stack pointer
+  val gp   = 3   // Global pointer
+  val tp   = 4   // Thread pointer
+  val t0   = 5   // Temporaries
+  val t1   = 6
+  val t2   = 7
+  val s0   = 8   // Saved register / frame pointer
+  val fp   = 8   // Alias for s0
+  val s1   = 9
+  val a0   = 10  // Function arguments / return values
+  val a1   = 11
+  val a2   = 12
+  val a3   = 13
+  val a4   = 14
+  val a5   = 15
+  val a6   = 16
+  val a7   = 17
+  val s2   = 18  // Saved registers
+  val s3   = 19
+  val s4   = 20
+  val s5   = 21
+  val s6   = 22
+  val s7   = 23
+  val s8   = 24
+  val s9   = 25
+  val s10  = 26
+  val s11  = 27
+  val t3   = 28  // Temporaries
+  val t4   = 29
+  val t5   = 30
+  val t6   = 31
+
+  // Standard x0–x31 register names
+  val x0  = 0
+  val x1  = 1
+  val x2  = 2
+  val x3  = 3
+  val x4  = 4
+  val x5  = 5
+  val x6  = 6
+  val x7  = 7
+  val x8  = 8
+  val x9  = 9
+  val x10 = 10
+  val x11 = 11
+  val x12 = 12
+  val x13 = 13
+  val x14 = 14
+  val x15 = 15
+  val x16 = 16
+  val x17 = 17
+  val x18 = 18
+  val x19 = 19
+  val x20 = 20
+  val x21 = 21
+  val x22 = 22
+  val x23 = 23
+  val x24 = 24
+  val x25 = 25
+  val x26 = 26
+  val x27 = 27
+  val x28 = 28
+  val x29 = 29
+  val x30 = 30
+  val x31 = 31
 }
