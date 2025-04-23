@@ -57,6 +57,7 @@ class Csr() extends Module {
   readData := 0.U
   when(io.readEnable) {
     readData := csrMem.read(io.address)
+    printf("CSR READ: address=0x%x, data=0x%x\n", io.address, readData)
     // Special cases for specific CSR addresses
     when(io.address === CYCLE.U)     { readData := cycle }
     when(io.address === CYCLEH.U)    { readData := cycleh }
@@ -104,6 +105,7 @@ class Csr() extends Module {
     }.otherwise {
       // For all other CSRs, write directly - for a minimal RISC-V this is sufficient
       csrMem.write(io.address, io.writeData)
+      printf("CSR WRITE: address=0x%x, data=0x%x\n", io.address, io.writeData)
     }
   }
 
@@ -125,16 +127,16 @@ class Csr() extends Module {
 
 
   // ------------------------ DEBUGGING ------------------------------
-  when(io.readEnable) {
-    printf("CSR READ: addr=0x%x, data=0x%x\n", io.address, readData)
-  }
+//  when(io.readEnable) {
+//    printf("CSR READ: addr=0x%x, data=0x%x\n", io.address, readData)
+//  }
 
-  when(io.writeEnable) {
-    printf("CSR WRITE: addr=0x%x, data=0x%x\n", io.address, io.writeData)
-  }
+//  when(io.writeEnable) {
+//    printf("CSR WRITE: addr=0x%x, data=0x%x\n", io.address, io.writeData)
+//  }
 
   // Debug dump for mepc
-  when(io.address === 0x341.U) {
+  when(RegNext(io.address === 0x341.U)) {
     printf("MEPC access: read=%d, write=%d, value=0x%x\n",
       io.readEnable, io.writeEnable,
       Mux(io.writeEnable, io.writeData, readData))

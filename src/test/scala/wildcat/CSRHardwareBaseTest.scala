@@ -111,10 +111,10 @@ abstract class CSRHardwareBaseTest extends AnyFlatSpec with ChiselScalatestTeste
     val branch = dut.io.debug_doBranch.peekBoolean()
     val target = dut.io.debug_branchTarget.peekInt()
 
-    println(f"PC=0x${pc}%08x Instr=0x${instrValue}%08x Branch=${branch} Target=0x${target}%08x")
-    if (branch) {
-      println(f"BRANCH TAKEN FROM 0x${pc}%08x TO 0x${target}%08x")
-    }
+    println(f"PC=0x${pc}%08x Instr=0x${instrValue}%08x Branch=${branch} Target=0x${target}%08x, WRITE CSR: " + dut.io.debug_csrWriteNeeded.peekBoolean())
+//    if (branch) {
+//      println(f"BRANCH TAKEN FROM 0x${pc}%08x TO 0x${target}%08x")
+//    }
   }
 
 }
@@ -150,10 +150,10 @@ class CSRHardwareInstructionsTest extends CSRHardwareBaseTest {
       println(s"Test binary: $binFile")
 
       // Initial state
-      println("\n----- INITIAL STATE -----")
-      printDebugInfo(dut)
+      //println("\n----- INITIAL STATE -----")
+      //printDebugInfo(dut)
 
-      // Execute with periodic debug info
+//    // Execute with periodic debug info
 //      for (i <- 1 to 100) {
 //        dut.clock.step(1)
 //
