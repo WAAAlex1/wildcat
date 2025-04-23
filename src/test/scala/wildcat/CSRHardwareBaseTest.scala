@@ -36,7 +36,6 @@ class CSRHardwareInstructionsTest extends CSRHardwareBaseTest {
   "CSR Instructions Test" should "pass on the ThreeCats processor" in {
     // Get binary file path
     val binFile = getBinaryPath("CSR_full_test.bin")
-
     test(new WildcatTestTop(binFile)).withAnnotations(Seq(WriteVcdAnnotation)) { dut =>
       // Run for enough cycles to complete the test
       var i = 0
@@ -45,11 +44,10 @@ class CSRHardwareInstructionsTest extends CSRHardwareBaseTest {
           i += 1
           dut.clock.step(1)
           for (x <- 0 until 32) {
-            val r = dut.io.regFile(i).peekInt()
+            val r = dut.io.regFile(x).peekInt()
             println(f"reg($x) = ${r}")
           }
       }
-      dut.clock.step(100)
       // Check register values
       for ((reg, expectedValue) <- csrTestExpected) {
         val actualValue = dut.io.regFile(reg).peekInt()

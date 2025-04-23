@@ -48,7 +48,7 @@ object Functions {
     decOut.isCsrrci := false.B
 
     //Added for exception handling
-    decOut.isImm := true.B //Default to illegal, set false if legal instruction encountered
+    decOut.isIllegal := true.B //Default to illegal, set false if legal instruction encountered
 
     switch(opcode) {
       is(AluImm.U) {
