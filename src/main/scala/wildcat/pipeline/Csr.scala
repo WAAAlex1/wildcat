@@ -22,11 +22,11 @@ class Csr() extends Module {
     val mretTarget  = Output(UInt(32.W))   // For MRET instruction
 
     // Exception handling signals
-    val exception = Input(Bool())
-    val exceptionCause = Input(UInt(32.W))
-    val exceptionPC = Input(UInt(32.W))
-    val instruction   = Input(UInt(32.W))
-    val trapVector = Output(UInt(32.W))
+    val exception       = Input(Bool())
+    val exceptionCause  = Input(UInt(32.W))
+    val exceptionPC     = Input(UInt(32.W))
+    val instruction     = Input(UInt(32.W))
+    val trapVector      = Output(UInt(32.W))
   })
 
   // Create a CSR file supporting the entire range of registers (4096)
@@ -122,4 +122,24 @@ class Csr() extends Module {
 
   // Trap vector address
   io.trapVector := csrMem.read(MTVEC.asUInt)
+
+
+  // ------------------------ DEBUGGING ------------------------------
+  when(io.readEnable) {
+    printf("CSR READ: addr=0x%x, data=0x%x\n", io.address, readData)
+  }
+
+  when(io.writeEnable) {
+    printf("CSR WRITE: addr=0x%x, data=0x%x\n", io.address, io.writeData)
+  }
+
+  // Debug dump for mepc
+  when(io.address === 0x341.U) {
+    printf("MEPC access: read=%d, write=%d, value=0x%x\n",
+      io.readEnable, io.writeEnable,
+      Mux(io.writeEnable, io.writeData, readData))
+  }
+
+  //-------------------------------------------------------------------
+
 }

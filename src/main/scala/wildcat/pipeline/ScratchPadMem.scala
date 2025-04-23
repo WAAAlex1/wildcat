@@ -24,6 +24,28 @@ class ScratchPadMem(data: Array[Int], nrBytes: Int = 4096) extends Module {
   loadMemoryFromFile(mem, "data.hex")
    */
 
+
+  //-------------------- DEBUGGING ------------------------------
+  // Add a debug register to trigger initialization prints only once
+//  val debugInitDone = RegInit(false.B)
+//
+//  when (!debugInitDone) {
+//    debugInitDone := true.B
+//
+//    // Print memory initialization details
+//    printf("=== Memory Initialization ===\n")
+//    printf("Memory size: %d bytes, %d words\n", nrBytes.U, (nrBytes/4).U)
+//    printf("Loaded instructions: %d words\n", data.length.U)
+//
+//    // Print first several instructions for verification
+//    for (i <- 0 until Math.min(20, data.length)) {
+//      printf("Memory[%d] = 0x%x\n", i.U, data(i).U)
+//    }
+//    printf("\n")
+//  }
+  //--------------------------------------------------------------
+
+
   // split an integer into a seq of 4 bytes
   // little endian, so first byte in seq goes to mem(0)
   def splitInt(x: Int): Seq[Int] = {

@@ -13,6 +13,110 @@ abstract class CSRHardwareBaseTest extends AnyFlatSpec with ChiselScalatestTeste
   def getBinaryPath(filename: String): String = {
     new java.io.File("bin", filename).getAbsolutePath
   }
+
+  def printDebugInfo(dut: WildcatTestTop): Unit = {
+    // Print PC and instruction if available
+    println(f"PC: 0x${dut.io.debug_pc.peekInt()}%08x, Instruction: 0x${dut.io.debug_instr.peekInt()}%08x")
+    println(f"Branch: ${dut.io.debug_doBranch.peekBoolean()}, Target: 0x${dut.io.debug_branchTarget.peekInt()}%08x, Stall: ${dut.io.debug_stall.peekBoolean()}")
+    val instrValue = dut.io.debug_instr.peekInt()
+    println(f"PC: 0x${dut.io.debug_pc.peekInt()}%08x, Instruction: 0x${instrValue}%08x (${decodeInstructionForDebug(instrValue.toLong)})")
+    // Print registers in a formatted table, 8 per row
+    println("Registers:")
+    for (i <- 0 until 32 by 8) {
+      print(f"x${i}%-2d: 0x${dut.io.regFile(i).peekInt()}%08x")
+      print(f" | x${i + 1}%-2d: 0x${dut.io.regFile(i + 1).peekInt()}%08x")
+      print(f" | x${i + 2}%-2d: 0x${dut.io.regFile(i + 2).peekInt()}%08x")
+      print(f" | x${i + 3}%-2d: 0x${dut.io.regFile(i + 3).peekInt()}%08x")
+      print(f" | x${i + 4}%-2d: 0x${dut.io.regFile(i + 4).peekInt()}%08x")
+      print(f" | x${i + 5}%-2d: 0x${dut.io.regFile(i + 5).peekInt()}%08x")
+      print(f" | x${i + 6}%-2d: 0x${dut.io.regFile(i + 6).peekInt()}%08x")
+      print(f" | x${i + 7}%-2d: 0x${dut.io.regFile(i + 7).peekInt()}%08x")
+      println()
+    }
+    println()
+  }
+
+  // Add this to your CSRHardwareBaseTest class
+  def dumpBinary(filePath: String): Unit = {
+    println("\n===== TEST BINARY CONTENTS =====")
+    println(s"File: $filePath")
+
+    try {
+      val (code, start) = Util.getCode(filePath)
+      println(s"Start address: 0x${start.toHexString}")
+      println(s"Code length: ${code.length} words")
+
+      if (code.length == 0) {
+        println("WARNING: Empty binary file!")
+      } else {
+        // Print first several instructions for verification
+        println("First 20 instructions:")
+        for (i <- 0 until Math.min(20, code.length)) {
+          println(f"$i%3d: 0x${code(i)}%08x")
+        }
+
+        // Print instructions from the main test area (if applicable)
+        if (code.length > 50) {
+          println("\nInstructions around position 50:")
+          for (i <- 45 until Math.min(55, code.length)) {
+            println(f"$i%3d: 0x${code(i)}%08x")
+          }
+        }
+
+        // Print last few instructions
+        if (code.length > 10) {
+          println("\nLast 10 instructions:")
+          for (i <- Math.max(0, code.length - 10) until code.length) {
+            println(f"$i%3d: 0x${code(i)}%08x")
+          }
+        }
+      }
+    } catch {
+      case e: Exception =>
+        println(s"ERROR reading binary file: ${e.getMessage}")
+        e.printStackTrace()
+    }
+    println("\n")
+  }
+
+  def decodeInstructionForDebug(instr: Long): String = {
+    val opcode = instr & 0x7f
+    val rd = (instr >> 7) & 0x1f
+    val rs1 = (instr >> 15) & 0x1f
+    val rs2 = (instr >> 20) & 0x1f
+    val funct3 = (instr >> 12) & 0x7
+    val funct7 = (instr >> 25) & 0x7f
+
+    opcode match {
+      case 0x13 => s"addi x$rd, x$rs1, ${(instr >> 20).toInt}" // I-type immediate
+      case 0x33 => s"ALU op x$rd, x$rs1, x$rs2" // R-type
+      case 0x37 => s"lui x$rd, 0x${(instr >> 12).toHexString}" // U-type
+      case 0x17 => s"auipc x$rd, 0x${(instr >> 12).toHexString}" // U-type
+      case 0x73 => {
+        funct3 match {
+          case 0 => "ecall/mret"
+          case 1 => s"csrrw x$rd, 0x${((instr >> 20) & 0xfff).toHexString}, x$rs1"
+          case 2 => s"csrrs x$rd, 0x${((instr >> 20) & 0xfff).toHexString}, x$rs1"
+          case 3 => s"csrrc x$rd, 0x${((instr >> 20) & 0xfff).toHexString}, x$rs1"
+          case _ => s"CSR op 0x${funct3.toHexString}"
+        }
+      }
+      case _ => s"Unknown op 0x${opcode.toHexString}"
+    }
+  }
+
+  def printCompactDebugInfo(dut: WildcatTestTop): Unit = {
+    val pc = dut.io.debug_pc.peekInt()
+    val instrValue = dut.io.debug_instr.peekInt()
+    val branch = dut.io.debug_doBranch.peekBoolean()
+    val target = dut.io.debug_branchTarget.peekInt()
+
+    println(f"PC=0x${pc}%08x Instr=0x${instrValue}%08x Branch=${branch} Target=0x${target}%08x")
+    if (branch) {
+      println(f"BRANCH TAKEN FROM 0x${pc}%08x TO 0x${target}%08x")
+    }
+  }
+
 }
 
 /**
@@ -36,21 +140,42 @@ class CSRHardwareInstructionsTest extends CSRHardwareBaseTest {
   "CSR Instructions Test" should "pass on the ThreeCats processor" in {
     // Get binary file path
     val binFile = getBinaryPath("CSR_full_test.bin")
+
+    // Dump binary file contents before testing
+    dumpBinary(binFile)
+
     test(new WildcatTestTop(binFile)).withAnnotations(Seq(WriteVcdAnnotation)) { dut =>
       // Run for enough cycles to complete the test
-      var i = 0
-      println("---------------- STEPPING CLOCK ----------------")
-      while(i < 100){
-          i += 1
-          dut.clock.step(1)
-          for (x <- 0 until 32) {
-            val r = dut.io.regFile(x).peekInt()
-            println(f"reg($x) = ${r}")
-          }
+      println("\n===== STARTING TEST EXECUTION =====")
+      println(s"Test binary: $binFile")
+
+      // Initial state
+      println("\n----- INITIAL STATE -----")
+      printDebugInfo(dut)
+
+      // Execute with periodic debug info
+//      for (i <- 1 to 100) {
+//        dut.clock.step(1)
+//
+//        if (i % 10 == 0 || i <= 5) { // More frequent at start, then every 10 cycles
+//          println(s"\n----- AFTER $i CYCLES -----")
+//          printDebugInfo(dut)
+//        }
+//      }
+
+      for (i <- 1 to 50) {
+        dut.clock.step(1)
+        printCompactDebugInfo(dut)
       }
+
+      // Final state
+      println("\n----- FINAL STATE -----")
+      printDebugInfo(dut)
+
       // Check register values
       for ((reg, expectedValue) <- csrTestExpected) {
         val actualValue = dut.io.regFile(reg).peekInt()
+        println(f"Checking x$reg: Actual=0x${actualValue}%08x, Expected=0x${expectedValue}%08x")
         assert(actualValue == expectedValue,
           f"Register x$reg value: 0x${actualValue}%08x, expected: 0x${expectedValue}%08x")
       }
@@ -80,6 +205,9 @@ class CSRHardwareEdgeCasesTest extends CSRHardwareBaseTest {
   "CSR Edge Cases Test" should "pass on the ThreeCats processor" in {
     // Get binary file path
     val binFile = getBinaryPath("CSR_edgecases_test.bin")
+
+    // Dump binary file contents before testing
+    dumpBinary(binFile)
 
     test(new WildcatTestTop(binFile)).withAnnotations(Seq(WriteVcdAnnotation)) { dut =>
       // Run for enough cycles to complete the test
@@ -112,6 +240,9 @@ class CSRHardwareExceptionHandlingTest extends CSRHardwareBaseTest {
   "Exception Handling Test" should "pass on the ThreeCats processor" in {
     // Get binary file path
     val binFile = getBinaryPath("Exception_test.bin")
+
+    // Dump binary file contents before testing
+    dumpBinary(binFile)
 
     test(new WildcatTestTop(binFile)).withAnnotations(Seq(WriteVcdAnnotation)) { dut =>
       // Will need more steps for exception handling test

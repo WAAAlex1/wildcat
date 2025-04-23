@@ -102,16 +102,19 @@ object Functions {
         decOut.instrType := U.id.U
         decOut.rfWrite := true.B
         decOut.isLui := true.B
+        decOut.isIllegal := false.B
       }
       is(AuiPc.U) {
         decOut.instrType := U.id.U
         decOut.rfWrite := true.B
         decOut.isAuiPc := true.B
+        decOut.isIllegal := false.B
       }
       is(Jal.U) {
         decOut.instrType := UJ.id.U
         decOut.rfWrite := true.B
         decOut.isJal := true.B
+        decOut.isIllegal := false.B
       }
       is(JalR.U) {
         when(func3 === 0.U) { // JALR requires func3 to be 0
