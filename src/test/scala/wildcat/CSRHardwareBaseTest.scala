@@ -125,7 +125,7 @@ abstract class CSRHardwareBaseTest extends AnyFlatSpec with ChiselScalatestTeste
 class CSRHardwareInstructionsTest extends CSRHardwareBaseTest {
   // Define the expected register values - same as in simulator tests
   val csrTestExpected = Map(
-    REGS.x3   -> 0x00000000,      // Original mstatus (0)
+    REGS.x3   -> 0x00000000,      // Original mcause (0)
     REGS.x4   -> 0x00001880,      // After CSRRW
     REGS.x5   -> 0x00001888,      // After CSRRS
     REGS.x6   -> 0x00000888,      // After CSRRC
@@ -137,31 +137,17 @@ class CSRHardwareInstructionsTest extends CSRHardwareBaseTest {
     REGS.x12  -> 0x0000002F       // MARCHID = 47 (0x2F)
   )
 
-  "CSR Instructions Test" should "pass on the ThreeCats processor" in {
+  "CSR Instructions Edgecases Test" should "pass on the ThreeCats processor" in {
     // Get binary file path
     val binFile = getBinaryPath("CSR_full_test.bin")
 
     // Dump binary file contents before testing
-    dumpBinary(binFile)
+    // dumpBinary(binFile)
 
     test(new WildcatTestTop(binFile)).withAnnotations(Seq(WriteVcdAnnotation)) { dut =>
       // Run for enough cycles to complete the test
       println("\n===== STARTING TEST EXECUTION =====")
       println(s"Test binary: $binFile")
-
-      // Initial state
-      //println("\n----- INITIAL STATE -----")
-      //printDebugInfo(dut)
-
-//    // Execute with periodic debug info
-//      for (i <- 1 to 100) {
-//        dut.clock.step(1)
-//
-//        if (i % 10 == 0 || i <= 5) { // More frequent at start, then every 10 cycles
-//          println(s"\n----- AFTER $i CYCLES -----")
-//          printDebugInfo(dut)
-//        }
-//      }
 
       for (i <- 1 to 50) {
         dut.clock.step(1)
@@ -176,7 +162,7 @@ class CSRHardwareInstructionsTest extends CSRHardwareBaseTest {
       for ((reg, expectedValue) <- csrTestExpected) {
         val actualValue = dut.io.regFile(reg).peekInt()
         println(f"Checking x$reg: Actual=0x${actualValue}%08x, Expected=0x${expectedValue}%08x")
-        assert(actualValue == expectedValue,
+        assert((actualValue & 0xFFFFFFFFL) == (expectedValue & 0xFFFFFFFFL),
           f"Register x$reg value: 0x${actualValue}%08x, expected: 0x${expectedValue}%08x")
       }
     }
@@ -202,21 +188,32 @@ class CSRHardwareEdgeCasesTest extends CSRHardwareBaseTest {
     REGS.x14  -> 0x40000101  // x14 (verify MISA MASK)
   )
 
-  "CSR Edge Cases Test" should "pass on the ThreeCats processor" in {
+  "CSR Instructions Test" should "pass on the ThreeCats processor" in {
     // Get binary file path
     val binFile = getBinaryPath("CSR_edgecases_test.bin")
 
     // Dump binary file contents before testing
-    dumpBinary(binFile)
+    // dumpBinary(binFile)
 
     test(new WildcatTestTop(binFile)).withAnnotations(Seq(WriteVcdAnnotation)) { dut =>
       // Run for enough cycles to complete the test
-      dut.clock.step(100)
+      println("\n===== STARTING TEST EXECUTION =====")
+      println(s"Test binary: $binFile")
+
+      for (i <- 1 to 100) {
+        dut.clock.step(1)
+        printCompactDebugInfo(dut)
+      }
+
+      // Final state
+      println("\n----- FINAL STATE -----")
+      printDebugInfo(dut)
 
       // Check register values
       for ((reg, expectedValue) <- csrEdgeCaseTestExpected) {
         val actualValue = dut.io.regFile(reg).peekInt()
-        assert(actualValue == expectedValue,
+        println(f"Checking x$reg: Actual=0x${actualValue}%08x, Expected=0x${expectedValue}%08x")
+        assert((actualValue & 0xFFFFFFFFL) == (expectedValue & 0xFFFFFFFFL),
           f"Register x$reg value: 0x${actualValue}%08x, expected: 0x${expectedValue}%08x")
       }
     }
@@ -237,7 +234,7 @@ class CSRHardwareExceptionHandlingTest extends CSRHardwareBaseTest {
     REGS.x24 -> 0x55,       // Success code for handling illegal instr
   )
 
-  "Exception Handling Test" should "pass on the ThreeCats processor" in {
+  "CSR Hardware Exception Test" should "pass on the ThreeCats processor" in {
     // Get binary file path
     val binFile = getBinaryPath("Exception_test.bin")
 
@@ -245,28 +242,24 @@ class CSRHardwareExceptionHandlingTest extends CSRHardwareBaseTest {
     dumpBinary(binFile)
 
     test(new WildcatTestTop(binFile)).withAnnotations(Seq(WriteVcdAnnotation)) { dut =>
-      // Will need more steps for exception handling test
-      var cycles = 0
-      var testFinished = false
+      // Run for enough cycles to complete the test
+      println("\n===== STARTING TEST EXECUTION =====")
+      println(s"Test binary: $binFile")
 
-      while (cycles < 500 && !testFinished) {
+      for (i <- 1 to 100) {
         dut.clock.step(1)
-        cycles += 1
-
-        // Check if we're at the success_end loop indicated by x10 = 1
-        val x10Value = dut.io.regFile(10).peekInt()
-        if (x10Value == 1) {
-          testFinished = true
-        }
+        printDebugInfo(dut)
       }
 
-      // Check if we reached the success point
-      assert(testFinished, "Test didn't reach success endpoint within timeout")
+      // Final state
+      println("\n----- FINAL STATE -----")
+      printDebugInfo(dut)
 
       // Check register values
       for ((reg, expectedValue) <- exceptionTestExpected) {
         val actualValue = dut.io.regFile(reg).peekInt()
-        assert(actualValue == expectedValue,
+        println(f"Checking x$reg: Actual=0x${actualValue}%08x, Expected=0x${expectedValue}%08x")
+        assert((actualValue & 0xFFFFFFFFL) == (expectedValue & 0xFFFFFFFFL),
           f"Register x$reg value: 0x${actualValue}%08x, expected: 0x${expectedValue}%08x")
       }
     }

@@ -158,27 +158,25 @@ class ThreeCats() extends Wildcat() {
   val v2 = Mux(exFwdReg.valid && exFwdReg.wbDest === decExReg.rs2, exFwdReg.wbData, decExReg.rs2Val)
 
   // --------------------- CSR HANDLING IN EXECUTE STAGE -----------------------------------
-  // Wire to capture CSR value at execute stage for accurate reading
   val csrExValue = Wire(UInt(32.W))
 
-  // To handle CSR reads in execute stage, we need to make another read from the CSR file
-  // but only for CSR instructions that will write to registers
-  val needsCsrReRead = decExReg.valid && (
-    (decExReg.decOut.isCsrrw && decExReg.rd =/= 0.U) ||
-      decExReg.decOut.isCsrrs ||
-      decExReg.decOut.isCsrrc ||
-      (decExReg.decOut.isCsrrwi && decExReg.rd =/= 0.U) ||
-      decExReg.decOut.isCsrrsi ||
-      decExReg.decOut.isCsrrci
-    )
+  // Correctly extract the CSR address in execute stage
+  val csrAddrEx = decExReg.instruction(31, 20)
 
-  // Connect address for CSR reads in execute stage
-  when(needsCsrReRead) {
-    csr.io.address := decExReg.csrAddr
+  // Re-read the CSR in execute stage with the correct address
+  when (decExReg.valid && (
+    decExReg.decOut.isCsrrw || decExReg.decOut.isCsrrs || decExReg.decOut.isCsrrc ||
+      decExReg.decOut.isCsrrwi || decExReg.decOut.isCsrrsi || decExReg.decOut.isCsrrci
+    )) {
+    csr.io.address := csrAddrEx
     csr.io.readEnable := true.B
+  }.otherwise {
+    csr.io.address := instrReg(31, 20)
+    csr.io.readEnable := (decOut.isCsrrw && decEx.rd =/= 0.U) || decOut.isCsrrs || decOut.isCsrrc ||
+      (decOut.isCsrrwi && decEx.rd =/= 0.U) || decOut.isCsrrsi || decOut.isCsrrci
   }
 
-  // Get the most up-to-date CSR value, considering possible in-flight writes
+  // Get the most up-to-date CSR value from the current read
   csrExValue := csr.io.data
 
   // Determine when we need to write to a CSR
@@ -315,7 +313,10 @@ class ThreeCats() extends Wildcat() {
 
 
   // ------------------------------ DEBUGGING -------------------------------------
-  // Make key signals available for debugging
+  when(illegalInstr) {
+    printf("ILLEGAL INSTRUCTION DETECTED: PC=0x%x, Instruction=0x%x\n",
+      decExReg.pc, decExReg.instruction)
+  }
 
   // Add debug wires
   val debug_isJal = Wire(Bool())

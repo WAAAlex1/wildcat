@@ -136,11 +136,11 @@ class Csr() extends Module {
 //  }
 
   // Debug dump for mepc
-  when(RegNext(io.address === 0x341.U)) {
-    printf("MEPC access: read=%d, write=%d, value=0x%x\n",
-      io.readEnable, io.writeEnable,
-      Mux(io.writeEnable, io.writeData, readData))
-  }
+//  when(RegNext(io.address === 0x341.U)) {
+//    printf("MEPC access: read=%d, write=%d, value=0x%x\n",
+//      io.readEnable, io.writeEnable,
+//      Mux(io.writeEnable, io.writeData, readData))
+//  }
 
   //-------------------------------------------------------------------
 

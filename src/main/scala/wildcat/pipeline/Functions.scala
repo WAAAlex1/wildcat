@@ -48,7 +48,10 @@ object Functions {
     decOut.isCsrrci := false.B
 
     //Added for exception handling
-    decOut.isIllegal := true.B //Default to illegal, set false if legal instruction encountered
+    decOut.isIllegal := false.B
+
+    // Initialize opcode recognition
+    val isRecognizedOpcode = WireDefault(true.B)
 
     switch(opcode) {
       is(AluImm.U) {
@@ -56,118 +59,120 @@ object Functions {
         decOut.isImm := true.B
         decOut.rfWrite := true.B
         decOut.rs1Valid := true.B
-        decOut.isIllegal := false.B  // Valid instruction
+        isRecognizedOpcode := true.B
       }
       is(Alu.U) {
         decOut.instrType := R.id.U
         decOut.rfWrite := true.B
         decOut.rs1Valid := true.B // TODO: do I need this?
         decOut.rs2Valid := true.B
-        decOut.isIllegal := false.B  // Valid instruction
+        isRecognizedOpcode := true.B
       }
       is(Branch.U) {
         decOut.instrType := SBT.id.U
         decOut.isImm := true.B
         decOut.isBranch := true.B
 
-        // Check for valid funct3 values
-        when(func3 === 0.U || func3 === 1.U || // BEQ, BNE
-          func3 === 4.U || func3 === 5.U || // BLT, BGE
-          func3 === 6.U || func3 === 7.U) { // BLTU, BGEU
-          decOut.isIllegal := false.B
-        }
+        // Verify that branch func3 is valid
+        val validBranchFunc3 = func3 === BEQ.U || func3 === BNE.U ||
+          func3 === BLT.U || func3 === BGE.U ||
+          func3 === BLTU.U || func3 === BGEU.U
+
+        isRecognizedOpcode := validBranchFunc3
       }
       is(Load.U) {
         decOut.instrType := I.id.U
         decOut.isLoad := true.B
         decOut.rfWrite := true.B
+        // Valid load func3 values
+        val validLoadFunc3 = func3 === LB.U || func3 === LH.U ||
+          func3 === LW.U || func3 === LBU.U ||
+          func3 === LHU.U
 
-        // Check for valid funct3 values
-        when(func3 === 0.U || func3 === 1.U ||  // LB, LH
-             func3 === 2.U || func3 === 4.U ||  // LW, LBU
-             func3 === 5.U ) {                   // LHU
-          decOut.isIllegal := false.B
-        }
+        isRecognizedOpcode := validLoadFunc3
       }
       is(Store.U) {
         decOut.instrType := S.id.U
         decOut.isStore := true.B
+        // Valid store func3 values
+        val validStoreFunc3 = func3 === SB.U || func3 === SH.U || func3 === SW.U
 
-        // Check for valid funct3 values
-        when(func3 === 0.U || func3 === 1.U || func3 === 2.U) { // SB, SH, SW
-          decOut.isIllegal := false.B
-        }
+        isRecognizedOpcode := validStoreFunc3
       }
       is(Lui.U) {
         decOut.instrType := U.id.U
         decOut.rfWrite := true.B
         decOut.isLui := true.B
-        decOut.isIllegal := false.B
+        isRecognizedOpcode := true.B
       }
       is(AuiPc.U) {
         decOut.instrType := U.id.U
         decOut.rfWrite := true.B
         decOut.isAuiPc := true.B
-        decOut.isIllegal := false.B
+        isRecognizedOpcode := true.B
       }
       is(Jal.U) {
         decOut.instrType := UJ.id.U
         decOut.rfWrite := true.B
         decOut.isJal := true.B
-        decOut.isIllegal := false.B
+        isRecognizedOpcode := true.B
       }
       is(JalR.U) {
         when(func3 === 0.U) { // JALR requires func3 to be 0
           decOut.instrType := I.id.U
           decOut.isJalr := true.B
           decOut.rfWrite := true.B
-          decOut.isIllegal := false.B
+          isRecognizedOpcode := true.B
         }
       }
       is(System.U) {
         decOut.instrType := I.id.U
+
         when (func3 === 0.U) {
           when(instruction(31, 20) === 0.U) {
             decOut.isECall := true.B
-            decOut.isIllegal := false.B  // Valid instruction
+            isRecognizedOpcode := true.B
           }.elsewhen(instruction(31, 20) === 0x302.U && rs1 === 0.U && rd === 0.U) {
             decOut.isMret := true.B
-            decOut.isIllegal := false.B  // Valid instruction
+            isRecognizedOpcode := true.B
           }
         } .otherwise {
           switch(func3) {
             is(1.U) { // CSRRW
               decOut.isCsrrw := true.B
               decOut.rfWrite := true.B
-              decOut.isIllegal := false.B  // Valid instruction
+              isRecognizedOpcode := true.B
             }
             is(2.U) { // CSRRS
               decOut.isCsrrs := true.B
               decOut.rfWrite := true.B
-              decOut.isIllegal := false.B  // Valid instruction
+              isRecognizedOpcode := true.B
             }
             is(3.U) { // CSRRC
               decOut.isCsrrc := true.B
               decOut.rfWrite := true.B
-              decOut.isIllegal := false.B  // Valid instruction
+              isRecognizedOpcode := true.B
             }
             is(5.U) { // CSRRWI
               decOut.isCsrrwi := true.B
               decOut.rfWrite := true.B
-              decOut.isIllegal := false.B  // Valid instruction
+              isRecognizedOpcode := true.B
             }
             is(6.U) { // CSRRSI
               decOut.isCsrrsi := true.B
               decOut.rfWrite := true.B
-              decOut.isIllegal := false.B  // Valid instruction
+              isRecognizedOpcode := true.B
             }
             is(7.U) { // CSRRCI
               decOut.isCsrrci := true.B
               decOut.rfWrite := true.B
-              decOut.isIllegal := false.B  // Valid instruction
+              isRecognizedOpcode := true.B
             }
           }
         }
+      }
+      is(Fence.U) {
+        isRecognizedOpcode := true.B // FENCE is a NOP in this implementation
       }
       // For Load Reserved and Store Conditional instructions
       is(0x2F.U) { // AMO operations
@@ -177,19 +182,30 @@ object Functions {
             when(rs2 === 0.U) { // LR.W requires rs2=0
               decOut.isLr := true.B
               decOut.rfWrite := true.B
-              decOut.isIllegal := false.B
+              isRecognizedOpcode := true.B
             }
           }.elsewhen(funct5 === 3.U) { // SC.W
             decOut.isSc := true.B
             decOut.rfWrite := true.B
-            decOut.isIllegal := false.B
+            isRecognizedOpcode := true.B
           }
           // Other funct5 values remain marked as illegal
         }
       }
     }
+
+    // Mark as illegal if not recognized
+    decOut.isIllegal := !isRecognizedOpcode
+
     decOut.aluOp := getAluOp(instruction)
     decOut.imm := getImm(instruction, decOut.instrType)
+
+    // -------------- DEBUGGING ---------------------
+    when(isRecognizedOpcode === false.B) {
+      printf("UNRECOGNIZED OPCODE: 0x%x in instruction 0x%x\n", opcode, instruction)
+    }
+    // ----------------------------------------------
+
     decOut
   }
 
