@@ -52,6 +52,16 @@ class MemoryControllerTop(implicit val config:TilelinkConfig) extends Module {
   SpiCtrl.io.memSPIctrl(0) <> MemCtrl.io.SPIctrl(0)
   SpiCtrl.io.memSPIctrl(1) <> MemCtrl.io.SPIctrl(1)
 
+  io.CS0 := SpiCtrl.io.CS0out
+  io.CS1 := SpiCtrl.io.CS1out
+  io.CS2 := true.B // Attach flash ctrl here
+
+
+  SpiCtrl.io.so := 0.U
+
+
+  // Below is need for testing on FPGA only
+  /*
   val SPIbuffer0 = Module(new IOBUFFER)
   val SPIbuffer1 = Module(new IOBUFFER)
   val SPIbuffer2 = Module(new IOBUFFER)
@@ -75,7 +85,6 @@ class MemoryControllerTop(implicit val config:TilelinkConfig) extends Module {
   attach(io.IO1,SPIbuffer1.io.io)
   attach(io.IO2,SPIbuffer2.io.io)
   attach(io.IO3,SPIbuffer3.io.io)
-  io.CS0 := SpiCtrl.io.CS0out
-  io.CS1 := SpiCtrl.io.CS1out
-  io.CS2 := true.B // Attach flash ctrl here
+  */
+
 }

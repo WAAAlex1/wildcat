@@ -8,7 +8,7 @@ class SPITop extends Module{
   val io = IO(new Bundle{
     val memSPIctrl = Vec(2,new SpiCTRLIO)
 
-    val clk = Output(Bool())
+    val clk = Output(Clock())
     val si = Output(UInt(4.W))
     val so = Input(UInt(4.W))
     val dir = Output(Bool()) // 1 = Output, 0 = Input (from buffer)
@@ -29,6 +29,7 @@ class SPITop extends Module{
   SPICTRL0.io.dataIn := io.memSPIctrl(0).dataIn
   io.memSPIctrl(0).dataOut := SPICTRL0.io.dataOut
   io.memSPIctrl(0).done := SPICTRL0.io.done
+  SPICTRL0.io.sioOut := DontCare
 
   SPICTRL1.io.rst := io.memSPIctrl(1).rst
   SPICTRL1.io.rw := io.memSPIctrl(1).rw
@@ -37,6 +38,9 @@ class SPITop extends Module{
   SPICTRL1.io.dataIn := io.memSPIctrl(1).dataIn
   io.memSPIctrl(1).dataOut := SPICTRL1.io.dataOut
   io.memSPIctrl(1).done := SPICTRL1.io.done
+  SPICTRL1.io.sioOut := DontCare
+
+  io.dir := 1.U // always write
 
 
   // After updating SpiMemController.scala, should be:
@@ -55,5 +59,5 @@ class SPITop extends Module{
 
   io.CS0out := SPICTRL0.io.ce
   io.CS1out := SPICTRL1.io.ce
-  io.clk := Clock()
+  io.clk := clock
 }
