@@ -15,6 +15,8 @@ import wildcat.pipeline.Functions._
  *
  * Author: Martin Schoeberl (martin@jopdesign.com)
  *
+ * CSR Instruction handling / Exception handling added by:
+ * Alexander Aakersø and Georg Dyvad
  */
 class ThreeCats() extends Wildcat() {
   // some forward declarations
@@ -49,7 +51,12 @@ class ThreeCats() extends Wildcat() {
     pcNext := pcReg
   }
 
-  // Decode, register read, and memory access
+  /**********************************************************************************************
+   *                                                                                            *
+   *                                      DECODE STAGE                                          *
+   *                This section handles DECODE, REGISTER READ, MEMORY ACCESS                   *
+   *                                                                                            *
+   **********************************************************************************************/
   val pcRegReg = RegNext(pcReg)
   val instrReg = RegInit(0x00000033.U) // nop on reset
   instrReg := Mux(doBranch, 0x00000033.U, instr)
@@ -108,143 +115,91 @@ class ThreeCats() extends Wildcat() {
     io.dmem.wrEnable := wre
   }
 
-  // --------------------------- CSR --------------------------
+  // --------------------------- CSR IN DECODE (READ) ---------------------------------------
+  // DECODE STAGE -> HERE WE READ CSR
   val csr = Module(new Csr())
 
-  // Improved CSR forwarding system
-  // Track not just the last written CSR but also any active writes in the pipeline
-  val csrWriteInProgress = RegInit(false.B)
-  val lastWrittenCsrAddr = RegInit(0.U(12.W))
-  val lastWrittenCsrData = RegInit(0.U(32.W))
-
-  // Add pipeline tracking for CSRs in execute stage
-  val csrWriteInExStage = Wire(Bool())
-  val csrAddrInExStage = Wire(UInt(12.W))
-  val csrDataInExStage = Wire(UInt(32.W))
-
-  // Connect CSR read interface in decode stage
-  csr.io.address := instrReg(31, 20) // CSR address from instruction
-  csr.io.instruction := instrReg // The entire instruction
-  csr.io.readEnable := false.B // Default, will be set based on decoded instruction
-  csr.io.writeEnable := false.B // Default, will be set in execute stage
-  csr.io.writeData := 0.U // Default, will be set in execute stage
-
-  // Enable read for CSR instructions that need to read the current value
+  // READ CSR IN DECODE STAGE
   csr.io.readEnable := (decOut.isCsrrw && decEx.rd =/= 0.U) || decOut.isCsrrs || decOut.isCsrrc ||
     (decOut.isCsrrwi && decEx.rd =/= 0.U) || decOut.isCsrrsi || decOut.isCsrrci
 
-  // Enhanced CSR forwarding system
-  // Check for any CSR that might be in the process of being written
-  val csrForwardingNeeded = (csrWriteInProgress && (instrReg(31, 20) === lastWrittenCsrAddr)) ||
-    (csrWriteInExStage && (instrReg(31, 20) === csrAddrInExStage))
-
-  // Select the most recent value for forwarding (prioritize execute stage over last completed write)
-  val forwardedCsrValue = Mux(csrWriteInExStage && (instrReg(31, 20) === csrAddrInExStage),
-    csrDataInExStage,
-    lastWrittenCsrData)
-
-  // Get final CSR value with improved forwarding
-  val csrVal = Mux(csrForwardingNeeded, forwardedCsrValue, csr.io.data)
-
   // Store the CSR value in the pipeline register
-  decEx.csrVal := csrVal
-  // ------------------------------------------------------------
+  decEx.csrVal := csr.io.data
+  // ---------------------------------------------------------------------------------------
 
-  // Execute
+  /**********************************************************************************************
+   *                                                                                            *
+   *                                      EXECUTE STAGE                                         *
+   *                This section handles execution of instructions, ALU, MEMORY                 *
+   *                                                                                            *
+   **********************************************************************************************/
+
+  // Pipeline registers for EX stage
   val decExReg = RegNext(decEx)
 
-  // Forwarding
+  // Forwarding of wbData from EX stage to EX stage
   val v1 = Mux(exFwdReg.valid && exFwdReg.wbDest === decExReg.rs1, exFwdReg.wbData, decExReg.rs1Val)
   val v2 = Mux(exFwdReg.valid && exFwdReg.wbDest === decExReg.rs2, exFwdReg.wbData, decExReg.rs2Val)
 
-  // --------------------- CSR HANDLING IN EXECUTE STAGE -----------------------------------
-  val csrExValue = Wire(UInt(32.W))
-
-  // Correctly extract the CSR address in execute stage
-  val csrAddrEx = decExReg.instruction(31, 20)
-
-  // Re-read the CSR in execute stage with the correct address
-  when (decExReg.valid && (
-    decExReg.decOut.isCsrrw || decExReg.decOut.isCsrrs || decExReg.decOut.isCsrrc ||
-      decExReg.decOut.isCsrrwi || decExReg.decOut.isCsrrsi || decExReg.decOut.isCsrrci
-    )) {
-    csr.io.address := csrAddrEx
-    csr.io.readEnable := true.B
-  }.otherwise {
-    csr.io.address := instrReg(31, 20)
-    csr.io.readEnable := (decOut.isCsrrw && decEx.rd =/= 0.U) || decOut.isCsrrs || decOut.isCsrrc ||
-      (decOut.isCsrrwi && decEx.rd =/= 0.U) || decOut.isCsrrsi || decOut.isCsrrci
-  }
-
-  // Get the most up-to-date CSR value from the current read
-  csrExValue := csr.io.data
-
-  // Determine when we need to write to a CSR
-  val csrWriteData = Wire(UInt(32.W))
-  val zimm = decExReg.rs1
-
-  val csrWriteNeeded = decExReg.valid && (
-    decExReg.decOut.isCsrrw ||
-      (decExReg.decOut.isCsrrs && decExReg.rs1 =/= 0.U) ||
-      (decExReg.decOut.isCsrrc && decExReg.rs1 =/= 0.U) ||
-      decExReg.decOut.isCsrrwi ||
-      (decExReg.decOut.isCsrrsi && zimm(4, 0) =/= 0.U) ||
-      (decExReg.decOut.isCsrrci && zimm(4, 0) =/= 0.U)
-    )
-
-  // Compute the value to write based on CSR operation
-  when(decExReg.decOut.isCsrrw) {
-    csrWriteData := v1 // v1 is forwarded rs1 value
-  }.elsewhen(decExReg.decOut.isCsrrs) {
-    csrWriteData := csrExValue | v1
-  }.elsewhen(decExReg.decOut.isCsrrc) {
-    csrWriteData := csrExValue & (~v1).asUInt
-  }.elsewhen(decExReg.decOut.isCsrrwi) {
-    csrWriteData := zimm(4, 0)
-  }.elsewhen(decExReg.decOut.isCsrrsi) {
-    csrWriteData := csrExValue | zimm(4, 0)
-  }.otherwise { // CSRRCI
-    csrWriteData := csrExValue & (~zimm(4, 0)).asUInt
-  }
-
-  // Update CSR module signals for the write
-  csr.io.writeEnable := csrWriteNeeded
-  csr.io.writeData := csrWriteData
-
-  // Update signals for forwarding future CSR reads
-  csrWriteInExStage := csrWriteNeeded
-  csrAddrInExStage := decExReg.csrAddr
-  csrDataInExStage := csrWriteData
-
-  // Update forwarding state for completed CSR writes
-  csrWriteInProgress := csrWriteNeeded
-  when(csrWriteNeeded) {
-    lastWrittenCsrAddr := decExReg.csrAddr
-    lastWrittenCsrData := csrWriteData
-  }
-
-  // Counting for CSR
-  val instrComplete = decExReg.valid && !stall
-  csr.io.instrComplete := instrComplete
-  // ----------------------------------------------------------------
-
-  // ------------------- EXCEPTION HANDLING -------------------------
+  // ---------------------- EXCEPTION HANDLING ----------------------------------------------
+  val exceptionCause = WireDefault(0.U(32.W))
   // Detect illegal instruction
   val illegalInstr = decExReg.valid && decExReg.decOut.isIllegal
   // Detect ECALL
   val ecallM = decExReg.valid && decExReg.decOut.isECall
-  // Combine exception signals
-  val exceptionOccurred = illegalInstr || ecallM
-  val exceptionCause = WireDefault(0.U(32.W))
+
   when(illegalInstr) {
     exceptionCause := 2.U
   }.elsewhen(ecallM) {
     exceptionCause := 11.U
   }
+
+  // Combine exception signals
+  val exceptionOccurred = illegalInstr || ecallM
+
   // Connect exception signals to CSR module
   csr.io.exception := exceptionOccurred
   csr.io.exceptionCause := exceptionCause
   csr.io.exceptionPC := decExReg.pc
+  // ---------------------------------------------------------------------------------------
+
+  // --------------------- CSR HANDLING IN EXECUTE STAGE (WRITE) ---------------------------
+  // Signals
+  val csrWriteData = Wire(UInt(32.W))
+  val zimm = decExReg.rs1(4,0)
+  // Extract CSR Write address in execute stage
+  val csr.io.writeAddress = decExReg.instruction(31, 20)
+  // Determine when we need to write to a CSR
+  csr.io.writeEnable := decExReg.valid && (
+    decExReg.decOut.isCsrrw ||
+      (decExReg.decOut.isCsrrs && decExReg.rs1 =/= 0.U) ||
+      (decExReg.decOut.isCsrrc && decExReg.rs1 =/= 0.U) ||
+      decExReg.decOut.isCsrrwi ||
+      (decExReg.decOut.isCsrrsi && zimm =/= 0.U) ||
+      (decExReg.decOut.isCsrrci && zimm =/= 0.U)
+    )
+  // Compute the value to write based on CSR operation
+  when(decExReg.decOut.isCsrrw) {
+    csrWriteData := v1 // v1 is forwarded rs1 value
+  }.elsewhen(decExReg.decOut.isCsrrs) {
+    csrWriteData := decExReg.csrVal | v1
+  }.elsewhen(decExReg.decOut.isCsrrc) {
+    csrWriteData := decExReg.csrVal & (~v1).asUInt
+  }.elsewhen(decExReg.decOut.isCsrrwi) {
+    csrWriteData := zimm
+  }.elsewhen(decExReg.decOut.isCsrrsi) {
+    csrWriteData := decExReg.csrVal | zimm
+  }.otherwise { // CSRRCI
+    csrWriteData := decExReg.csrVal & (~zimm).asUInt
+  }
+
+  // Update CSR module signals for the write
+  csr.io.writeData := csrWriteData
+  csr.io.instruction := decExReg.instruction
+
+  // Counting for CSR
+  val instrComplete = decExReg.valid && !stall
+  csr.io.instrComplete := instrComplete
   // ----------------------------------------------------------------
 
   // ALU Operations and result selection
@@ -263,7 +218,7 @@ class ThreeCats() extends Wildcat() {
     decExReg.decOut.isCsrrwi    ||
     decExReg.decOut.isCsrrsi    ||
     decExReg.decOut.isCsrrci) {
-    res := csrExValue
+    res := decExReg.csrVal
   }
   wbDest := decExReg.rd
   wbData := res
@@ -308,7 +263,7 @@ class ThreeCats() extends Wildcat() {
   exFwdReg.wbDest := wbDest
   exFwdReg.wbData := wbData
 
-  // Just to exit tests
+  // Just to exit tests -- no longer sufficient with ecall handling
   val stop = decExReg.decOut.isECall
 
 
@@ -316,6 +271,15 @@ class ThreeCats() extends Wildcat() {
   when(illegalInstr) {
     printf("ILLEGAL INSTRUCTION DETECTED: PC=0x%x, Instruction=0x%x\n",
       decExReg.pc, decExReg.instruction)
+  }
+
+  when(decExReg.decOut.isMret){
+    printf("MRET DETECTED: PC=0x%x, TARGET=0x%x\n",
+      decExReg.pc, csr.io.mretTarget )
+  }
+  when(ecallM){
+    printf("ECALL DETECTED: PC=0x%x, ExceptionPC=0x%x, ExceptionCause=0x%x\n",
+      decExReg.pc, csr.io.exceptionPC, csr.io.exceptionCause)
   }
 
   // Add debug wires
@@ -340,8 +304,6 @@ class ThreeCats() extends Wildcat() {
   dontTouch(debug_isJalr)
   dontTouch(debug_branchInstr)
   dontTouch(debug_compareResult)
-  dontTouch(csrWriteNeeded)
-  dontTouch(csrExValue)
 
   // ------------------------------------------------------------------------------
 

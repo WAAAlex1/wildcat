@@ -79,6 +79,7 @@ abstract class CSRHardwareBaseTest extends AnyFlatSpec with ChiselScalatestTeste
     println("\n")
   }
 
+  // SIMPLE, NOT ALL INSTRUCTIONS INCLUDED
   def decodeInstructionForDebug(instr: Long): String = {
     val opcode = instr & 0x7f
     val rd = (instr >> 7) & 0x1f
@@ -112,6 +113,9 @@ abstract class CSRHardwareBaseTest extends AnyFlatSpec with ChiselScalatestTeste
     val target = dut.io.debug_branchTarget.peekInt()
 
     println(f"PC=0x${pc}%08x Instr=0x${instrValue}%08x Branch=${branch} Target=0x${target}%08x, WRITE CSR: " + dut.io.debug_csrWriteNeeded.peekBoolean())
+//    if(branch){
+//      println(f"BRANCHING TO: 0x${target}%08x")
+//    }
 //    if (branch) {
 //      println(f"BRANCH TAKEN FROM 0x${pc}%08x TO 0x${target}%08x")
 //    }
@@ -239,7 +243,7 @@ class CSRHardwareExceptionHandlingTest extends CSRHardwareBaseTest {
     val binFile = getBinaryPath("Exception_test.bin")
 
     // Dump binary file contents before testing
-    dumpBinary(binFile)
+    // dumpBinary(binFile)
 
     test(new WildcatTestTop(binFile)).withAnnotations(Seq(WriteVcdAnnotation)) { dut =>
       // Run for enough cycles to complete the test
@@ -248,7 +252,7 @@ class CSRHardwareExceptionHandlingTest extends CSRHardwareBaseTest {
 
       for (i <- 1 to 100) {
         dut.clock.step(1)
-        printDebugInfo(dut)
+        printCompactDebugInfo(dut)
       }
 
       // Final state

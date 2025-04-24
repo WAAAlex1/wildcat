@@ -11,10 +11,11 @@ import wildcat.CSR._
 class Csr() extends Module {
   val io = IO(new Bundle {
     // INPUTS
-    val address       = Input(UInt(12.W))
+    val readAddress   = Input(UInt(12.W))
+    val writeAddress  = Input(UInt(12.W))
+    val readEnable    = Input(Bool())
     val writeEnable   = Input(Bool())
     val writeData     = Input(UInt(32.W))
-    val readEnable    = Input(Bool())
     val instrComplete = Input(Bool())
 
     // OUTPUTS
@@ -56,56 +57,56 @@ class Csr() extends Module {
   val readData = Wire(UInt(32.W))
   readData := 0.U
   when(io.readEnable) {
-    readData := csrMem.read(io.address)
-    printf("CSR READ: address=0x%x, data=0x%x\n", io.address, readData)
-    // Special cases for specific CSR addresses
-    when(io.address === CYCLE.U)     { readData := cycle }
-    when(io.address === CYCLEH.U)    { readData := cycleh }
-    when(io.address === TIME.U)      { readData := cycle }
-    when(io.address === TIMEH.U)     { readData := cycleh }
-    when(io.address === MCYCLE.U)    { readData := cycle }
-    when(io.address === MCYCLEH.U)   { readData := cycleh }
-    when(io.address === INSTRET.U)   { readData := instret }
-    when(io.address === INSTRETH.U)  { readData := instreth }
-    when(io.address === MINSTRET.U)  { readData := instret }
-    when(io.address === MINSTRETH.U) { readData := instreth }
-    when(io.address === MARCHID.U)   { readData := WILDCAT_MARCHID.U }
-    when(io.address === MVENDORID.U) { readData := WILDCAT_VENDORID.U }
-    when(io.address === MISA.U)      { readData := WILDCAT_MISA.U }
+    // Forwarding logic - prioritize most recent values
+    when(io.writeEnable && (io.readAddress === io.writeAddress)) {
+      readData := io.writeData
+    }.elsewhen(io.exception && io.readAddress === MEPC.U) {
+      readData := io.exceptionPC
+    }.elsewhen(io.exception && io.readAddress === MCAUSE.U) {
+      readData := io.exceptionCause
+    }.elsewhen(io.exception && io.readAddress === MTVAL.U) {
+      readData := io.instruction
+    }.otherwise {
+      // Regular read from CSR memory
+      readData := csrMem.read(io.readAddress)
+    }
+
+    // Handle special register reads (counters, etc.)
+    when(io.readAddress === CYCLE.U)     { readData := cycle }
+    when(io.readAddress === CYCLEH.U)    { readData := cycleh }
+    when(io.readAddress === TIME.U)      { readData := cycle }
+    when(io.readAddress === TIMEH.U)     { readData := cycleh }
+    when(io.readAddress === MCYCLE.U)    { readData := cycle }
+    when(io.readAddress === MCYCLEH.U)   { readData := cycleh }
+    when(io.readAddress === INSTRET.U)   { readData := instret }
+    when(io.readAddress === INSTRETH.U)  { readData := instreth }
+    when(io.readAddress === MINSTRET.U)  { readData := instret }
+    when(io.readAddress === MINSTRETH.U) { readData := instreth }
+    when(io.readAddress === MARCHID.U)   { readData := WILDCAT_MARCHID.U }
+    when(io.readAddress === MVENDORID.U) { readData := WILDCAT_VENDORID.U }
+    when(io.readAddress === MISA.U)      { readData := WILDCAT_MISA.U }
+
+    //printf("CSR READ: address=0x%x, data=0x%x\n", io.address, readData)
   }
   io.data := readData
-
-  // Helper function to determine if a CSR is read-only
-  def isReadOnly(addr: UInt): Bool = {
-    // Check address ranges 0xC00-0xCFF and 0xD00-0xDFF (read-only ranges)
-    val upperBits = addr(11, 8)
-    val isStandardReadOnly = (upperBits === "b1100".U) || (upperBits === "b1101".U)
-
-    // Check specific read-only registers
-    val specificReadOnly = (addr === MARCHID.asUInt) ||
-      (addr === MVENDORID.asUInt) ||
-      (addr === HARTID.asUInt)
-
-    isStandardReadOnly || specificReadOnly
-  }
 
   // Write operation
   when(io.writeEnable) {
     // Special handling for counter registers
-    when(io.address === CYCLE.asUInt || io.address === TIME.asUInt || io.address === MCYCLE.asUInt) {
+    when(io.writeAddress === CYCLE.asUInt || io.writeAddress === TIME.asUInt || io.writeAddress === MCYCLE.asUInt) {
       cycle := io.writeData
-    }.elsewhen(io.address === CYCLEH.asUInt || io.address === TIMEH.asUInt || io.address === MCYCLEH.asUInt) {
+    }.elsewhen(io.writeAddress === CYCLEH.asUInt || io.writeAddress === TIMEH.asUInt || io.writeAddress === MCYCLEH.asUInt) {
       cycleh := io.writeData
-    }.elsewhen(io.address === INSTRET.asUInt || io.address === MINSTRET.asUInt) {
+    }.elsewhen(io.writeAddress === INSTRET.asUInt || io.writeAddress === MINSTRET.asUInt) {
       instret := io.writeData
-    }.elsewhen(io.address === INSTRETH.asUInt || io.address === MINSTRETH.asUInt) {
+    }.elsewhen(io.writeAddress === INSTRETH.asUInt || io.writeAddress === MINSTRETH.asUInt) {
       instreth := io.writeData
-    }.elsewhen(isReadOnly(io.address)) {
+    }.elsewhen(isReadOnly(io.writeAddress)) {
       // Empty : Don't write to read-only registers
     }.otherwise {
       // For all other CSRs, write directly - for a minimal RISC-V this is sufficient
-      csrMem.write(io.address, io.writeData)
-      printf("CSR WRITE: address=0x%x, data=0x%x\n", io.address, io.writeData)
+      csrMem.write(io.writeAddress, io.writeData)
+      //printf("CSR WRITE: address=0x%x, data=0x%x\n", io.address, io.writeData)
     }
   }
 
@@ -120,11 +121,27 @@ class Csr() extends Module {
     csrMem.write(MCAUSE.asUInt, io.exceptionCause)
     // Save instr to MTVAL
     csrMem.write(MTVAL.asUInt, io.instruction)
+    printf("MEPC(0x%x)=0x%x  ||  MCAUSE(0x%x)=0x%x ||  MTVAL(0x%x)=0x%x\n",
+      MEPC.asUInt, io.exceptionPC, MCAUSE.asUInt, io.exceptionCause, MTVAL.asUInt, io.instruction)
+
   }
 
   // Trap vector address
   io.trapVector := csrMem.read(MTVEC.asUInt)
 
+  // Helper function to determine if a CSR is read-only
+  def isReadOnly(addr: UInt): Bool = {
+    // Check address ranges 0xC00-0xCFF and 0xD00-0xDFF (read-only ranges)
+    val upperBits = addr(11, 8)
+    val isStandardReadOnly = (upperBits === "b1100".U) || (upperBits === "b1101".U)
+
+    // Check specific read-only registers
+    val specificReadOnly = (addr === MARCHID.asUInt) ||
+      (addr === MVENDORID.asUInt) ||
+      (addr === HARTID.asUInt)
+
+    isStandardReadOnly || specificReadOnly
+  }
 
   // ------------------------ DEBUGGING ------------------------------
 //  when(io.readEnable) {
