@@ -123,6 +123,8 @@ class ThreeCats() extends Wildcat() {
   csr.io.readEnable := (decOut.isCsrrw && decEx.rd =/= 0.U) || decOut.isCsrrs || decOut.isCsrrc ||
     (decOut.isCsrrwi && decEx.rd =/= 0.U) || decOut.isCsrrsi || decOut.isCsrrci
 
+  csr.io.readAddress := decEx.instruction(31, 20)
+
   // Store the CSR value in the pipeline register
   decEx.csrVal := csr.io.data
   // ---------------------------------------------------------------------------------------
@@ -168,7 +170,7 @@ class ThreeCats() extends Wildcat() {
   val csrWriteData = Wire(UInt(32.W))
   val zimm = decExReg.rs1(4,0)
   // Extract CSR Write address in execute stage
-  val csr.io.writeAddress = decExReg.instruction(31, 20)
+  csr.io.writeAddress := decExReg.instruction(31, 20)
   // Determine when we need to write to a CSR
   csr.io.writeEnable := decExReg.valid && (
     decExReg.decOut.isCsrrw ||

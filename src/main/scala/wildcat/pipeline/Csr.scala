@@ -60,15 +60,16 @@ class Csr() extends Module {
     // Forwarding logic - prioritize most recent values
     when(io.writeEnable && (io.readAddress === io.writeAddress)) {
       readData := io.writeData
-    }.elsewhen(io.exception && io.readAddress === MEPC.U) {
+    }.elsewhen(io.exception && (io.readAddress === MEPC.U)) {
       readData := io.exceptionPC
-    }.elsewhen(io.exception && io.readAddress === MCAUSE.U) {
+    }.elsewhen(io.exception && (io.readAddress === MCAUSE.U)) {
       readData := io.exceptionCause
-    }.elsewhen(io.exception && io.readAddress === MTVAL.U) {
+    }.elsewhen(io.exception && (io.readAddress === MTVAL.U)) {
       readData := io.instruction
     }.otherwise {
       // Regular read from CSR memory
       readData := csrMem.read(io.readAddress)
+      printf("CSR READ: address=0x%x, data=0x%x\n", io.readAddress, readData)
     }
 
     // Handle special register reads (counters, etc.)
@@ -85,8 +86,6 @@ class Csr() extends Module {
     when(io.readAddress === MARCHID.U)   { readData := WILDCAT_MARCHID.U }
     when(io.readAddress === MVENDORID.U) { readData := WILDCAT_VENDORID.U }
     when(io.readAddress === MISA.U)      { readData := WILDCAT_MISA.U }
-
-    //printf("CSR READ: address=0x%x, data=0x%x\n", io.address, readData)
   }
   io.data := readData
 
@@ -106,7 +105,7 @@ class Csr() extends Module {
     }.otherwise {
       // For all other CSRs, write directly - for a minimal RISC-V this is sufficient
       csrMem.write(io.writeAddress, io.writeData)
-      //printf("CSR WRITE: address=0x%x, data=0x%x\n", io.address, io.writeData)
+      printf("CSR WRITE: address=0x%x, data=0x%x\n", io.writeAddress, io.writeData)
     }
   }
 

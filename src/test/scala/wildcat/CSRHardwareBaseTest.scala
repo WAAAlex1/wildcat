@@ -111,8 +111,10 @@ abstract class CSRHardwareBaseTest extends AnyFlatSpec with ChiselScalatestTeste
     val instrValue = dut.io.debug_instr.peekInt()
     val branch = dut.io.debug_doBranch.peekBoolean()
     val target = dut.io.debug_branchTarget.peekInt()
+    val csrResult = dut.io.debug_csrResult.peekInt()
+    val csrWrite = dut.io.debug_csrWrite.peekBoolean()
 
-    println(f"PC=0x${pc}%08x Instr=0x${instrValue}%08x Branch=${branch} Target=0x${target}%08x, WRITE CSR: " + dut.io.debug_csrWriteNeeded.peekBoolean())
+    println(f"PC=0x${pc}%08x Instr=0x${instrValue}%08x Branch=${branch} Target=0x${target}%08x, WRITE CSR=${csrWrite}, csrResult: 0x${csrResult}%08x" )
 //    if(branch){
 //      println(f"BRANCHING TO: 0x${target}%08x")
 //    }

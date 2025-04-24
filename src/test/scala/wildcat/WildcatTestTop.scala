@@ -24,8 +24,8 @@ class WildcatTestTop(file: String) extends Module {
     val debug_doBranch = Output(Bool())
     val debug_branchTarget = Output(UInt(32.W))
     val debug_stall = Output(Bool())
-    val debug_csrWriteNeeded = Output(Bool())
-
+    val debug_csrWrite = Output(Bool())
+    val debug_csrResult = Output(UInt(32.W))
   })
   val cpuTop = Module(new WildcatTop(file))
 
@@ -42,15 +42,16 @@ class WildcatTestTop(file: String) extends Module {
   io.debug_doBranch := false.B
   io.debug_branchTarget := 0.U
   io.debug_stall := false.B
-  io.debug_csrWriteNeeded := false.B
+  io.debug_csrWrite := false.B
+  io.debug_csrResult := 0.U
 
   BoringUtils.bore(cpuTop.cpu.pcReg, Seq(io.debug_pc))
   BoringUtils.bore(cpuTop.cpu.decExReg.instruction, Seq(io.debug_instr))
   BoringUtils.bore(cpuTop.cpu.doBranch, Seq(io.debug_doBranch))
   BoringUtils.bore(cpuTop.cpu.branchTarget, Seq(io.debug_branchTarget))
   BoringUtils.bore(cpuTop.cpu.stall, Seq(io.debug_stall))
-  BoringUtils.bore(cpuTop.cpu.csrWriteNeeded, Seq(io.debug_csrWriteNeeded))
-
+  BoringUtils.bore(cpuTop.cpu.csr.io.writeEnable, Seq(io.debug_csrWrite))
+  BoringUtils.bore(cpuTop.cpu.decExReg.csrVal, Seq(io.debug_csrResult))
   cpuTop.io.rx := io.rx
   io.tx := cpuTop.io.tx
 }
