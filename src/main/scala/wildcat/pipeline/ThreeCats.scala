@@ -76,11 +76,11 @@ class ThreeCats() extends Wildcat() {
     val rd = UInt(5.W)
     val rs1Val = UInt(32.W)
     val rs2Val = UInt(32.W)
-    val csrVal = UInt(32.W)
     val csrAddr = UInt(12.W)
     val func3 = UInt(3.W)
     val memLow = UInt(2.W)
     val instruction = UInt(32.W)
+    val csrReadVal = UInt(32.W)
   })
   decEx.decOut := decOut
   decEx.valid := !doBranch
@@ -126,7 +126,7 @@ class ThreeCats() extends Wildcat() {
   csr.io.readAddress := decEx.instruction(31, 20)
 
   // Store the CSR value in the pipeline register
-  decEx.csrVal := csr.io.data
+  decEx.csrReadVal := csr.io.data
   // ---------------------------------------------------------------------------------------
 
   /**********************************************************************************************
@@ -184,15 +184,15 @@ class ThreeCats() extends Wildcat() {
   when(decExReg.decOut.isCsrrw) {
     csrWriteData := v1 // v1 is forwarded rs1 value
   }.elsewhen(decExReg.decOut.isCsrrs) {
-    csrWriteData := decExReg.csrVal | v1
+    csrWriteData := decExReg.csrReadVal | v1
   }.elsewhen(decExReg.decOut.isCsrrc) {
-    csrWriteData := decExReg.csrVal & (~v1).asUInt
+    csrWriteData := decExReg.csrReadVal & (~v1).asUInt
   }.elsewhen(decExReg.decOut.isCsrrwi) {
     csrWriteData := zimm
   }.elsewhen(decExReg.decOut.isCsrrsi) {
-    csrWriteData := decExReg.csrVal | zimm
+    csrWriteData := decExReg.csrReadVal | zimm
   }.otherwise { // CSRRCI
-    csrWriteData := decExReg.csrVal & (~zimm).asUInt
+    csrWriteData := decExReg.csrReadVal & (~zimm).asUInt
   }
 
   // Update CSR module signals for the write
@@ -220,7 +220,7 @@ class ThreeCats() extends Wildcat() {
     decExReg.decOut.isCsrrwi    ||
     decExReg.decOut.isCsrrsi    ||
     decExReg.decOut.isCsrrci) {
-    res := decExReg.csrVal
+    res := decExReg.csrReadVal
   }
   wbDest := decExReg.rd
   wbData := res
@@ -270,19 +270,19 @@ class ThreeCats() extends Wildcat() {
 
 
   // ------------------------------ DEBUGGING -------------------------------------
-  when(illegalInstr) {
-    printf("ILLEGAL INSTRUCTION DETECTED: PC=0x%x, Instruction=0x%x\n",
-      decExReg.pc, decExReg.instruction)
-  }
-
-  when(decExReg.decOut.isMret){
-    printf("MRET DETECTED: PC=0x%x, TARGET=0x%x\n",
-      decExReg.pc, csr.io.mretTarget )
-  }
-  when(ecallM){
-    printf("ECALL DETECTED: PC=0x%x, ExceptionPC=0x%x, ExceptionCause=0x%x\n",
-      decExReg.pc, csr.io.exceptionPC, csr.io.exceptionCause)
-  }
+//  when(illegalInstr) {
+//    printf("ILLEGAL INSTRUCTION DETECTED: PC=0x%x, Instruction=0x%x\n",
+//      decExReg.pc, decExReg.instruction)
+//  }
+//
+//  when(decExReg.decOut.isMret){
+//    printf("MRET DETECTED: PC=0x%x, TARGET=0x%x\n",
+//      decExReg.pc, csr.io.mretTarget )
+//  }
+//  when(ecallM){
+//    printf("ECALL DETECTED: PC=0x%x, ExceptionPC=0x%x, ExceptionCause=0x%x\n",
+//      decExReg.pc, csr.io.exceptionPC, csr.io.exceptionCause)
+//  }
 
   // Add debug wires
   val debug_isJal = Wire(Bool())

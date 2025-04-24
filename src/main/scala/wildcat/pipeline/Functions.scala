@@ -51,7 +51,7 @@ object Functions {
     decOut.isIllegal := false.B
 
     // Initialize opcode recognition
-    val isRecognizedOpcode = WireDefault(true.B)
+    val isRecognizedOpcode = WireDefault(false.B)
 
     switch(opcode) {
       is(AluImm.U) {
@@ -199,12 +199,6 @@ object Functions {
 
     decOut.aluOp := getAluOp(instruction)
     decOut.imm := getImm(instruction, decOut.instrType)
-
-    // -------------- DEBUGGING ---------------------
-    when(isRecognizedOpcode === false.B) {
-      printf("UNRECOGNIZED OPCODE: 0x%x in instruction 0x%x\n", opcode, instruction)
-    }
-    // ----------------------------------------------
 
     decOut
   }

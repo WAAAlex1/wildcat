@@ -37,10 +37,7 @@ _start:
     # Test 7: Write to mepc and read back
     li x1, 0xABCDEF00
     csrrw x0, mepc, x1        # mepc ← 0xABCDEF00 (no dest reg)
-    nop
-    nop
     csrrs x10, mepc, x0       # 10 = mepc
-
     # Test 8: Read read-only CSRs
     csrrs x11, mvendorid, x0  # x11 = mvendorid (platform-specific)
     csrrs x12, marchid, x0    # x12 = marchid (should be 0x2F or 47 decimal)

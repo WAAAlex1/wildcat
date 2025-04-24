@@ -2,6 +2,7 @@ package wildcat.pipeline
 
 import chisel3._
 import chisel3.util._
+import firrtl.passes.memlib.DefaultWriteFirstAnnotation
 import wildcat.CSR._
 
 /**
@@ -31,7 +32,7 @@ class Csr() extends Module {
   })
 
   // Create a CSR file supporting the entire range of registers (4096)
-  val csrMem = SyncReadMem(4096, UInt(32.W))
+  val csrMem = Mem(4096, UInt(32.W))
 
   // Special registers for counters
   val cycle = RegInit(0.U(32.W))
@@ -54,8 +55,7 @@ class Csr() extends Module {
   }
 
   // Read operation
-  val readData = Wire(UInt(32.W))
-  readData := 0.U
+  val readData = WireDefault(0.U(32.W))
   when(io.readEnable) {
     // Forwarding logic - prioritize most recent values
     when(io.writeEnable && (io.readAddress === io.writeAddress)) {
@@ -69,7 +69,7 @@ class Csr() extends Module {
     }.otherwise {
       // Regular read from CSR memory
       readData := csrMem.read(io.readAddress)
-      printf("CSR READ: address=0x%x, data=0x%x\n", io.readAddress, readData)
+//      printf("CSR READ: address=0x%x, data=0x%x\n", io.readAddress, readData)
     }
 
     // Handle special register reads (counters, etc.)
@@ -88,7 +88,6 @@ class Csr() extends Module {
     when(io.readAddress === MISA.U)      { readData := WILDCAT_MISA.U }
   }
   io.data := readData
-
   // Write operation
   when(io.writeEnable) {
     // Special handling for counter registers
@@ -105,7 +104,7 @@ class Csr() extends Module {
     }.otherwise {
       // For all other CSRs, write directly - for a minimal RISC-V this is sufficient
       csrMem.write(io.writeAddress, io.writeData)
-      printf("CSR WRITE: address=0x%x, data=0x%x\n", io.writeAddress, io.writeData)
+//      printf("CSR WRITE: address=0x%x, data=0x%x\n", io.writeAddress, io.writeData)
     }
   }
 
@@ -120,9 +119,8 @@ class Csr() extends Module {
     csrMem.write(MCAUSE.asUInt, io.exceptionCause)
     // Save instr to MTVAL
     csrMem.write(MTVAL.asUInt, io.instruction)
-    printf("MEPC(0x%x)=0x%x  ||  MCAUSE(0x%x)=0x%x ||  MTVAL(0x%x)=0x%x\n",
-      MEPC.asUInt, io.exceptionPC, MCAUSE.asUInt, io.exceptionCause, MTVAL.asUInt, io.instruction)
-
+//    printf("MEPC(0x%x)=0x%x  ||  MCAUSE(0x%x)=0x%x ||  MTVAL(0x%x)=0x%x\n",
+//      MEPC.asUInt, io.exceptionPC, MCAUSE.asUInt, io.exceptionCause, MTVAL.asUInt, io.instruction)
   }
 
   // Trap vector address
@@ -152,12 +150,12 @@ class Csr() extends Module {
 //  }
 
   // Debug dump for mepc
-//  when(RegNext(io.address === 0x341.U)) {
-//    printf("MEPC access: read=%d, write=%d, value=0x%x\n",
-//      io.readEnable, io.writeEnable,
-//      Mux(io.writeEnable, io.writeData, readData))
+//  when(io.readAddress === 0x341.U && io.readEnable) {
+//    printf("MEPC READ access: value=0x%x\n", csrMem.read(MEPC.asUInt))
 //  }
-
+//  when(io.writeAddress === 0x341.U && io.writeEnable) {
+//    printf("MEPC WRITE access: value=0x%x\n", io.writeData)
+//  }
   //-------------------------------------------------------------------
 
 }

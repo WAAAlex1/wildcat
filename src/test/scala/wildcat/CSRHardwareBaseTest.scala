@@ -113,8 +113,9 @@ abstract class CSRHardwareBaseTest extends AnyFlatSpec with ChiselScalatestTeste
     val target = dut.io.debug_branchTarget.peekInt()
     val csrResult = dut.io.debug_csrResult.peekInt()
     val csrWrite = dut.io.debug_csrWrite.peekBoolean()
+    val isIllegal = dut.io.debug_isIllegal.peekBoolean()
 
-    println(f"PC=0x${pc}%08x Instr=0x${instrValue}%08x Branch=${branch} Target=0x${target}%08x, WRITE CSR=${csrWrite}, csrResult: 0x${csrResult}%08x" )
+    println(f"PC=0x${pc}%08x Instr=0x${instrValue}%08x Branch=${branch} Target=0x${target}%08x, WRITE CSR=${csrWrite}, isIllegal=${isIllegal}" )
 //    if(branch){
 //      println(f"BRANCHING TO: 0x${target}%08x")
 //    }
@@ -143,7 +144,7 @@ class CSRHardwareInstructionsTest extends CSRHardwareBaseTest {
     REGS.x12  -> 0x0000002F       // MARCHID = 47 (0x2F)
   )
 
-  "CSR Instructions Edgecases Test" should "pass on the ThreeCats processor" in {
+  "CSR Instructions Test" should "pass on the ThreeCats processor" in {
     // Get binary file path
     val binFile = getBinaryPath("CSR_full_test.bin")
 
@@ -194,7 +195,7 @@ class CSRHardwareEdgeCasesTest extends CSRHardwareBaseTest {
     REGS.x14  -> 0x40000101  // x14 (verify MISA MASK)
   )
 
-  "CSR Instructions Test" should "pass on the ThreeCats processor" in {
+  "CSR Instructions Edgecases Test" should "pass on the ThreeCats processor" in {
     // Get binary file path
     val binFile = getBinaryPath("CSR_edgecases_test.bin")
 
@@ -234,7 +235,7 @@ class CSRHardwareExceptionHandlingTest extends CSRHardwareBaseTest {
   val exceptionTestExpected = Map(
     REGS.x10 -> 1,          // Success code
     REGS.x12 -> 0xFEFEFEFE, // Illegal instruction from mtval
-    REGS.x21 -> 1,          // Last exception cause = 2
+    REGS.x21 -> 2,          // Last illegal instruction exception causes = 2
     REGS.x22 -> 42,         // Success code for handling ecall
     REGS.x23 -> 0xFEFEFEFE, // Illegal instruction from mtval
     REGS.x24 -> 0x55,       // Success code for handling illegal instr
