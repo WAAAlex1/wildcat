@@ -91,13 +91,13 @@ class PSRAM_Model (nbytes: Int) extends Module{
       }.otherwise {
         switch(lastCommand) {
           is(QUAD_MODE_ENABLE) {
-            mode(0) := 1.U
+            mode :=  mode | 1.U
           }
           is(QUAD_MODE_EXIT){
-            mode(0) := 0.U
+            mode := mode & 0.U
           }
           is(WRAP_BOUNDARY_TOGGLE){
-            mode(1) := ~mode(1)
+            mode := mode ^ 2.U
           }
         }
       }

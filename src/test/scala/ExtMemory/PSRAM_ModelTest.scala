@@ -11,7 +11,6 @@ class PSRAM_ModelTestTop extends Module {
     val CS = Input(Bool())
     val IN = Input(UInt(4.W))
     val OUT = Output(UInt(4.W))
-    val dir = Output(UInt(4.W)) // Direction control for each IO line
 
     // Debug outputs
     val command = Output(UInt(8.W))
@@ -161,10 +160,10 @@ class PSRAM_ModelTest extends AnyFlatSpec with ChiselScalatestTester {
       pokeInputQuad(QPI_WRITE,2)
       dut.io.command.expect(QPI_WRITE)
       step()
-      dut.io.state.expect(2.U) // get address state
+      dut.io.state.expect(1.U) // get address state
       pokeInputQuad(64.U,6)
       step()
-      dut.io.state.expect(4.U) // write state
+      dut.io.state.expect(3.U) // write state
       dut.io.address.expect(64.U)
       pokeInputQuad("hAB".U,2)
       dut.io.val2Write.expect("hAB".U)
@@ -183,10 +182,10 @@ class PSRAM_ModelTest extends AnyFlatSpec with ChiselScalatestTester {
       pokeInputQuad(QPI_FAST_QUAD_READ, 2)
       dut.io.command.expect(QPI_FAST_QUAD_READ)
       step()
-      dut.io.state.expect(2.U) // get address state
+      dut.io.state.expect(1.U) // get address state
       pokeInputQuad(64.U, 6)
       step()
-      dut.io.state.expect(3.U) // write state
+      dut.io.state.expect(2.U) // read state
       step(8)
       dut.io.readMemVal.expect("hAB".U)
       dut.io.OUT.expect(10.U)

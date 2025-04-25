@@ -51,7 +51,7 @@ class CacheTop(blockSize: Int)(implicit val config:TilelinkConfig) extends Modul
   io.CacheReqOut.bits.addrRequest := 0.U
   io.CacheReqOut.bits.isWrite := false.B
   io.CacheReqOut.bits.activeByteLane := 0.U
-  io.CacheRspIn.ready := true.B
+  io.CacheRspIn.ready := true.B // Always ready for response
 
 
   // Stall  processor on miss
@@ -59,22 +59,20 @@ class CacheTop(blockSize: Int)(implicit val config:TilelinkConfig) extends Modul
     io.CPUmemIO.stall := true.B
   }
 
-  // Convert Vec[Bool] to UInt
-  val weBits = io.CPUmemIO.wrEnable.asUInt
 
-
-  // Drive Cache on read
+  // Drive controller on read
   when(io.CPUmemIO.rdEnable){ // lb, lh or lw
-
     Controller.io.validReq := true.B
     Controller.io.rw := true.B
     Controller.io.memAdd := io.CPUmemIO.rdAddress
 
   }
 
+
+  val weBits = io.CPUmemIO.wrEnable.asUInt
+
   // Drive controller on write
   when(weBits > 0.U){ // sb, sh or sw
-
     Controller.io.validReq := true.B
     Controller.io.rw := false.B
     Controller.io.memAdd := io.CPUmemIO.wrAddress
@@ -95,7 +93,7 @@ class CacheTop(blockSize: Int)(implicit val config:TilelinkConfig) extends Modul
     io.CacheReqOut.bits.dataRequest := io.CPUmemIO.wrData
     io.CacheReqOut.bits.addrRequest := io.CPUmemIO.wrAddress
     io.CacheReqOut.bits.isWrite := true.B
-    io.CacheReqOut.bits.activeByteLane := Controller.io.wrEnable.asUInt
+    io.CacheReqOut.bits.activeByteLane := weBits
 
   }
 

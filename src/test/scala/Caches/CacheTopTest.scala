@@ -101,8 +101,8 @@ class CacheTopTest extends AnyFlatSpec with ChiselScalatestTester {
       dut.io.CPUmemIO.rdEnable.poke(true.B)
       step()
       dut.io.CPUmemIO.stall.expect(false.B)
-      step()
       dut.io.CPUmemIO.rdData.expect("hCAFEBABE".U)
+      step()
 
       // Try to read next word (non modified)
       dut.io.CPUmemIO.rdAddress.poke(4.U)
@@ -110,7 +110,6 @@ class CacheTopTest extends AnyFlatSpec with ChiselScalatestTester {
       dut.io.CPUmemIO.rdEnable.poke(true.B)
       step()
       dut.io.CPUmemIO.stall.expect(false.B)
-      step()
       dut.io.CPUmemIO.rdData.expect(0.U)
     }
   }
@@ -151,8 +150,8 @@ class CacheTopTest extends AnyFlatSpec with ChiselScalatestTester {
       dut.io.CPUmemIO.rdEnable.poke(true.B)
       step()
       dut.io.CPUmemIO.stall.expect(false.B)
-      step()
       dut.io.CPUmemIO.rdData.expect("hBABE0000".U)
+      step()
 
       // Try to read next word (non modified)
       dut.io.CPUmemIO.rdAddress.poke(4.U)
@@ -160,7 +159,6 @@ class CacheTopTest extends AnyFlatSpec with ChiselScalatestTester {
       dut.io.CPUmemIO.rdEnable.poke(true.B)
       step()
       dut.io.CPUmemIO.stall.expect(false.B)
-      step()
       dut.io.CPUmemIO.rdData.expect(0.U)
     }
   }

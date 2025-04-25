@@ -27,6 +27,8 @@ class CacheControllerTester(blockSize: Int) extends Module {
     //Debugging
     val cacheDO = Output(UInt(32.W))
     val state = Output(UInt(2.W))
+    val actualTag = Output(UInt(32.W))
+    val targetTag = Output(UInt(32.W))
   })
   val controller = Module(new CacheController(blockSize))
   controller.io.validReq := io.validReq
@@ -35,7 +37,7 @@ class CacheControllerTester(blockSize: Int) extends Module {
   controller.io.CPUdataIn := io.CPUdataIn
   io.CPUdataOut := controller.io.CPUdataOut
   io.cacheMiss := controller.io.cacheMiss
-  io.cacheInvalid := controller.io.cacheInvalid
+  io.cacheInvalid := DontCare
   io.ready := controller.io.ready
   controller.io.wrEnable := io.wrEnable
   controller.io.memDataIn := io.memDataIn
@@ -45,8 +47,15 @@ class CacheControllerTester(blockSize: Int) extends Module {
 
   io.cacheDO := DontCare
   io.state := DontCare
+  io.targetTag := DontCare
+  io.actualTag := DontCare
+  val valid = WireInit(false.B)
   BoringUtils.bore(controller.cache.io.DO,Seq(io.cacheDO))
   BoringUtils.bore(controller.stateReg,Seq(io.state))
+  BoringUtils.bore(controller.cacheValid,Seq(valid))
+  BoringUtils.bore(controller.targetTag, Seq(io.targetTag))
+  BoringUtils.bore(controller.actualTag, Seq(io.actualTag))
+  io.cacheInvalid := !valid
 }
 
 class CacheControllerTest extends AnyFlatSpec with ChiselScalatestTester {
@@ -307,6 +316,8 @@ class CacheControllerTest extends AnyFlatSpec with ChiselScalatestTester {
       dut.clock.step()
       dut.io.state.expect(1.U) //Compare tag State
       dut.io.cacheInvalid.expect(false.B) // Cache valid because of current block
+      dut.io.targetTag.expect(1.U)
+      dut.io.actualTag.expect(0.U)
       dut.io.cacheMiss.expect(true.B) // cache miss => overwrite block
       dut.clock.step(blockSize + 3)
       dut.io.ready.expect(true.B)

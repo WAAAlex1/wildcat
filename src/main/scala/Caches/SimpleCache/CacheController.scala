@@ -24,7 +24,6 @@ class CacheController(blockSize: Int) extends Module {
     val CPUdataIn = Input(UInt(32.W))
     val CPUdataOut = Output(UInt(32.W))
     val cacheMiss = Output(Bool())
-    val cacheInvalid = Output(Bool())
     val ready = Output(Bool())
     val wrEnable = Input(Vec (4, Bool()))
 
@@ -38,20 +37,23 @@ class CacheController(blockSize: Int) extends Module {
   val cacheSize = 1024
   val blockCount = cacheSize / blockSize
 
+  val n = log2Down(blockCount) // Number of bits for index
+  val m = log2Down(blockSize) // Number of bits for locating word in block
+  val tagSize = 32 - (n + m + 2)
   val lastRead = RegInit(0.U(32.W)) // Register to remember last read value
-  val tagStore = Module(new SRAM(cacheSize/blockSize,32))
+  val tagStore = Module(new SRAM(cacheSize/blockSize,tagSize + 1))
   val cache = Module(new SRAM(cacheSize,32))
 
 
 
-  val blockOffset = io.memAdd(1 + log2Down(blockSize), 2)
-  val index = io.memAdd(1 + log2Down(blockSize) + log2Down(blockCount), 2 + log2Down(blockSize))
-  val targetTag = io.memAdd(31, 2 + log2Down(blockSize) + log2Down(blockCount))
-  val targetTagWord = WireInit(0.U(32.W))
-  val actualTag = tagStore.io.DO(31, 2 + log2Down(blockSize) + log2Down(blockCount))
-  val cacheValid = tagStore.io.DO(1 + log2Down(blockSize) + log2Down(blockCount))
-  val writeIndex = RegInit(0.U(3.W)) // Tracks the index during write-through
-  val updatedTag = RegInit(0.U(32.W))
+  val blockOffset = io.memAdd(1 + m, 2)
+  val index = io.memAdd(1 + m + n, 2 + m)
+  val targetTag = io.memAdd(31, 32 - tagSize)
+  val actualTag = tagStore.io.DO(tagSize, 1)
+  val cacheValid = tagStore.io.DO(0)
+  val rwIndex = RegInit(0.U(3.W)) // Tracks the index during write-through
+  val updatedTag = targetTag ## 1.U // Setting valid bit to 1
+
   val cacheWriteAdd = WireInit(0.U(log2Down(cacheSize).W))
   val cacheReadAdd = WireInit(0.U(log2Down(cacheSize).W))
 
@@ -64,6 +66,7 @@ class CacheController(blockSize: Int) extends Module {
   // Default connections
   tagStore.io.rw := true.B
   tagStore.io.EN := false.B
+  tagStore.io.DI := updatedTag
   cache.io.rw := true.B
   cache.io.EN := false.B
   cache.io.DI := io.CPUdataIn
@@ -71,10 +74,9 @@ class CacheController(blockSize: Int) extends Module {
   io.memReq := 0.U
 
   cacheReadAdd := index ## blockOffset
-  cacheWriteAdd := index ## writeIndex
+  cacheWriteAdd := index ## rwIndex
 
   cache.io.ad := cacheAdd
-  targetTagWord := targetTag << 12
 
   // Address lines
   tagStore.io.ad := index
@@ -156,18 +158,16 @@ class CacheController(blockSize: Int) extends Module {
       cacheAdd := cacheWriteAdd
       cache.io.DI := io.memDataIn
 
-      updatedTag := targetTagWord | "h800".U // Setting valid bit to 1
-
       when(io.memReady) {
         writeRAM(cache)
 
-        when(writeIndex === (blockSize - 1).asUInt) {
+        when(rwIndex === (blockSize - 1).asUInt) {
           //Update tag store
           writeRAM(tagStore)
           stateReg := compareTag
-          writeIndex := 0.U
+          rwIndex := 0.U
         }.otherwise {
-          writeIndex := writeIndex + 1.U
+          rwIndex := rwIndex + 1.U
         }
       }
     }
@@ -177,11 +177,9 @@ class CacheController(blockSize: Int) extends Module {
   // Output
 
   io.ready := stateReg === idle
-  io.cacheInvalid := !cacheValid
-  tagStore.io.DI := updatedTag
   io.CPUdataOut := Mux(io.ready,lastRead,cache.io.DO)
-  //io.alloAddr := (memWordAdd ## 0.U(2.W)) + writeIndex*4.U
-  io.alloAddr := (memWordAdd << 2).asUInt + writeIndex*4.U
+  //io.alloAddr := (memWordAdd ## 0.U(2.W)) + rwIndex*4.U
+  io.alloAddr := (memWordAdd << 2).asUInt + rwIndex*4.U
 }
 
 
