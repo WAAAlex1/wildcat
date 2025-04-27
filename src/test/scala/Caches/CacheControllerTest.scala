@@ -13,7 +13,7 @@ class CacheControllerTester(blockSize: Int) extends Module {
     val memAdd = Input(UInt(32.W))
     val CPUdataIn = Input(UInt(32.W))
     val CPUdataOut = Output(UInt(32.W))
-    val cacheMiss = Output(Bool())
+    val stall = Output(Bool())
     val cacheInvalid = Output(Bool())
     val ready = Output(Bool())
     val wrEnable = Input(Vec(4, Bool()))
@@ -36,7 +36,7 @@ class CacheControllerTester(blockSize: Int) extends Module {
   controller.io.memAdd := io.memAdd
   controller.io.CPUdataIn := io.CPUdataIn
   io.CPUdataOut := controller.io.CPUdataOut
-  io.cacheMiss := controller.io.cacheMiss
+  io.stall := controller.io.stall
   io.cacheInvalid := DontCare
   io.ready := controller.io.ready
   controller.io.wrEnable := io.wrEnable
@@ -49,13 +49,12 @@ class CacheControllerTester(blockSize: Int) extends Module {
   io.state := DontCare
   io.targetTag := DontCare
   io.actualTag := DontCare
-  val valid = WireInit(false.B)
+
   BoringUtils.bore(controller.cache.io.DO,Seq(io.cacheDO))
   BoringUtils.bore(controller.stateReg,Seq(io.state))
-  BoringUtils.bore(controller.cacheValid,Seq(valid))
+  BoringUtils.bore(controller.cacheInvalid,Seq(io.cacheInvalid))
   BoringUtils.bore(controller.targetTag, Seq(io.targetTag))
   BoringUtils.bore(controller.actualTag, Seq(io.actualTag))
-  io.cacheInvalid := !valid
 }
 
 class CacheControllerTest extends AnyFlatSpec with ChiselScalatestTester {
@@ -81,7 +80,7 @@ class CacheControllerTest extends AnyFlatSpec with ChiselScalatestTester {
       dut.io.validReq.poke(true.B)
       dut.clock.step()
       dut.io.ready.expect(false.B)
-      dut.io.cacheMiss.expect(true.B)
+      dut.io.stall.expect(true.B)
     }
   }
   "Controller" should "be invalid" in {
@@ -108,7 +107,7 @@ class CacheControllerTest extends AnyFlatSpec with ChiselScalatestTester {
       dut.clock.step()
       dut.io.validReq.poke(false.B)
       dut.io.ready.expect(false.B)
-      dut.io.cacheMiss.expect(true.B)
+      dut.io.stall.expect(true.B)
       dut.io.memReady.poke(true.B)
       dut.clock.step(blockSize + 1)
       dut.io.cacheInvalid.expect(false.B)
@@ -125,12 +124,12 @@ class CacheControllerTest extends AnyFlatSpec with ChiselScalatestTester {
 
       dut.io.validReq.poke(false.B)
       dut.io.ready.expect(false.B)
-      dut.io.cacheMiss.expect(true.B)
+      dut.io.stall.expect(true.B)
       dut.io.cacheInvalid.expect(true.B)
       dut.io.memReady.poke(true.B)
       dut.clock.step(blockSize + 1)
       dut.io.cacheInvalid.expect(false.B)
-      dut.io.cacheMiss.expect(false.B)
+      dut.io.stall.expect(false.B)
       dut.clock.step(2)
       dut.io.ready.expect(true.B)
 
@@ -147,12 +146,12 @@ class CacheControllerTest extends AnyFlatSpec with ChiselScalatestTester {
       dut.clock.step()
       dut.io.validReq.poke(false.B)
       dut.io.ready.expect(false.B)
-      dut.io.cacheMiss.expect(true.B)
+      dut.io.stall.expect(true.B)
       dut.io.cacheInvalid.expect(true.B)
       dut.io.memReady.poke(true.B)
       dut.clock.step(blockSize + 1)
       dut.io.cacheInvalid.expect(false.B)
-      dut.io.cacheMiss.expect(false.B)
+      dut.io.stall.expect(false.B)
       dut.clock.step(2)
       dut.io.ready.expect(true.B)
     }
@@ -168,12 +167,12 @@ class CacheControllerTest extends AnyFlatSpec with ChiselScalatestTester {
       dut.clock.step()
       dut.io.validReq.poke(false.B)
       dut.io.ready.expect(false.B)
-      dut.io.cacheMiss.expect(true.B)
+      dut.io.stall.expect(true.B)
       dut.io.cacheInvalid.expect(true.B)
       dut.io.memReady.poke(true.B)
       dut.clock.step(blockSize + 1)
       dut.io.cacheInvalid.expect(false.B)
-      dut.io.cacheMiss.expect(false.B)
+      dut.io.stall.expect(false.B)
       dut.clock.step(2)
       dut.io.ready.expect(true.B)
       dut.clock.step()
@@ -182,7 +181,7 @@ class CacheControllerTest extends AnyFlatSpec with ChiselScalatestTester {
       dut.io.validReq.poke(true.B)
       dut.clock.step()
       dut.io.cacheInvalid.expect(false.B)
-      dut.io.cacheMiss.expect(false.B)
+      dut.io.stall.expect(false.B)
       dut.clock.step()
       dut.io.ready.expect(true.B)
       dut.io.CPUdataOut.expect(42.U)
@@ -203,14 +202,14 @@ class CacheControllerTest extends AnyFlatSpec with ChiselScalatestTester {
 
       dut.io.validReq.poke(false.B)
       dut.io.ready.expect(false.B)
-      dut.io.cacheMiss.expect(true.B)
+      dut.io.stall.expect(true.B)
       dut.io.cacheInvalid.expect(true.B)
       dut.io.memReady.poke(true.B)
 
       dut.clock.step(blockSize + 1)
 
       dut.io.cacheInvalid.expect(false.B)
-      dut.io.cacheMiss.expect(false.B)
+      dut.io.stall.expect(false.B)
 
       dut.clock.step(3)
       dut.io.ready.expect(true.B)
@@ -224,32 +223,33 @@ class CacheControllerTest extends AnyFlatSpec with ChiselScalatestTester {
       dut.clock.step()
       dut.io.validReq.poke(false.B)
       dut.io.cacheInvalid.expect(false.B)
-      dut.io.cacheMiss.expect(false.B)
+      dut.io.stall.expect(false.B)
       dut.clock.step(2)
       dut.io.ready.expect(true.B)
+
+      // Read new values in every cycle
       dut.io.validReq.poke(true.B)
       dut.io.rw.poke(true.B)
-      dut.io.memAdd.poke("b1000".U)
-      dut.clock.step()
-      dut.io.validReq.poke(false.B)
-      dut.io.CPUdataOut.expect(2.U)
-      dut.clock.step()
-      dut.io.ready.expect(true.B)
-      dut.io.CPUdataOut.expect(2.U)
       dut.io.memAdd.poke("b0000".U)
-      dut.io.validReq.poke(true.B)
       dut.clock.step()
-      dut.io.validReq.poke(false.B)
-      dut.clock.step()
-      dut.io.ready.expect(true.B)
+      dut.io.stall.expect(false.B)
+      dut.io.memAdd.poke("b1000".U)
       dut.io.CPUdataOut.expect(42.U)
-      dut.io.memAdd.poke("b100".U)
-      dut.io.validReq.poke(true.B)
-      dut.clock.step()
-      dut.io.validReq.poke(false.B)
       dut.clock.step()
       dut.io.ready.expect(true.B)
+      dut.io.CPUdataOut.expect(2.U)
+      dut.io.memAdd.poke("b100".U)
+      dut.clock.step()
+      dut.io.state.expect(1.U)
+      dut.io.stall.expect(false.B)
       dut.io.CPUdataOut.expect(0.U)
+      dut.io.memAdd.poke("h10000000".U)
+      dut.io.stall.expect(true.B)
+      dut.clock.step()
+      dut.io.stall.expect(true.B)
+      dut.io.CPUdataOut.expect(0.U)
+
+
     }
   }
 
@@ -265,14 +265,14 @@ class CacheControllerTest extends AnyFlatSpec with ChiselScalatestTester {
       dut.clock.step()
       dut.io.validReq.poke(false.B)
       dut.io.ready.expect(false.B)
-      dut.io.cacheMiss.expect(true.B)
+      dut.io.stall.expect(true.B)
       dut.io.cacheInvalid.expect(true.B)
       dut.io.memReady.poke(true.B)
 
       dut.clock.step(blockSize + 1)
 
       dut.io.cacheInvalid.expect(false.B)
-      dut.io.cacheMiss.expect(false.B)
+      dut.io.stall.expect(false.B)
 
       dut.clock.step(2)
       dut.io.ready.expect(true.B)
@@ -318,7 +318,7 @@ class CacheControllerTest extends AnyFlatSpec with ChiselScalatestTester {
       dut.io.cacheInvalid.expect(false.B) // Cache valid because of current block
       dut.io.targetTag.expect(1.U)
       dut.io.actualTag.expect(0.U)
-      dut.io.cacheMiss.expect(true.B) // cache miss => overwrite block
+      dut.io.stall.expect(true.B) // cache miss => overwrite block
       dut.clock.step(blockSize + 3)
       dut.io.ready.expect(true.B)
       dut.io.rw.poke(true.B)
@@ -338,17 +338,18 @@ class CacheControllerTest extends AnyFlatSpec with ChiselScalatestTester {
       dut.io.ready.expect(true.B)
       dut.io.CPUdataOut.expect(42.U)
 
-      // Read second word in block
+      // Read second and third word in block
       dut.io.memAdd.poke("b100".U)
-      dut.clock.step(2)
-      dut.io.ready.expect(true.B)
+      dut.clock.step()
       dut.io.CPUdataOut.expect(21.U)
-
-      // Read third word in block
       dut.io.memAdd.poke("b1000".U)
+      dut.clock.step()
+      dut.io.ready.expect(true.B)
+      dut.io.CPUdataOut.expect(0.U)
       dut.clock.step(2)
       dut.io.ready.expect(true.B)
       dut.io.CPUdataOut.expect(0.U)
+
 
       // Allocate, overwrites yet index again
       dut.io.memDataIn.poke(2.U)
