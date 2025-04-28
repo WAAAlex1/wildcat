@@ -1,6 +1,6 @@
 package Bootloader
 
-import ExtMemory.IOBUFFER
+import ExtMemory.{IOBUFFER, PSRAM_Model}
 import SPI.SPITop
 import caravan.bus.tilelink.{TLRequest, TLResponse, TilelinkConfig}
 import chisel3.experimental._
@@ -27,10 +27,13 @@ class MemoryControllerTop(implicit val config:TilelinkConfig) extends Module {
     val CS0 = Output(Bool())
     val CS1 = Output(Bool())
     val CS2 = Output(Bool())
+    /*
     val IO0 = Analog(1.W)
     val IO1 = Analog(1.W)
     val IO2 = Analog(1.W)
     val IO3 = Analog(1.W)
+    */
+
   })
   val MemCtrl = Module(new MemoryController())
   // dummy code
@@ -56,11 +59,22 @@ class MemoryControllerTop(implicit val config:TilelinkConfig) extends Module {
   io.CS1 := SpiCtrl.io.CS1out
   io.CS2 := true.B // Attach flash ctrl here
 
+  // For simulation
+  val RAM0 = Module(new PSRAM_Model(2048))
+  val RAM1 = Module(new PSRAM_Model(2048))
 
+  RAM0.io.CS := SpiCtrl.io.CS0out
+  RAM0.io.IN := SpiCtrl.io.si
+  RAM1.io.IN := SpiCtrl.io.si
+  RAM1.io.CS := SpiCtrl.io.CS1out
   SpiCtrl.io.so := 0.U
+  when(!SpiCtrl.io.CS0out){
+    SpiCtrl.io.so := RAM0.io.OUT
+  }.elsewhen(!SpiCtrl.io.CS1out){
+    SpiCtrl.io.so := RAM1.io.OUT
+  }
 
-
-  // Below is need for testing on FPGA only
+  // Below is need for FPGA only
   /*
   val SPIbuffer0 = Module(new IOBUFFER)
   val SPIbuffer1 = Module(new IOBUFFER)

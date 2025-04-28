@@ -28,7 +28,7 @@ class PSRAM_Model (nbytes: Int) extends Module{
   val address = RegInit(0.U(24.W))
   val mode = RegInit(0.U(2.W)) // mode(0): 0 = SPI, 1 = QPI, mode(1): 0 = LINEAR BURST, 1 = WRAP
   val idx = RegInit(0.U(3.W))
-  val lastRead = RegInit(0.U(24.W))
+  val lastRead = RegInit(0.U(8.W))
   val rw = RegInit(true.B) // read/write mode register
   val readMemVal = WireInit(0.U(8.W))
   val waitDone = RegInit(false.B)
@@ -50,40 +50,26 @@ class PSRAM_Model (nbytes: Int) extends Module{
   switch(stateReg){
     is(idle){
       when(!io.CS){
-        when(!mode) { // SPI mode
-          lastRead := lastRead ## io.IN(0)
-          command := lastRead ## io.IN(0)
+        when(!mode(0)) { // SPI mode
+          lastRead := lastRead(6,0) ## io.IN(0)
+          command := lastRead(6,0) ## io.IN(0)
 
-          when(idx === 7.U) {
-            lastRead := 0.U
-            idx := 0.U
-          }.otherwise {
-            idx := idx + 1.U
-          }
 
         }.otherwise { // QPI mode
-          lastRead := lastRead ## io.IN
-          command := lastRead ## io.IN
+          lastRead := lastRead(3,0) ## io.IN
+          command := lastRead(3,0) ## io.IN
 
-          when(idx === 1.U) {
-            idx := 0.U
-            lastRead := 0.U
-
-            switch(command) {
-              is(QPI_WRITE) {
-                rw := false.B
-                address := 0.U
-                stateReg := getAddress
-              }
-              is(QPI_FAST_QUAD_READ) {
-                rw := true.B
-                address := 0.U
-                stateReg := getAddress
-              }
+          switch(command) {
+            is(QPI_WRITE) {
+              rw := false.B
+              address := 0.U
+              stateReg := getAddress
             }
-
-          }.otherwise {
-            idx := idx + 1.U
+            is(QPI_FAST_QUAD_READ) {
+              rw := true.B
+              address := 0.U
+              stateReg := getAddress
+            }
           }
         }
         lastCommand := command
@@ -152,8 +138,8 @@ class PSRAM_Model (nbytes: Int) extends Module{
     }
     is(write){
       when(!io.CS) {
-        lastRead := lastRead ## io.IN
-        val2Write := lastRead ## io.IN
+        lastRead := lastRead(3,0) ## io.IN
+        val2Write := lastRead(3,0) ## io.IN
         when(idx === 1.U) {
           mem.write(address,val2Write)
           idx := 0.U
