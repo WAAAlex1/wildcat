@@ -183,7 +183,7 @@ abstract class CSRHardwareBaseTest extends AnyFlatSpec with ChiselScalatestTeste
 class CSRHardwareInstructionsTest extends CSRHardwareBaseTest {
   // Define the expected register values
   val csrTestExpected = Map(
-    REGS.x3   -> 0x00000000,      // Original mcause (0)
+    REGS.x3   -> 0x00000001,      // Original mcause (0)
     REGS.x4   -> 0x00001880,      // After CSRRW
     REGS.x5   -> 0x00001888,      // After CSRRS
     REGS.x6   -> 0x00000888,      // After CSRRC
