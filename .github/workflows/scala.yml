@@ -1,10 +1,7 @@
-name: Scala CI
+name: Scala CI (Pull Request)
 
 on:
-  push:
-    branches:
-      - '*' # changed from master.  This will run on all branches.
-  pull_request: # added.  This will run on PRs.
+  pull_request:
     branches:
       - master
 
@@ -48,3 +45,30 @@ jobs:
       - name: Fail job if tests failed
         if: env.TEST_EXIT_CODE != '0'
         run: exit 1
+
+      - name: Comment on failure
+        if: env.TEST_EXIT_CODE != '0'
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const output = await core.getOutput('run_tests');
+            const testResult = process.env.TEST_EXIT_CODE;
+            console.log(`Test Result: ${testResult}`);
+            console.log(`Output: ${output}`);
+            if (testResult !== '0') {
+              const message = `
+                Scala CI failed! Tests did not pass.
+                <details><summary>Test Output</summary>
+                \`\`\`
+                ${process.env.TEST_EXIT_CODE}
+                \`\`\`
+                </details>
+              `;
+              await github.rest.issues.createComment({
+                issue_number: context.issue.number,
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                body: message
+              });
+            }
