@@ -155,7 +155,7 @@ class BusInterconnectTest extends AnyFlatSpec with ChiselScalatestTester {
       dut.io.iReqAck.expect(false.B)
       dut.io.dReqAck.expect(true.B)
       step()
-      dut.io.CPUdCacheMemIO.stall.expect(false.B) // hit after allocate
+      dut.io.CPUdCacheMemIO.stall.expect(true.B) // hit after allocate, but stall since cache is busy
       dut.io.CPUdCacheMemIO.rdData.expect(0.U) // Reading before write
       step()
       dut.io.iReqAck.expect(false.B)
@@ -220,7 +220,7 @@ class BusInterconnectTest extends AnyFlatSpec with ChiselScalatestTester {
       dut.io.dReqAck.expect(false.B)
       dut.io.iReqAck.expect(true.B)
       step()
-      dut.io.CPUiCacheMemIO.stall.expect(false.B) // hit after allocate
+      dut.io.CPUiCacheMemIO.stall.expect(true.B) // hit after allocate, but stall since cache is busy
       dut.io.CPUiCacheMemIO.rdData.expect(0.U) // Reading before write
       step()
       dut.io.dReqAck.expect(false.B)
