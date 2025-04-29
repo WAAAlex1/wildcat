@@ -151,7 +151,7 @@ class CacheTopTest extends AnyFlatSpec with ChiselScalatestTester {
       step()
       dut.io.CPUmemIO.stall.expect(false.B)
       dut.io.CPUmemIO.rdData.expect("hBABE0000".U)
-      step()
+
 
       // Try to read next word (non modified)
       dut.io.CPUmemIO.rdAddress.poke(4.U)

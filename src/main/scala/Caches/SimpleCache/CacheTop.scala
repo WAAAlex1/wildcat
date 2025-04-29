@@ -55,9 +55,8 @@ class CacheTop(blockSize: Int)(implicit val config:TilelinkConfig) extends Modul
 
 
   // Stall  processor on miss
-  when(Controller.io.cacheMiss){
-    io.CPUmemIO.stall := true.B
-  }
+  io.CPUmemIO.stall := Controller.io.stall
+
 
 
   // Drive controller on read
@@ -77,6 +76,9 @@ class CacheTop(blockSize: Int)(implicit val config:TilelinkConfig) extends Modul
     Controller.io.rw := false.B
     Controller.io.memAdd := io.CPUmemIO.wrAddress
 
+    when(!Controller.io.ready){ // Ensure stalling when busy writing
+      io.CPUmemIO.stall := true.B
+    }
   }
 
 

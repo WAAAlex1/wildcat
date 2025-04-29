@@ -266,7 +266,18 @@ class ThreeCats() extends Wildcat() {
 
   // Memory read access
   when(decExReg.decOut.isLoad && !doBranch) {
-    res := selectLoadData(io.dmem.rdData, decExReg.func3, decExReg.memLow)
+    when(!io.dmem.stall) {
+      res := selectLoadData(io.dmem.rdData, decExReg.func3, decExReg.memLow)
+    }.otherwise{
+      // Freeze inputs to pipeline stages
+      pcNext := pcReg
+      instrReg := instrReg
+      decExReg := decExReg
+
+      // Guard writes
+      exFwdReg.valid := false.B
+      decExReg.valid := false.B
+    }
   }
 
   // Forwarding register values to ALU
