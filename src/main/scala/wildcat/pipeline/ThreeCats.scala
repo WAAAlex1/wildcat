@@ -92,6 +92,7 @@ class ThreeCats() extends Wildcat() {
     val func3 = UInt(3.W)
     val memLow = UInt(2.W)
     val instruction = UInt(32.W)
+    val csr_data = UInt(32.W)
   })
   decEx.decOut := decOut
   decEx.valid := !doBranch
@@ -136,7 +137,7 @@ class ThreeCats() extends Wildcat() {
 
   // The CSR address comes from the instruction field
   csr.io.readAddress := decEx.csrAddr
-  val csr_read_reg = RegNext(csr.io.data)
+  decEx.csr_data := csr.io.data
   // ---------------------------------------------------------------------------------------
 
   /**********************************************************************************************
@@ -195,15 +196,15 @@ class ThreeCats() extends Wildcat() {
   when(decExReg.decOut.isCsrrw) {
     csr.io.writeData := v1 // v1 is forwarded rs1 value
   }.elsewhen(decExReg.decOut.isCsrrs) {
-    csr.io.writeData := csr_read_reg | v1
+    csr.io.writeData := decExReg.csr_data | v1
   }.elsewhen(decExReg.decOut.isCsrrc) {
-    csr.io.writeData := csr_read_reg & (~v1).asUInt
+    csr.io.writeData := decExReg.csr_data & (~v1).asUInt
   }.elsewhen(decExReg.decOut.isCsrrwi) {
     csr.io.writeData := zimm
   }.elsewhen(decExReg.decOut.isCsrrsi) {
-    csr.io.writeData := csr_read_reg | zimm
+    csr.io.writeData := decExReg.csr_data | zimm
   }.elsewhen(decExReg.decOut.isCsrrci) {
-    csr.io.writeData := csr_read_reg & (~zimm).asUInt
+    csr.io.writeData := decExReg.csr_data & (~zimm).asUInt
   }.otherwise {
     csr.io.writeData := 0.U
   }
@@ -229,7 +230,7 @@ class ThreeCats() extends Wildcat() {
     decExReg.decOut.isCsrrwi    ||
     decExReg.decOut.isCsrrsi    ||
     decExReg.decOut.isCsrrci) {
-    res := csr_read_reg
+    res := decExReg.csr_data
   }
   wbDest := decExReg.rd
   wbData := res
