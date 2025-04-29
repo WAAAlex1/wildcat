@@ -368,11 +368,11 @@ class SimRV(mem: Array[Int], start: Int, stop: Int) {
 
     instrCnt += 1
 
-    (pc != oldPc && run && pc < stop) && !(pc == 0) // detect endless loop or go beyond code to stop simulation
+    (pc != oldPc && run && pc < stop) && !(pc == 0 && opcode == System) // detect endless loop or go beyond code to stop simulation
     // Added that code will stop running if new pc is 0 (we jump back to start)
     // Solves Ecall issue - added ecall support will not make the code stop
     //                      Instead will set pc = MTVEC = 0 (missing exception handler for tests)
-    //                      Code will hence loop infinitely
+    //                      Code will hence loop/run infinitely
   }
 
   //Handling exceptions

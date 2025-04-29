@@ -3,20 +3,120 @@ package wildcat
 import org.scalatest.flatspec.AnyFlatSpec
 import wildcat.isasim.SimRV
 import java.io.File
+import java.io.FileWriter
 import wildcat.REGS
+import scala.sys.process._
+
 /**
- * Base class for CSR and Exception handling tests
+ * Base class for CSR and Exception handling simulator tests
  */
 abstract class CSRSimBaseTest extends AnyFlatSpec {
   // Create the bin directory if it doesn't exist
-  val binDir = new File("bin")
+  val binDir = new File("CSR_testFiles")
   if (!binDir.exists()) {
     binDir.mkdir()
   }
 
+  // Create link.ld if it doesn't exist
+  val linkFile = new File(binDir, "link.ld")
+  if (!linkFile.exists()) {
+    val linkScript =
+      """SECTIONS
+        |{
+        |  . = 0x0000;      /* Start address for the .text section */
+        |  .text : { *(.text) }
+        |  .data : { *(.data) }
+        |  .bss : { *(.bss) }
+        |}
+        |""".stripMargin
+
+    // Use Java IO to write the file
+    val writer = new FileWriter(linkFile)
+    try {
+      writer.write(linkScript)
+    } finally {
+      writer.close()
+    }
+    println(s"Created link.ld in ${binDir.getAbsolutePath}")
+  }
+
   // Get the path to the binary file
   def getBinaryPath(filename: String): String = {
-    new File("bin", filename).getAbsolutePath
+    new File(binDir, filename).getAbsolutePath
+  }
+
+  // Helper function to compile test
+  def compileTest(testName: String): String = {
+    val sourceFile = new File(binDir, s"${testName}.s")
+    val objectFile = new File(binDir, s"${testName}.o")
+    val executableFile = new File(binDir, s"${testName}.out")
+    val binaryFile = new File(binDir, s"${testName}.bin")
+
+    if (!sourceFile.exists()) {
+      fail(s"Source file ${sourceFile.getAbsolutePath} not found")
+    }
+
+    println(s"Compiling $testName for simulation testing...")
+
+    // Compile the assembly file
+    val asResult = s"riscv64-unknown-elf-as -march rv32ia_zicsr ${sourceFile.getAbsolutePath} -o ${objectFile.getAbsolutePath}".!
+    if (asResult != 0) {
+      fail(s"Failed to assemble ${sourceFile.getAbsolutePath}")
+    }
+
+    // Link the object file
+    val ldResult = s"riscv64-unknown-elf-ld -m elf32lriscv -T ${linkFile.getAbsolutePath} ${objectFile.getAbsolutePath} -o ${executableFile.getAbsolutePath}".!
+    if (ldResult != 0) {
+      fail(s"Failed to link ${objectFile.getAbsolutePath}")
+    }
+
+    // Generate binary file
+    val binResult = s"riscv64-unknown-elf-objcopy -O binary ${executableFile.getAbsolutePath} ${binaryFile.getAbsolutePath}".!
+    if (binResult != 0) {
+      fail(s"Failed to create binary ${binaryFile.getAbsolutePath}")
+    }
+
+    println(s"Successfully compiled ${executableFile.getAbsolutePath} and ${binaryFile.getAbsolutePath}")
+
+    // Return the path to the binary file
+    binaryFile.getAbsolutePath
+  }
+
+  // Helper function to compile and run a test in the simulator
+  def runSimulatorTest(testName: String, expectedResults: Map[Int, Int]): Unit = {
+    // Compile the test
+    val binFile = compileTest(testName)
+
+    println(s"\n===== STARTING $testName SIMULATION =====")
+    println(s"Binary file: $binFile")
+
+    try {
+      // Run the simulator using Util.getCode
+      val (code, start) = Util.getCode(binFile)
+      val sim = new SimRV(code, start, start + code.length * 4)
+
+      println("\n----- FINAL REGISTER STATE -----")
+
+      // Check register values
+      var allPassed = true
+      for ((reg, expectedValue) <- expectedResults) {
+        val actualValue = sim.reg(reg)
+        println(f"Register x$reg: Actual=0x${actualValue}%08x, Expected=0x${expectedValue}%08x")
+
+        if (actualValue != expectedValue) {
+          allPassed = false
+          println(f"ERROR: Register x$reg value mismatch: 0x${actualValue}%08x, expected: 0x${expectedValue}%08x")
+        }
+      }
+
+      // Final assertion for the test
+      assert(allPassed, "One or more register values did not match expected values")
+    } catch {
+      case e: Exception =>
+        println(s"Error running simulator test: ${e.getMessage}")
+        e.printStackTrace()
+        fail(s"Error running simulator test: ${e.getMessage}")
+    }
   }
 }
 
@@ -39,19 +139,7 @@ class CSRSimInstructionsTest extends CSRSimBaseTest {
   )
 
   "CSR Instructions Test" should "pass in the simulator" in {
-    // Get binary file path
-    val binFile = getBinaryPath("CSR_full_test.bin")
-
-    // Run the simulator using Util.getCode
-    val (code, start) = Util.getCode(binFile)
-    val sim = new SimRV(code, start, start + code.length * 4)
-
-    // Check register values
-    for ((reg, expectedValue) <- csrTestExpected) {
-      val actualValue = sim.reg(reg)
-      assert(actualValue == expectedValue,
-        f"Register x$reg value: 0x${actualValue}%08x, expected: 0x${expectedValue}%08x")
-    }
+    runSimulatorTest("CSR_full_test", csrTestExpected)
   }
 }
 
@@ -66,23 +154,11 @@ class CSRSimExceptionHandlingTest extends CSRSimBaseTest {
     REGS.x21 -> 2,          // Last exception cause = 2
     REGS.x22 -> 42,         // Success code for handling ecall
     REGS.x23 -> 0xFEFEFEFE, // Illegal instruction from mtval
-    REGS.x24 -> 0x55,       // Success code fro handling illegal instr
+    REGS.x24 -> 0x55,       // Success code for handling illegal instr
   )
 
   "Exception Handling Test" should "pass in the simulator" in {
-    // Get binary file path
-    val binFile = getBinaryPath("Exception_test.bin")
-
-    // Run the simulator using Util.getCode
-    val (code, start) = Util.getCode(binFile)
-    val sim = new SimRV(code, start, start + code.length * 4)
-
-    // Check register values
-    for ((reg, expectedValue) <- exceptionTestExpected) {
-      val actualValue = sim.reg(reg)
-      assert(actualValue == expectedValue,
-        f"Register x$reg value: 0x${actualValue}%08x, expected: 0x${expectedValue}%08x")
-    }
+    runSimulatorTest("Exception_test", exceptionTestExpected)
   }
 }
 
@@ -106,18 +182,28 @@ class CSRSimEdgeCasesTest extends CSRSimBaseTest {
   )
 
   "CSR Edge Cases Test" should "pass in the simulator" in {
-    // Get binary file path
-    val binFile = getBinaryPath("CSR_edgecases_test.bin")
+    runSimulatorTest("CSR_edgecases_test", csrEdgeCaseTestExpected)
+  }
+}
 
-    // Run the simulator using Util.getCode
-    val (code, start) = Util.getCode(binFile)
-    val sim = new SimRV(code, start, start + code.length * 4)
+/**
+ * Main combined test class that runs all CSR simulator tests
+ */
+class CSRSimAllTests extends CSRSimBaseTest {
+  // Create instances of the individual test classes
+  val instructionsTest = new CSRSimInstructionsTest()
+  val exceptionTest = new CSRSimExceptionHandlingTest()
+  val edgeCasesTest = new CSRSimEdgeCasesTest()
 
-    // Check register values
-    for ((reg, expectedValue) <- csrEdgeCaseTestExpected) {
-      val actualValue = sim.reg(reg)
-      assert(actualValue == expectedValue,
-        f"Register x$reg value: 0x${actualValue}%08x, expected: 0x${expectedValue}%08x")
-    }
+  "CSR Instructions" should "pass all simulator tests" in {
+    runSimulatorTest("CSR_full_test", instructionsTest.csrTestExpected)
+  }
+
+  "CSR Exception Handling" should "pass all simulator tests" in {
+    runSimulatorTest("Exception_test", exceptionTest.exceptionTestExpected)
+  }
+
+  "CSR Edge Cases" should "pass all simulator tests" in {
+    runSimulatorTest("CSR_edgecases_test", edgeCasesTest.csrEdgeCaseTestExpected)
   }
 }
