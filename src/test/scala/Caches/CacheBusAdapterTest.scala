@@ -59,7 +59,7 @@ class CacheBusAdapterTest extends AnyFlatSpec with ChiselScalatestTester {
       dut.io.reqOut.bits.isWrite.expect(false.B)
       dut.io.reqOut.bits.activeByteLane.expect(15.U)
       step()
-      dut.io.CPUMemIO.stall.expect(false.B) // hit after allocate
+      dut.io.CPUMemIO.stall.expect(true.B) // hit after allocate, but stall since cache is busy
       dut.io.CPUMemIO.rdData.expect(0.U) // Reading before write
       step()
       dut.io.reqOut.valid.expect(true.B)
@@ -115,7 +115,7 @@ class CacheBusAdapterTest extends AnyFlatSpec with ChiselScalatestTester {
       dut.io.reqOut.bits.isWrite.expect(false.B)
       dut.io.reqOut.bits.activeByteLane.expect(15.U)
       step()
-      dut.io.CPUMemIO.stall.expect(false.B) // hit after allocate
+      dut.io.CPUMemIO.stall.expect(true.B) // hit after allocate, but stall since cache is busy
       dut.io.CPUMemIO.rdData.expect(0.U) // Reading before write
       step()
       dut.io.reqOut.valid.expect(true.B)

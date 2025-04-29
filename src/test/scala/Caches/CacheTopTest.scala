@@ -83,7 +83,7 @@ class CacheTopTest extends AnyFlatSpec with ChiselScalatestTester {
       dut.io.CacheReqOut.bits.addrRequest.expect(12.U)
       dut.io.CacheReqOut.bits.activeByteLane.expect(15.U)
       step(blockSize - 3)
-      dut.io.CPUmemIO.stall.expect(false.B) // hit after allocate
+      dut.io.CPUmemIO.stall.expect(true.B) // hit after allocate, but stall since cache is busy
       dut.io.CPUmemIO.rdData.expect(0.U) // Reading before write
       step()
       dut.io.memReq.expect(2.U) //Write through
@@ -132,7 +132,7 @@ class CacheTopTest extends AnyFlatSpec with ChiselScalatestTester {
       step()
       dut.io.memReq.expect(1.U) //Allocate
       step(blockSize)
-      dut.io.CPUmemIO.stall.expect(false.B) // hit after allocate
+      dut.io.CPUmemIO.stall.expect(true.B) // hit after allocate, but stall since cache is busy
       dut.io.CPUmemIO.rdData.expect(0.U) // Reading before write
       step()
       dut.io.memReq.expect(2.U) //Write through
@@ -178,7 +178,7 @@ class CacheTopTest extends AnyFlatSpec with ChiselScalatestTester {
       step()
       dut.io.CPUmemIO.stall.expect(true.B) // miss / invalid
       step(blockSize + 1)
-      dut.io.CPUmemIO.stall.expect(false.B) // hit after allocate
+      dut.io.CPUmemIO.stall.expect(true.B) // hit after allocate, but stall since cache is busy
       dut.io.CPUmemIO.rdData.expect(0.U) // Reading before write
       step()
       dut.io.memReq.expect(2.U) //Write through
