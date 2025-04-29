@@ -192,7 +192,7 @@ class CSRHardwareEdgeCasesTest extends CSRHardwareBaseTest {
     REGS.x10  -> 0x0000002F, // x10 (marchid value)
     REGS.x11  -> 0x0000002F, // x11 (verify marchid unchanged)
     REGS.x13  -> 0x40000101, // x13 (verify MISA Start value)
-    REGS.x14  -> 0x40000101  // x14 (verify MISA MASK)
+    REGS.x14  -> 0xFFFFFFFF  // x14 (MISA NOT WRITE PROTECTED HERE)
   )
 
   "CSR Instructions Edgecases Test" should "pass on the ThreeCats processor" in {

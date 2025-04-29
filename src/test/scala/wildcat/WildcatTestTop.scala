@@ -53,7 +53,7 @@ class WildcatTestTop(file: String) extends Module {
   BoringUtils.bore(cpuTop.cpu.branchTarget, Seq(io.debug_branchTarget))
   BoringUtils.bore(cpuTop.cpu.stall, Seq(io.debug_stall))
   BoringUtils.bore(cpuTop.cpu.csr.io.writeEnable, Seq(io.debug_csrWrite))
-  BoringUtils.bore(cpuTop.cpu.decExReg.csrReadVal, Seq(io.debug_csrResult))
+  BoringUtils.bore(cpuTop.cpu.csr.io.data, Seq(io.debug_csrResult))
   BoringUtils.bore(cpuTop.cpu.decExReg.decOut.isIllegal, Seq(io.debug_isIllegal))
 
   cpuTop.io.rx := io.rx

@@ -44,6 +44,18 @@ class ThreeCats() extends Wildcat() {
   pcReg := pcNext
   io.imem.address := pcNext
 
+  // Control signal for if processor has been initialized -- used to prevent exceptions at startup/reset
+  val processorInitialized = RegInit(false.B)
+  val initCounter = RegInit(0.U(2.W))
+
+  // simple counter which toggles processorInitialized after 3 clock cycles
+  when (!processorInitialized) {
+    initCounter := initCounter + 1.U
+    when (initCounter === 3.U) {
+      processorInitialized := true.B
+    }
+  }
+
   // Fetch
   val instr = WireDefault(io.imem.data)
   when (io.imem.stall) {
@@ -80,7 +92,6 @@ class ThreeCats() extends Wildcat() {
     val func3 = UInt(3.W)
     val memLow = UInt(2.W)
     val instruction = UInt(32.W)
-    val csrReadVal = UInt(32.W)
   })
   decEx.decOut := decOut
   decEx.valid := !doBranch
@@ -123,10 +134,9 @@ class ThreeCats() extends Wildcat() {
   csr.io.readEnable := (decOut.isCsrrw && decEx.rd =/= 0.U) || decOut.isCsrrs || decOut.isCsrrc ||
     (decOut.isCsrrwi && decEx.rd =/= 0.U) || decOut.isCsrrsi || decOut.isCsrrci
 
-  csr.io.readAddress := decEx.instruction(31, 20)
-
-  // Store the CSR value in the pipeline register
-  decEx.csrReadVal := csr.io.data
+  // The CSR address comes from the instruction field
+  csr.io.readAddress := decEx.csrAddr
+  val csr_read_reg = RegNext(csr.io.data)
   // ---------------------------------------------------------------------------------------
 
   /**********************************************************************************************
@@ -146,7 +156,7 @@ class ThreeCats() extends Wildcat() {
   // ---------------------- EXCEPTION HANDLING ----------------------------------------------
   val exceptionCause = WireDefault(0.U(32.W))
   // Detect illegal instruction
-  val illegalInstr = decExReg.valid && decExReg.decOut.isIllegal
+  val illegalInstr = decExReg.valid && decExReg.decOut.isIllegal && processorInitialized  // Detect ECALL
   // Detect ECALL
   val ecallM = decExReg.valid && decExReg.decOut.isECall
 
@@ -163,11 +173,11 @@ class ThreeCats() extends Wildcat() {
   csr.io.exception := exceptionOccurred
   csr.io.exceptionCause := exceptionCause
   csr.io.exceptionPC := decExReg.pc
+  csr.io.instruction := decExReg.instruction
   // ---------------------------------------------------------------------------------------
 
   // --------------------- CSR HANDLING IN EXECUTE STAGE (WRITE) ---------------------------
   // Signals
-  val csrWriteData = Wire(UInt(32.W))
   val zimm = decExReg.rs1(4,0)
   // Extract CSR Write address in execute stage
   csr.io.writeAddress := decExReg.instruction(31, 20)
@@ -180,24 +190,23 @@ class ThreeCats() extends Wildcat() {
       (decExReg.decOut.isCsrrsi && zimm =/= 0.U) ||
       (decExReg.decOut.isCsrrci && zimm =/= 0.U)
     )
+
   // Compute the value to write based on CSR operation
   when(decExReg.decOut.isCsrrw) {
-    csrWriteData := v1 // v1 is forwarded rs1 value
+    csr.io.writeData := v1 // v1 is forwarded rs1 value
   }.elsewhen(decExReg.decOut.isCsrrs) {
-    csrWriteData := decExReg.csrReadVal | v1
+    csr.io.writeData := csr_read_reg | v1
   }.elsewhen(decExReg.decOut.isCsrrc) {
-    csrWriteData := decExReg.csrReadVal & (~v1).asUInt
+    csr.io.writeData := csr_read_reg & (~v1).asUInt
   }.elsewhen(decExReg.decOut.isCsrrwi) {
-    csrWriteData := zimm
+    csr.io.writeData := zimm
   }.elsewhen(decExReg.decOut.isCsrrsi) {
-    csrWriteData := decExReg.csrReadVal | zimm
-  }.otherwise { // CSRRCI
-    csrWriteData := decExReg.csrReadVal & (~zimm).asUInt
+    csr.io.writeData := csr_read_reg | zimm
+  }.elsewhen(decExReg.decOut.isCsrrci) {
+    csr.io.writeData := csr_read_reg & (~zimm).asUInt
+  }.otherwise {
+    csr.io.writeData := 0.U
   }
-
-  // Update CSR module signals for the write
-  csr.io.writeData := csrWriteData
-  csr.io.instruction := decExReg.instruction
 
   // Counting for CSR
   val instrComplete = decExReg.valid && !stall
@@ -220,7 +229,7 @@ class ThreeCats() extends Wildcat() {
     decExReg.decOut.isCsrrwi    ||
     decExReg.decOut.isCsrrsi    ||
     decExReg.decOut.isCsrrci) {
-    res := decExReg.csrReadVal
+    res := csr_read_reg
   }
   wbDest := decExReg.rd
   wbData := res
