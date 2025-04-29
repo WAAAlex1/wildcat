@@ -1,0 +1,89 @@
+name: Scala CI
+
+on:
+  push:
+    branches:
+      - '**'          # Triggers on all branches
+  pull_request:
+    branches:
+      - master        # PRs only trigger when affecting master
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  build:
+
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Set up JDK 11
+        uses: actions/setup-java@v4
+        with:
+          java-version: '11'
+          distribution: 'temurin'
+
+      - name: Setup sbt
+        uses: sbt/setup-sbt@v1
+
+      - name: apt-get update
+        run: sudo apt-get update
+
+      - name: Setup GCC
+        run: sudo apt-get install -y gcc-riscv64-unknown-elf
+
+      - name: Run tests
+        id: run_tests
+        run: |
+          echo "Running tests..."
+          set +e
+          make test
+          echo "TEST_EXIT_CODE=$?" >> $GITHUB_ENV
+          set -e
+
+      - name: Divert commit on failure
+        if: env.TEST_EXIT_CODE != '0' && github.ref == 'refs/heads/master'
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          echo "⚠️ Tests failed. Diverting the push..."
+          
+          COMMIT_HASH=$(git rev-parse HEAD)
+          NEW_BRANCH="quarantine/${{ github.actor }}-${{ github.run_id }}"
+          
+          # Configure Git
+          git config user.name "${{ github.actor }}"
+          git config user.email "${{ github.actor }}@users.noreply.github.com"
+          
+          # Create new branch with failing commit
+          git checkout -b "$NEW_BRANCH"
+          git push origin "$NEW_BRANCH"
+          
+          # Revert the failing commit on master
+          git checkout master
+          
+          # Force clean the working directory to avoid revert issues
+          git reset --hard
+          git clean -fdx
+          
+          # Now revert the last commit
+          git revert --no-edit "$COMMIT_HASH"
+          git push origin master
+          
+          # Create a pull request via GitHub CLI
+          echo "Creating a pull request from $NEW_BRANCH to master"
+          gh auth setup-git
+          gh pr create \
+            --base master \
+            --head "$NEW_BRANCH" \
+            --title "Fix failing commit from $COMMIT_HASH" \
+            --body "This commit failed CI checks and has been moved to a quarantined branch. Please fix the issues and merge via PR."
+
+      - name: Fail job if tests failed
+        if: env.TEST_EXIT_CODE != '0'
+        run: exit 1
