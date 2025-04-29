@@ -1,17 +1,19 @@
 name: Scala CI
 
 on:
-  pull_request:
+  push:
+    branches:
+      - '*' # changed from master.  This will run on all branches.
+  pull_request: # added.  This will run on PRs.
     branches:
       - master
 
 permissions:
-  contents: read
+  contents: write
   pull-requests: write
 
 jobs:
   build:
-
     runs-on: ubuntu-latest
 
     steps:
@@ -42,18 +44,6 @@ jobs:
           make test
           echo "TEST_EXIT_CODE=$?" >> $GITHUB_ENV
           set -e
-
-      - name: Comment on PR if tests failed
-        if: env.TEST_EXIT_CODE != '0'
-        uses: actions/github-script@v7
-        with:
-          script: |
-            github.rest.issues.createComment({
-              issue_number: context.issue.number,
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              body: "CI tests failed for this pull request. Please review the logs, fix any issues, and push an update. Once all tests pass, this PR can be merged."
-            })
 
       - name: Fail job if tests failed
         if: env.TEST_EXIT_CODE != '0'
