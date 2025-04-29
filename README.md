@@ -50,7 +50,7 @@ Prerequisit for this project is a working installation of
 the [RISC-V tools](https://github.com/riscv/riscv-tools). Chances are high that you can install
 them with your packet manager (see below).
 
-Furthermore, you need a Java in version >= 8 and < 21
+Furthermore, you need a *Java in version >= 8 and < 21*
 (the Chisel/Scala version in use in this project is broken for Java 21).
 
 To build Wildcat in an FPGA you need either Quartus or Vivado.
@@ -75,6 +75,15 @@ To run other programs use the environment variable APP. E.g.:
 ```
 make app run APP=asm/mem.s
 ```
+
+### Quick start on the Mac:
+
+```
+brew install sbt riscv64-elf-binutils
+git clone --recursive https://github.com/schoeberl/wildcat
+make -C wildcat app run
+```
+
 ### More make targets
 
 Running the simulation on one example (and generate .vcd files):
@@ -254,7 +263,7 @@ Once ```rustup``` has been installed, the following components should be added b
 - ```cargo install cargo-binutils```
 
 ### Getting started
-Currently, a simple starter project has been setup at [rust/starter-project](rust/starter-project).
+Currently, a simple starter project has been set up at [rust/starter-project](rust/starter-project).
 To compile and run the starter project with the ISA simulator, 
 execute the following command from the root of the Wildcat project:
 - ```make rust-compile``` (compiles)
@@ -275,3 +284,5 @@ execute the following command from the root of the Wildcat project:
 
 Furthermore, the disassembly for the new project can be viewed by executing the following command:
 - ```make rust-disassembly``` (prints disassembly)
+
+
