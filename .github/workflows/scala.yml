@@ -2,9 +2,11 @@ name: Scala CI
 
 on:
   push:
-    branches: [ "master" ]
+    branches:
+      - '**'          # Triggers on all branches
   pull_request:
-    branches: [ "master" ]
+    branches:
+      - master        # PRs only trigger when affecting master
 
 permissions:
   contents: write
@@ -45,7 +47,7 @@ jobs:
           set -e
 
       - name: Divert commit on failure
-        if: env.TEST_EXIT_CODE != '0'
+        if: env.TEST_EXIT_CODE != '0' && github.ref == 'refs/heads/master'
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
@@ -64,6 +66,12 @@ jobs:
           
           # Revert the failing commit on master
           git checkout master
+          
+          # Force clean the working directory to avoid revert issues
+          git reset --hard
+          git clean -fdx
+          
+          # Now revert the last commit
           git revert --no-edit "$COMMIT_HASH"
           git push origin master
           
