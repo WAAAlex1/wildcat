@@ -287,7 +287,7 @@ class ThreeCats() extends Wildcat() {
   exFwdReg.wbData := wbData
 
   // Just to exit tests -- no longer sufficient with ecall handling
-  val stop = decExReg.decOut.isECall
+  val stop = decExReg.decOut.isECall && (pcNext === 0.U)
 
 
   // ------------------------------ DEBUGGING -------------------------------------

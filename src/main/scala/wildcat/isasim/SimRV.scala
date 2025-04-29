@@ -183,7 +183,7 @@ class SimRV(mem: Array[Int], start: Int, stop: Int) {
         case SW => {
           // very primitive IO simulation
           if (addr == 0xf0000004) {
-            println("out: " + value.toChar)
+            //println("out: " + value.toChar)
           } else {
             mem(wordAddr) = value
           }
@@ -197,10 +197,10 @@ class SimRV(mem: Array[Int], start: Int, stop: Int) {
         case ESYS =>
           if (csrAddr == 0) { // ECALL
             val ex = handleException(11, instr)
-            println("ecall")
+            //println("ecall")
             (0, false, ex._2)
           } else if (csrAddr == 0x302 && rs1 == 0x0 && rd == 0x0) { // MRET
-            println("mret")
+            //println("mret")
             val mepc = csrFile.read(CSR.MEPC)
 
             // Update mstatus: set MIE to MPIE, set MPIE to 1, set MPP to U (00)
@@ -314,7 +314,7 @@ class SimRV(mem: Array[Int], start: Int, stop: Int) {
 
     // Debug output for atomic instructions
     if (opcode == 0x2f) {
-      println(f"Atomic instruction at pc=0x${pc}%08x: rs1=x${rs1}%d(0x${rs1Val}%08x) rs2=x${rs2}%d(0x${rs2Val}%08x) rd=x${rd}%d funct7=0x${funct7}%02x")
+      //println(f"Atomic instruction at pc=0x${pc}%08x: rs1=x${rs1}%d(0x${rs1Val}%08x) rs2=x${rs2}%d(0x${rs2Val}%08x) rd=x${rd}%d funct7=0x${funct7}%02x")
     }
 
     // Check for illegal instruction
@@ -368,7 +368,11 @@ class SimRV(mem: Array[Int], start: Int, stop: Int) {
 
     instrCnt += 1
 
-    pc != oldPc && run && pc < stop // detect endless loop or go beyond code to stop simulation
+    (pc != oldPc && run && pc < stop) && !(pc == 0) // detect endless loop or go beyond code to stop simulation
+    // Added that code will stop running if new pc is 0 (we jump back to start)
+    // Solves Ecall issue - added ecall support will not make the code stop
+    //                      Instead will set pc = MTVEC = 0 (missing exception handler for tests)
+    //                      Code will hence loop infinitely
   }
 
   //Handling exceptions
@@ -397,6 +401,9 @@ class SimRV(mem: Array[Int], start: Int, stop: Int) {
     newPC = csrFile.read(CSR.MTVEC)
     //println("Jumping to: " + f"${newPC}%08x")
 
+    if(newPC == 0){
+     return (false, newPC) // end execution
+    }
     (true, newPC) // Continue execution
   }
 
