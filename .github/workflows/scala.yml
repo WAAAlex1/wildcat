@@ -38,52 +38,34 @@ jobs:
         run: sudo apt-get install -y gcc-riscv64-unknown-elf
 
       - name: Run tests
-        id: run_tests
-        run: |
-          echo "Running tests..."
-          set +e
-          make test
-          echo "TEST_EXIT_CODE=$?" >> $GITHUB_ENV
-          set -e
+        run: make test
 
-      - name: Divert commit on failure
-        if: env.TEST_EXIT_CODE != '0' && github.ref == 'refs/heads/master'
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Check test result
+        id: test_result
         run: |
-          echo "⚠️ Tests failed. Diverting the push..."
-          
-          COMMIT_HASH=$(git rev-parse HEAD)
-          NEW_BRANCH="quarantine/${{ github.actor }}-${{ github.run_id }}"
-          
-          # Configure Git
-          git config user.name "${{ github.actor }}"
-          git config user.email "${{ github.actor }}@users.noreply.github.com"
-          
-          # Create new branch with failing commit
-          git checkout -b "$NEW_BRANCH"
-          git push origin "$NEW_BRANCH"
-          
-          # Revert the failing commit on master
-          git checkout master
-          
-          # Force clean the working directory to avoid revert issues
-          git reset --hard
-          git clean -fdx
-          
-          # Now revert the last commit
-          git revert --no-edit "$COMMIT_HASH"
-          git push origin master
-          
-          # Create a pull request via GitHub CLI
-          echo "Creating a pull request from $NEW_BRANCH to master"
-          gh auth setup-git
-          gh pr create \
-            --base master \
-            --head "$NEW_BRANCH" \
-            --title "Fix failing commit from $COMMIT_HASH" \
-            --body "This commit failed CI checks and has been moved to a quarantined branch. Please fix the issues and merge via PR."
+          if [[ $? -eq 0 ]]; then
+            echo "Tests passed."
+            echo "##vso[task.setvariable variable=test_outcome;isSuccess=true]"
+          else
+            echo "Tests failed."
+            echo "##vso[task.setvariable variable=test_outcome;isSuccess=false]"
+          fi
 
-      - name: Fail job if tests failed
-        if: env.TEST_EXIT_CODE != '0'
-        run: exit 1
+      - name: Create quarantine branch on test failure
+        if: steps.test_result.outputs.test_outcome == 'false'
+        run: |
+          # Get the latest commit hash of master
+          git fetch origin master
+          latest_commit=$(git log origin/master -1 --pretty=format:"%H")
+          
+          # Checkout a new quarantined branch
+          git checkout -b quarantine/WAAAlex1-${GITHUB_RUN_ID}
+          
+          # Make sure there's a unique commit (empty commit)
+          git commit --allow-empty -m "Initial quarantine commit after failed tests"
+          
+          # Push the quarantined branch to remote
+          git push origin quarantine/WAAAlex1-${GITHUB_RUN_ID}
+          
+          # Create a pull request
+          gh pr create --base master --head quarantine/WAAAlex1-${GITHUB_RUN_ID} --title "Quarantine Branch for WAAAlex1-${GITHUB_RUN_ID}" --body "This PR contains changes from the quarantined branch for manual review."
