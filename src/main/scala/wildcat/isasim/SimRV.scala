@@ -402,7 +402,7 @@ class SimRV(mem: Array[Int], start: Int, stop: Int) {
 
   var cont = true
   while (cont) {
-    cont = execute(mem(pc >> 2))
+    cont = execute(mem(pc >>> 2))
     // print("regs: ")
     // reg.foreach(printf("%08x ", _))
     // println()
@@ -429,8 +429,25 @@ object SimRV {
     sim
   }
 
+  def runSimRVforImage(file: String) = {
+    val mem = new Array[Int](1024 * 4096) // 16 MB to fit the image, also check masking in load and store
+
+    val (image, start) = Util.getCode(file)
+
+    for (i <- 0 until image.length) { //Load kernel in at 4MB
+      mem(i) = image(i)
+    }
+
+    val stop = start + image.length * 4
+
+    // TODO: do we really want ot ba able to start at an arbitrary address?
+    // Read in RV spec
+    val sim = new SimRV(mem, start, stop)
+    sim
+  }
+
   def main(args: Array[String]): Unit = {
-    runSimRV(args(0))
+    runSimRVforImage(args(0))
   }
 }
 

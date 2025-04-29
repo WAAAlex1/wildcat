@@ -3,6 +3,7 @@ package wildcat.pipeline
 import chisel3._
 import chisel3.util._
 import firrtl.passes.memlib.DefaultWriteFirstAnnotation
+import wildcat.CSR
 import wildcat.CSR._
 
 /**
@@ -32,13 +33,34 @@ class Csr() extends Module {
   })
 
   // Create a CSR file supporting the entire range of registers (4096)
-  val csrMem = Mem(4096, UInt(32.W))
+  val csrMem = SyncReadMem(4096, UInt(32.W))
 
   // Special registers for counters
   val cycle = RegInit(0.U(32.W))
   val cycleh = RegInit(0.U(32.W))
   val instret = RegInit(0.U(32.W))
   val instreth = RegInit(0.U(32.W))
+
+  // Special registers for exception handling and forwarding
+  val mepcReg = RegInit(0.U(32.W))
+  val mcauseReg = RegInit(0.U(32.W))
+  val mtvalReg = RegInit(0.U(32.W))
+  val mtvecReg = RegInit(0.U(32.W))
+
+  // Register to track CSR addresses for forwarding
+  val lastWriteAddr = RegNext(io.writeAddress)
+  val lastWriteEnable = RegNext(io.writeEnable && !isReadOnly(io.writeAddress), false.B)
+  val lastWriteData = RegNext(io.writeData)
+
+  // Exception handling registers
+  val lastExceptionAddr = RegNext(Mux(io.exception,
+    Mux(io.readAddress === MEPC.U, MEPC.U,
+      Mux(io.readAddress === MCAUSE.U, MCAUSE.U,
+        Mux(io.readAddress === MTVAL.U, MTVAL.U, 0.U))), 0.U))
+  val lastExceptionOccurred = RegNext(io.exception, false.B)
+  val lastExceptionPC = RegNext(io.exceptionPC)
+  val lastExceptionCause = RegNext(io.exceptionCause)
+  val lastInstruction = RegNext(io.instruction)
 
   // Update cycle counter every cycle
   cycle := cycle + 1.U
@@ -54,41 +76,59 @@ class Csr() extends Module {
     }
   }
 
-  // Read operation
-  val readData = WireDefault(0.U(32.W))
-  when(io.readEnable) {
-    // Forwarding logic - prioritize most recent values
-    when(io.writeEnable && (io.readAddress === io.writeAddress)) {
-      readData := io.writeData
-    }.elsewhen(io.exception && (io.readAddress === MEPC.U)) {
-      readData := io.exceptionPC
-    }.elsewhen(io.exception && (io.readAddress === MCAUSE.U)) {
-      readData := io.exceptionCause
-    }.elsewhen(io.exception && (io.readAddress === MTVAL.U)) {
-      readData := io.instruction
-    }.otherwise {
-      // Regular read from CSR memory
-      readData := csrMem.read(io.readAddress)
-//      printf("CSR READ: address=0x%x, data=0x%x\n", io.readAddress, readData)
-    }
+  // READ OPERATION
+  val csrReadData = csrMem.read(io.readAddress, io.readEnable)
+  // Output data with forwarding
+  val readData = Wire(UInt(32.W))
+  // Special handling for counter registers and frequently accessed CSRs
+  when(io.readAddress === CYCLE.U)     { readData := cycle }
+  .elsewhen(io.readAddress === CYCLEH.U)    { readData := cycleh }
+  .elsewhen(io.readAddress === TIME.U)      { readData := cycle }
+  .elsewhen(io.readAddress === TIMEH.U)     { readData := cycleh }
+  .elsewhen(io.readAddress === MCYCLE.U)    { readData := cycle }
+  .elsewhen(io.readAddress === MCYCLEH.U)   { readData := cycleh }
+  .elsewhen(io.readAddress === INSTRET.U)   { readData := instret }
+  .elsewhen(io.readAddress === INSTRETH.U)  { readData := instreth }
+  .elsewhen(io.readAddress === MINSTRET.U)  { readData := instret }
+  .elsewhen(io.readAddress === MINSTRETH.U) { readData := instreth }
+  .elsewhen(io.readAddress === MARCHID.U)   { readData := WILDCAT_MARCHID.U }
+  .elsewhen(io.readAddress === MVENDORID.U) { readData := WILDCAT_VENDORID.U }
+  .elsewhen(io.readAddress === MISA.U)      { readData := WILDCAT_MISA.U }
+  .elsewhen(io.readAddress === MEPC.U)      { readData := mepcReg }
+  .elsewhen(io.readAddress === MCAUSE.U)    { readData := mcauseReg }
+  .elsewhen(io.readAddress === MTVAL.U)     { readData := mtvalReg }
+  .elsewhen(io.readAddress === MTVEC.U)     { readData := mtvecReg }
+  .otherwise                                { readData := csrReadData }
 
-    // Handle special register reads (counters, etc.)
-    when(io.readAddress === CYCLE.U)     { readData := cycle }
-    when(io.readAddress === CYCLEH.U)    { readData := cycleh }
-    when(io.readAddress === TIME.U)      { readData := cycle }
-    when(io.readAddress === TIMEH.U)     { readData := cycleh }
-    when(io.readAddress === MCYCLE.U)    { readData := cycle }
-    when(io.readAddress === MCYCLEH.U)   { readData := cycleh }
-    when(io.readAddress === INSTRET.U)   { readData := instret }
-    when(io.readAddress === INSTRETH.U)  { readData := instreth }
-    when(io.readAddress === MINSTRET.U)  { readData := instret }
-    when(io.readAddress === MINSTRETH.U) { readData := instreth }
-    when(io.readAddress === MARCHID.U)   { readData := WILDCAT_MARCHID.U }
-    when(io.readAddress === MVENDORID.U) { readData := WILDCAT_VENDORID.U }
-    when(io.readAddress === MISA.U)      { readData := WILDCAT_MISA.U }
+// Forwarding logic: The read was initiated in decode stage and now in execute stage we need the result
+  // 1. Same-cycle read/write forwarding (if simultaneous read/write to same CSR)
+  // 2. Inter-instruction forwarding (if a previous write affects a current read)
+  // 3. Exception forwarding (if an exception updated a CSR)
+  when(io.readEnable && io.writeEnable && (io.readAddress === io.writeAddress) && !isReadOnly(io.writeAddress)) {
+    // If reading and writing to the same CSR in the same cycle, use the write value
+    io.data := io.writeData
+  }.elsewhen(io.readEnable && io.exception) {
+    // If an exception occurs this cycle, forward exception-related values
+    when(io.readAddress === MEPC.U)         { io.data := RegNext(io.exceptionPC) }
+    .elsewhen(io.readAddress === MCAUSE.U)  { io.data := RegNext(io.exceptionCause) }
+    .elsewhen(io.readAddress === MTVAL.U)   { io.data := RegNext(io.instruction) }
+    .otherwise                              { io.data := RegNext(readData) }
+  }.elsewhen(io.readEnable && lastWriteEnable && io.readAddress === lastWriteAddr) {
+    // If reading a CSR that was written in the previous cycle, forward the written value
+    io.data := lastWriteData
+  }.elsewhen(io.readEnable && lastExceptionOccurred && io.readAddress === lastExceptionAddr) {
+    // If reading a CSR that was affected by an exception in the previous cycle
+    when(io.readAddress === MEPC.U)         { io.data := lastExceptionPC }
+    .elsewhen(io.readAddress === MCAUSE.U)  { io.data := lastExceptionCause }
+    .elsewhen(io.readAddress === MTVAL.U)   { io.data := lastInstruction }
+    .otherwise                              { io.data := readData }
+  }.otherwise {
+    // Normal case - use the value from readData (which already handles special CSRs)
+    io.data := readData
   }
-  io.data := readData
+
   // Write operation
+  // Shadow registers for critical registers: MTVEC, MEPC, MCAUSE, MTVAL
   when(io.writeEnable) {
     // Special handling for counter registers
     when(io.writeAddress === CYCLE.asUInt || io.writeAddress === TIME.asUInt || io.writeAddress === MCYCLE.asUInt) {
@@ -99,32 +139,40 @@ class Csr() extends Module {
       instret := io.writeData
     }.elsewhen(io.writeAddress === INSTRETH.asUInt || io.writeAddress === MINSTRETH.asUInt) {
       instreth := io.writeData
-    }.elsewhen(isReadOnly(io.writeAddress)) {
-      // Empty : Don't write to read-only registers
+    }.elsewhen(io.writeAddress === MEPC.asUInt) {
+      mepcReg := io.writeData
+    }.elsewhen(io.writeAddress === MCAUSE.asUInt) {
+      mcauseReg := io.writeData
+    }.elsewhen(io.writeAddress === MTVAL.asUInt) {
+      mtvalReg := io.writeData
+    }.elsewhen(io.writeAddress === MTVEC.asUInt) {
+      mtvecReg := io.writeData
     }.otherwise {
-      // For all other CSRs, write directly - for a minimal RISC-V this is sufficient
-      csrMem.write(io.writeAddress, io.writeData)
-//      printf("CSR WRITE: address=0x%x, data=0x%x\n", io.writeAddress, io.writeData)
+      // For all other CSRs, write to memory (if not read-only)
+      when(!(isReadOnly(io.writeAddress))){
+        csrMem.write(io.writeAddress, io.writeData)
+        // printf("CSR WRITE: address=0x%x, data=0x%x\n", io.writeAddress, io.writeData)
+      }
     }
   }
-
-  // Provide MEPC content for MRET instruction
-  io.mretTarget := csrMem.read(MEPC.asUInt)
 
   // Handle exceptions
   when(io.exception) {
     // Save PC to MEPC
-    csrMem.write(MEPC.asUInt, io.exceptionPC)
+    mepcReg := io.exceptionPC
     // Save cause to MCAUSE
-    csrMem.write(MCAUSE.asUInt, io.exceptionCause)
+    mcauseReg := io.exceptionCause
     // Save instr to MTVAL
-    csrMem.write(MTVAL.asUInt, io.instruction)
+    mtvalReg := io.instruction
 //    printf("MEPC(0x%x)=0x%x  ||  MCAUSE(0x%x)=0x%x ||  MTVAL(0x%x)=0x%x\n",
 //      MEPC.asUInt, io.exceptionPC, MCAUSE.asUInt, io.exceptionCause, MTVAL.asUInt, io.instruction)
   }
 
+  // Provide MEPC content for MRET instruction
+  io.mretTarget := mepcReg
+
   // Trap vector address
-  io.trapVector := csrMem.read(MTVEC.asUInt)
+  io.trapVector := mtvecReg
 
   // Helper function to determine if a CSR is read-only
   def isReadOnly(addr: UInt): Bool = {
