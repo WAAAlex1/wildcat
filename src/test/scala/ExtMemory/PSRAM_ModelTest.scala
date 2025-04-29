@@ -69,11 +69,11 @@ class PSRAM_ModelTest extends AnyFlatSpec with ChiselScalatestTester {
         for (i <- 0 until nNibbles-1) {
           val nibble = value(4*nNibbles - 1 - 4*i, 4*nNibbles - 4 - 4*i)
           dut.io.IN.poke(nibble)
-          println(f"Nibble: ${nibble}")
+          //println(f"Nibble: ${nibble}")
           step()
         }
         val nibble = value(3,0)
-        println(f"Nibble: ${nibble}")
+        //println(f"Nibble: ${nibble}")
         dut.io.IN.poke(nibble)
       }
       // Test enter quad mode

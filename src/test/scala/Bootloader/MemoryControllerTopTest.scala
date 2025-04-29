@@ -65,9 +65,9 @@ class MemoryControllerTopTest extends AnyFlatSpec with ChiselScalatestTester{
       var configure = 0
       while(!dut.io.CS0.peekBoolean() && !dut.io.CS1.peekBoolean()){
         step()
-        println(f"Cycle($configure) data: ${dut.io.SpiSi.peek()}")
+        //println(f"Cycle($configure) data: ${dut.io.SpiSi.peek()}")
         configure = configure + 1
-        println(f"Last command: ${dut.io.LastCommand.peek()}")
+        //println(f"Last command: ${dut.io.LastCommand.peek()}")
       }
       step()
       dut.io.RAM0Mode.expect(1.U)
