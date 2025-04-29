@@ -9,16 +9,18 @@ package Bootloader
 import com.fazecast.jSerialComm._
 
 import java.nio.ByteBuffer
+import scala.io.Source
+/*
 import java.util.HexFormat
 import scala.math.BigInt
-import scala.io.Source
 import scala.util.Try
+ */
 
 object SendUART {
   def main(args: Array[String]): Unit = {
     // Identify available serial ports
     val ports = SerialPort.getCommPorts
-    if (ports.length == 0) System.out.println("No COM ports found ;(")
+    if (ports.isEmpty) System.out.println("No COM ports found ;(")
 
     var foundPortName = "COM6" //Standard COM port found on Alexander PC
     for (port <- ports) {
