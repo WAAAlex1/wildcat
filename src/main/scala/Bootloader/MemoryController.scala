@@ -1,21 +1,21 @@
+
 package Bootloader
 
 import caravan.bus.tilelink.{TLRequest, TLResponse, TilelinkConfig}
 import chisel3._
 import chisel3.util._
 import chisel3.experimental.ChiselEnum
-
+import wildcat.CSR.MemoryMap
+import wildcat.pipeline.CLINTLink
 
 /**
  * First draft of memory controller module for the Wildcat.
  *
  * Address space:
- * [0xf000_0000] is the IO space for the Wildcat
+ * [0xfxxx_xxxx] is the IO space for the Wildcat
  * [23,0] is the real address space of the memory
- * [23] is the toggling bit between instr and data mem. So far they are equal in size but it can change.
  * [27,24] are so far unused control signal bits we might need later
  * [0x1000_0000 etc.] is also unused so far.
- * By Georg Brink Dyvad, @GeorgBD
  */
 
 class MemoryController(implicit val config:TilelinkConfig) extends Module {
@@ -31,9 +31,13 @@ class MemoryController(implicit val config:TilelinkConfig) extends Module {
     val iCacheReqOut = Flipped(Decoupled(new TLRequest))
     val iCacheRspIn = Decoupled(new TLResponse)
 
-    // To/Form SPI controllers
+    // To/From SPI controllers
     val SPIctrl = Vec(2, Flipped(new SpiCTRLIO)) // SPI0 is RAM0, SPI1 is RAM1, SPI2 is Flash
+
+    // --- NEW: Interface to CLINT module ---
+    val clintLink = new CLINTLink()
   })
+
 
   val memory = Module(new TestMem(4096))
   io.memIO <> memory.io
@@ -49,8 +53,6 @@ class MemoryController(implicit val config:TilelinkConfig) extends Module {
 
   //I assume stalling will also be enabled by the caches and slower mem so the OR is for that.
   io.stall := io.bootloading || false.B
-
-
 
 
   val dReqAck = io.dCacheReqOut.valid && io.dCacheReqOut.ready // Request acknowledged

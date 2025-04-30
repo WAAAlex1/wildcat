@@ -90,14 +90,12 @@ object CSR {
   val TIMEH           = 0xc81
   val MCYCLE          = 0xb00
   val MCYCLEH         = 0xb80
-  // Disassembler does not know them
-  val MTIME           = 0xb01
-  val MTIMEH          = 0xb81
 
   val INSTRET         = 0xc02
   val INSTRETH        = 0xc82
 
   val HARTID          = 0xf10
+  val WILDCAT_HARTID  = 0
   val MARCHID         = 0xf12
   val WILDCAT_MARCHID = 47       // see https://github.com/riscv/riscv-isa-manual/blob/main/marchid.md
 
@@ -132,6 +130,18 @@ object CSR {
   val MENVCFGH        = 0x31A
 
 
+  // ---------Bit Definitions -------------
+  // For mstatus (simplified)
+  val MSTATUS_MIE_BIT = 3  // Machine Interrupt Enable bit
+  val MIE_MTIE_BIT    = 7  // Machine Timer Interrupt Enable bit
+  val MIP_MTIP_BIT    = 7  // Machine Timer Interrupt Pending bit
+
+  // --------- Interrupt cause code -------------
+  val CAUSE_MACHINE_TIMER_INTERRUPT = 7
+  // Interrupt causes have MSB set
+  val MCAUSE_INTERRUPT_MASK = (1 << 31)
+  val TRAP_CAUSE_MACHINE_TIMER_INTERRUPT = MCAUSE_INTERRUPT_MASK | CAUSE_MACHINE_TIMER_INTERRUPT
+
   // Add write mask definitions extracted from the simulator
   // Defines which bits are writable for each CSR (1 = writable, 0 = read-only)
   val MSTATUS_MASK    = 0x000018aa // MPRV, MXR, SUM, SBE, UBE, TVM, TW, TSR, FS, VS, XS, SD, all WPRI = 0 (read only)
@@ -149,6 +159,34 @@ object CSR {
   val MCONFIGPTR_MASK = 0x00000000
   val MENVCFG_MASK    = 0x00000000
   val MENVCFGH_MASK   = 0x00000000
+
+
+  // --- UPDATED Memory Map Definitions ---
+  object MemoryMap {
+    // IO Base Address Range Start
+    val IO_BASE  = 0xF0000000L
+
+    // Specific IO Device Addresses (as identified)
+    val UART_STATUS_ADDR = IO_BASE + 0x0000L // 0xF000_0000
+    val UART_DATA_ADDR   = IO_BASE + 0x0004L // 0xF000_0004
+    val LED_ADDR_BASE    = IO_BASE + 0x10000L // 0xF001_0000 (Based on wrAddress(19,16) === 1.U)
+
+    // CLINT Memory Map within IO Space ---
+    // Choose a base offset within IO space, avoiding UART/LEDs
+    val CLINT_OFFSET = 0x100000L             // Offset: 0x10_0000 -> Base: 0xF010_0000
+    val CLINT_BASE = IO_BASE + CLINT_OFFSET // 0xF010_0000
+
+    // Standard offsets within CLINT relative to CLINT_BASE
+    val MTIMECMP_HART0_OFFSET = 0x4000L // Offset for mtimecmp for hart 0
+    val MTIME_OFFSET          = 0xBFF8L // Offset for mtime
+
+    // Calculate full 32-bit addresses for accessing registers via memory map
+    val MTIMECMP_HART0_ADDR_L = CLINT_BASE + MTIMECMP_HART0_OFFSET      // 0xF0104000
+    val MTIMECMP_HART0_ADDR_H = CLINT_BASE + MTIMECMP_HART0_OFFSET + 4L // 0xF0104004
+    val MTIME_ADDR_L          = CLINT_BASE + MTIME_OFFSET               // 0xF010BFF8
+    val MTIME_ADDR_H          = CLINT_BASE + MTIME_OFFSET + 4L          // 0xF010BFFC
+  }
+
 
   /**
    * Get the write mask for a CSR address.
@@ -206,6 +244,7 @@ object CSR {
       case _ => false
     }
   }
+
 
 }
 
