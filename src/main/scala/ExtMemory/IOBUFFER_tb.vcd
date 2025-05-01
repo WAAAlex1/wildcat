@@ -1,0 +1,38 @@
+$date
+	Tue Mar 25 18:38:03 2025
+$end
+$version
+	Icarus Verilog
+$end
+$timescale
+	1ps
+$end
+$scope module IOBUFFER_tb $end
+$var wire 1 ! io $end
+$var wire 1 " in $end
+$var reg 1 # dir $end
+$var reg 1 $ out $end
+$scope module uut $end
+$var wire 1 # dir $end
+$var wire 1 " in $end
+$var wire 1 $ out $end
+$var wire 1 ! io $end
+$upscope $end
+$upscope $end
+$enddefinitions $end
+#0
+$dumpvars
+1$
+1#
+1"
+1!
+$end
+#10000
+0"
+0!
+0$
+#20000
+z"
+z!
+0#
+#30000

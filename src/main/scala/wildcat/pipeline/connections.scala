@@ -33,8 +33,21 @@ class DecodedInstr extends Bundle {
   val isJal = Bool()
   val isJalr = Bool()
   val rfWrite = Bool()
-  val isECall = Bool()
-  val isCssrw = Bool()
   val rs1Valid = Bool()
   val rs2Valid = Bool()
+
+  //Added for CSR / SYS Instructions
+  val isECall = Bool()
+  val isMret = Bool()
+  val isCsrrw = Bool()
+  val isCsrrs = Bool()
+  val isCsrrc = Bool()
+  val isCsrrwi = Bool()
+  val isCsrrsi = Bool()
+  val isCsrrci = Bool()
+
+  //Added for exception handling
+  // Function to check if instruction is valid
+  val isIllegal = Bool()
+
 }

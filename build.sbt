@@ -1,11 +1,15 @@
 scalaVersion := "2.13.10"
 
+//javaHome := Some(file("E:/Code/jdk-19.0.1")) //for some reason I need this for compiling
+
 scalacOptions ++= Seq(
   "-feature",
   "-language:reflectiveCalls",
 )
 
 Compile / unmanagedSourceDirectories += baseDirectory.value / "soc-comm/src"
+
+//Compile / unmanagedJars += baseDirectory.value / "libs" / "jelf-0-9-0.jar" //Including the jelf library
 
 // Chisel 3.5
 addCompilerPlugin("edu.berkeley.cs" % "chisel3-plugin" % "3.5.6" cross CrossVersion.full)

@@ -11,8 +11,7 @@
 
 package wildcat.isasim
 
-import net.fornwall.jelf.ElfFile
-
+//import net.fornwall.jelf.ElfFile
 import wildcat.Opcode._
 import wildcat.AluFunct3._
 import wildcat.AluFunct7._
@@ -20,8 +19,7 @@ import wildcat.BranchFunct3._
 import wildcat.LoadStoreFunct3._
 import wildcat.CSRFunct3._
 import wildcat.InstrType._
-import wildcat.CSR._
-import wildcat.Util
+import wildcat.{CSR, CSRFile, CSRFunct3, Util}
 
 class SimRV(mem: Array[Int], start: Int, stop: Int) {
 
@@ -30,6 +28,8 @@ class SimRV(mem: Array[Int], start: Int, stop: Int) {
   var pc = start // RISC-V tests start at 0x200
   var reg = new Array[Int](32)
   reg(0) = 0
+
+  val csrFile = new CSRFile()
 
   // Reservation state for LR/SC
   var reservationValid = false
@@ -42,7 +42,7 @@ class SimRV(mem: Array[Int], start: Int, stop: Int) {
   var instrCnt = 0
 
   def execute(instr: Int): Boolean = {
-
+    //println("EXECUTING INSTRUCTION: " + f"${instr}%08x" )
     // Do some decoding: extraction of decoded fields
     val opcode = instr & 0x7f
     val rd = (instr >> 7) & 0x01f
@@ -183,7 +183,7 @@ class SimRV(mem: Array[Int], start: Int, stop: Int) {
         case SW => {
           // very primitive IO simulation
           if (addr == 0xf0000004) {
-            println("out: " + value.toChar)
+            //println("out: " + value.toChar)
           } else {
             mem(wordAddr) = value
           }
@@ -191,34 +191,68 @@ class SimRV(mem: Array[Int], start: Int, stop: Int) {
       }
     }
 
-    def ecall(): Int = {
+    def handleSYS(funct3: Int, csrAddr: Int, rs1Val: Int, pcNext: Int, rd: Int, rs1: Int): (Int, Boolean, Int) = {
       funct3 match {
-        case ESYS => {
-          println("ecall")
-          run = false
-          return 0
-        }
-        case CSRRS => {
-          val v = imm & 0xfff match {
-            case CYCLE => instrCnt // cycle
-            case CYCLEH => 0 // cycleh
-            case TIME => instrCnt // time
-            case TIMEH => 0 // timeh
-            case INSTRET => instrCnt // instret
-            case INSTRETH => 0 // instreth
 
-            case HARTID => 0 // hartid
-            case MARCHID => WILDCAT_MARCHID
+        case ESYS =>
+          if (csrAddr == 0) { // ECALL
+            val ex = handleException(11, instr)
+            //println("ecall")
+            (0, false, ex._2)
+          } else if (csrAddr == 0x302 && rs1 == 0x0 && rd == 0x0) { // MRET
+            //println("mret")
+            val mepc = csrFile.read(CSR.MEPC)
 
-            case _ => 0 // this gets us around _start in the test cases
+            // Update mstatus: set MIE to MPIE, set MPIE to 1, set MPP to U (00)
+            val mstatus = csrFile.read(CSR.MSTATUS)
+            // Extract MPIE (bit 7)
+            val mpie = (mstatus >> 7) & 1
+            // Set MIE (bit 3) to MPIE
+            val newMstatus = (mstatus & ~(1 << 3)) | (mpie << 3)
+            // Set MPIE to 1
+            val newMstatus2 = newMstatus | (1 << 7)
+            // Set MPP to U (00) - bits 12:11
+            val newMstatus3 = newMstatus2 & ~(3 << 11)
+            csrFile.write(CSR.MSTATUS, newMstatus3)
+
+            // Return to address stored in mepc
+            (0, false, mepc)
+          } else {
+            throw new Exception(s"Unknown immediate for ECALL/EBREAK: $csrAddr")
           }
-          // println(s"csrrw ${imm & 0xfff} return: $v")
-          return v
-        }
-        case _ => {
-          println("Unknown ecall: " + funct3)
-          return 0
-        }
+
+        case CSRRW | CSRRS | CSRRC =>
+          //println("HANDLING NORMAL CSR: " + CSRFunct3.name(funct3))
+          var result = 0 // Standard value
+          if (funct3 == CSRRW) {
+            result = csrFile.exchange(csrAddr, rs1Val, rd)
+            //println(f"RESULT: 0x$result%08X")
+          } else if (funct3 == CSRRS) {
+            result = csrFile.setBits(csrAddr, rs1Val, rs1)
+            //println(f"RESULT: 0x$result%08X")
+          } else if (funct3 == CSRRC) {
+            result = csrFile.clearBits(csrAddr, rs1Val, rs1)
+            //println(f"RESULT: 0x$result%08X")
+          }
+          (result, true, pcNext)
+
+        case CSRRWI | CSRRSI | CSRRCI =>
+          //println("HANDLING IMM CSR: " + CSRFunct3.name(funct3))
+          val zimm = rs1 // For immediate variants, rs1 field contains zimm
+          var result = 0
+          if (funct3 == CSRRWI) {
+            result = csrFile.exchange(csrAddr, zimm, rd) // pass rd to check for nonzero imm
+            //println(f"RESULT: 0x$result%08X")
+          } else if (funct3 == CSRRSI) {
+            result = csrFile.setBits(csrAddr, zimm, zimm) // Use zimm as rd for checking non-zero
+            //println(f"RESULT: 0x$result%08X")
+          } else if (funct3 == CSRRCI) {
+            result = csrFile.clearBits(csrAddr, zimm, zimm) // Use zimm as rd for checking non-zero
+            //println(f"RESULT: 0x$result%08X")
+          }
+          (result, true, pcNext)
+        case _ =>
+          throw new Exception(s"Unknown System funct3: $funct3")
       }
     }
 
@@ -280,7 +314,18 @@ class SimRV(mem: Array[Int], start: Int, stop: Int) {
 
     // Debug output for atomic instructions
     if (opcode == 0x2f) {
-      println(f"Atomic instruction at pc=0x${pc}%08x: rs1=x${rs1}%d(0x${rs1Val}%08x) rs2=x${rs2}%d(0x${rs2Val}%08x) rd=x${rd}%d funct7=0x${funct7}%02x")
+      //println(f"Atomic instruction at pc=0x${pc}%08x: rs1=x${rs1}%d(0x${rs1Val}%08x) rs2=x${rs2}%d(0x${rs2Val}%08x) rd=x${rd}%d funct7=0x${funct7}%02x")
+    }
+
+    // Check for illegal instruction
+    val illegalInstr = opcode match {
+      case AluImm | Alu | Branch | Load | Store | Lui | AuiPc | Jal | JalR | Fence | System => false
+      case _ => true
+    }
+    if (illegalInstr) {
+      var ex = handleException(2, instr)
+      pc = ex._2
+      return ex._1// Illegal instruction
     }
 
     // Execute the instruction and return a tuple for the result:
@@ -299,14 +344,13 @@ class SimRV(mem: Array[Int], start: Int, stop: Int) {
       case Alu => (alu(funct3, sraSub, rs1Val, rs2Val), true, pcNext)
       case Branch => (0, false, if (compare(funct3, rs1Val, rs2Val)) pc + imm else pcNext)
       case Load => (load(funct3, rs1Val, imm), true, pcNext)
-      case Store =>
-        store(funct3, rs1Val, imm, rs2Val); (0, false, pcNext)
+      case Store => store(funct3, rs1Val, imm, rs2Val); (0, false, pcNext)
       case Lui => (imm, true, pcNext)
       case AuiPc => (pc + imm, true, pcNext)
       case Jal => (pc + 4, true, pc + imm)
       case JalR => (pc + 4, true, (rs1Val + imm) & 0xfffffffe)
       case Fence => (0, false, pcNext)
-      case System => (ecall(), true, pcNext)
+      case System => handleSYS(funct3, imm & 0xFFF, rs1Val, pcNext, rd, rs1)
       case _ => throw new Exception("Opcode " + opcode + " at " + pc + " not (yet) implemented")
     }
 
@@ -324,12 +368,48 @@ class SimRV(mem: Array[Int], start: Int, stop: Int) {
 
     instrCnt += 1
 
-    pc != oldPc && run && pc < stop // detect endless loop or go beyond code to stop simulation
+    (pc != oldPc && run && pc < stop) && !(pc == 0 && opcode == System) // detect endless loop or go beyond code to stop simulation
+    // Added that code will stop running if new pc is 0 (we jump back to start)
+    // Solves Ecall issue - added ecall support will not make the code stop
+    //                      Instead will set pc = MTVEC = 0 (missing exception handler for tests)
+    //                      Code will hence loop/run infinitely
+  }
+
+  //Handling exceptions
+  def handleException(cause: Int, instr: Int): (Boolean, Int) = {
+    // Save current PC to MEPC
+    csrFile.write(CSR.MEPC, pc)
+
+    // Helper variable for new PC
+    var newPC = pc
+
+    // Save cause to MCAUSE
+    csrFile.write(CSR.MCAUSE, cause)
+    //println("Handling Exception #: " + csrFile.read(CSR.MCAUSE))
+
+    // Save instr to MTVAL
+    csrFile.write(CSR.MTVAL, instr)
+
+    // Update MSTATUS: save current interrupt enable bit
+    val currentStatus = csrFile.read(CSR.MSTATUS)
+    val mie = (currentStatus >> 3) & 0x1
+    val newStatus = (currentStatus & ~0x1888) |
+      (mie << 7) // MPIE = MIE
+    csrFile.write(CSR.MSTATUS, newStatus)
+
+    // Jump to trap handler
+    newPC = csrFile.read(CSR.MTVEC)
+    //println("Jumping to: " + f"${newPC}%08x")
+
+    if(newPC == 0){
+     return (false, newPC) // end execution
+    }
+    (true, newPC) // Continue execution
   }
 
   var cont = true
   while (cont) {
-    cont = execute(mem(pc >> 2))
+    cont = execute(mem(pc >>> 2))
     // print("regs: ")
     // reg.foreach(printf("%08x ", _))
     // println()
@@ -344,7 +424,7 @@ object SimRV {
 
     val (code, start) = Util.getCode(file)
 
-    for (i <- 0 until code.length) {
+    for (i <- code.indices) {
       mem(i) = code(i)
     }
 
@@ -356,7 +436,27 @@ object SimRV {
     sim
   }
 
+  def runSimRVforImage(file: String) = {
+    val mem = new Array[Int](1024 * 4096) // 16 MB to fit the image, also check masking in load and store
+
+    val (image, start) = Util.getCode(file)
+
+    for (i <- 0 until image.length) { //Load kernel in at 4MB
+      mem(i) = image(i)
+    }
+
+    val stop = start + image.length * 4
+
+    // TODO: do we really want ot ba able to start at an arbitrary address?
+    // Read in RV spec
+    val sim = new SimRV(mem, start, stop)
+    sim
+  }
+
   def main(args: Array[String]): Unit = {
-    runSimRV(args(0))
+    runSimRVforImage(args(0))
   }
 }
+
+
+

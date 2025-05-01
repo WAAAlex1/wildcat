@@ -17,6 +17,16 @@ class WildcatTestTop(file: String) extends Module {
     val tx = Output(UInt(1.W))
     val rx = Input(UInt(1.W))
     val stop = Output(Bool())
+
+    // Add debug outputs to IO bundle
+    val debug_pc = Output(UInt(32.W))
+    val debug_instr = Output(UInt(32.W))
+    val debug_doBranch = Output(Bool())
+    val debug_branchTarget = Output(UInt(32.W))
+    val debug_stall = Output(Bool())
+    val debug_csrWrite = Output(Bool())
+    val debug_csrResult = Output(UInt(32.W))
+    val debug_isIllegal = Output(Bool())
   })
   val cpuTop = Module(new WildcatTop(file))
 
@@ -26,6 +36,25 @@ class WildcatTestTop(file: String) extends Module {
   BoringUtils.bore(cpuTop.cpu.stop, Seq(io.stop))
   io.led := DontCare
   BoringUtils.bore(cpuTop.ledReg, Seq(io.led))
+
+  // Initialize debug outputs with default values
+  io.debug_pc := 0.U
+  io.debug_instr := 0.U
+  io.debug_doBranch := false.B
+  io.debug_branchTarget := 0.U
+  io.debug_stall := false.B
+  io.debug_csrWrite := false.B
+  io.debug_csrResult := 0.U
+  io.debug_isIllegal := false.B
+
+  BoringUtils.bore(cpuTop.cpu.decExReg.pc, Seq(io.debug_pc))
+  BoringUtils.bore(cpuTop.cpu.decExReg.instruction, Seq(io.debug_instr))
+  BoringUtils.bore(cpuTop.cpu.doBranch, Seq(io.debug_doBranch))
+  BoringUtils.bore(cpuTop.cpu.branchTarget, Seq(io.debug_branchTarget))
+  BoringUtils.bore(cpuTop.cpu.stall, Seq(io.debug_stall))
+  BoringUtils.bore(cpuTop.cpu.csr.io.writeEnable, Seq(io.debug_csrWrite))
+  BoringUtils.bore(cpuTop.cpu.csr.io.data, Seq(io.debug_csrResult))
+  BoringUtils.bore(cpuTop.cpu.decExReg.decOut.isIllegal, Seq(io.debug_isIllegal))
 
   cpuTop.io.rx := io.rx
   io.tx := cpuTop.io.tx

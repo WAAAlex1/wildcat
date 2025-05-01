@@ -263,7 +263,7 @@ Once ```rustup``` has been installed, the following components should be added b
 - ```cargo install cargo-binutils```
 
 ### Getting started
-Currently, a simple starter project has been setup at [rust/starter-project](rust/starter-project).
+Currently, a simple starter project has been set up at [rust/starter-project](rust/starter-project).
 To compile and run the starter project with the ISA simulator, 
 execute the following command from the root of the Wildcat project:
 - ```make rust-compile``` (compiles)
@@ -284,3 +284,5 @@ execute the following command from the root of the Wildcat project:
 
 Furthermore, the disassembly for the new project can be viewed by executing the following command:
 - ```make rust-disassembly``` (prints disassembly)
+
+

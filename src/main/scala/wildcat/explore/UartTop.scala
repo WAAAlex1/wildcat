@@ -27,9 +27,12 @@ class UartTop() extends Module {
   rx.io.rxd := io.rx
   tx.io.channel <> rx.io.channel
 
+  rx.io.channel.ready := false.B // base case
+
   val ledReg = RegInit(0.U(8.W))
   when (rx.io.channel.valid) {
-    ledReg := ledReg + 1.U
+    ledReg := rx.io.channel.bits
+    rx.io.channel.ready := true.B
   }
 
   io.led := 1.U ## 0.U(7.W) ## RegNext(ledReg)
