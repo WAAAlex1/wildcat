@@ -1,6 +1,5 @@
 .idea
 **/target/
-*.gitignore
 *.hex
 *.o
 *.out
