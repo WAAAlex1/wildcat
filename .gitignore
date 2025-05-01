@@ -5,3 +5,4 @@
 *.out
 *.properties
 /risc-v-lab
+*.fir
