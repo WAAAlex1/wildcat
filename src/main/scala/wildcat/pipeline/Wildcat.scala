@@ -16,5 +16,7 @@ abstract class Wildcat() extends Module {
   val io = IO(new Bundle {
     val imem = new InstrIO()
     val dmem = new MemIO()
+
+    val mtimecmpVal_in = Input(UInt(64.W))
   })
 }

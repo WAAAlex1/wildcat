@@ -24,12 +24,12 @@ class Csr() extends Module {
     val instrComplete  = Input(Bool())      // Signal instruction completion (for counters)
 
     // Exception/Trap Info from Pipeline
-    val exception        = Input(Bool())      // Synchronous exception occurred
     val exceptionCause   = Input(UInt(32.W))  // The non-interrupt cause code
     val takeTrap         = Input(Bool())      // Trap (exception OR interrupt) is being taken this cycle
     val trapIsInterrupt  = Input(Bool())      // Indicates if the trap is an interrupt
     val trapPC           = Input(UInt(32.W))  // PC of trapped instruction
     val trapInstruction  = Input(UInt(32.W))  // The trapped instruction (for mtval on exception)
+    val mtimecmpVal      = Input(UInt(64.W))  // From CLINT module
 
     // === OUTPUTS ===
     val data         = Output(UInt(32.W)) // Data read from CSR (after forwarding)
@@ -52,7 +52,7 @@ class Csr() extends Module {
   timerCounter.io.csrWriteEnable := io.writeEnable && isCounterCSR(io.writeAddress) // Qualify write enable
   timerCounter.io.csrWriteData   := io.writeData
   // Connect mtimecmp value from CLINT (MUST BE DONE AT TOP LEVEL)
-  timerCounter.io.mtimecmpValue := 0.U // Placeholder
+  timerCounter.io.mtimecmpValue := io.mtimecmpVal
   // Connect currentTime output to CLINT (MUST BE DONE AT TOP LEVEL)
   // val clint_currentTime = timerCounter.io.currentTime // Example if CLINT instantiated here
 

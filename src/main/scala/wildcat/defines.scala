@@ -154,8 +154,8 @@ object CSR {
   val MVENDORID_MASK  = 0x00000000
   val MEDELEG_MASK    = 0x00000000
   val MIDELEG_MASK    = 0x00000000
-  val MIE_MASK        = 0x00000000
-  val MIP_MASK        = 0x00000000
+  val MIE_MASK        = 0xFFFFFFFF  // Now needed for interrupts
+  val MIP_MASK        = 0xFFFFFFFF  // Now needed for interrupts
   val MCONFIGPTR_MASK = 0x00000000
   val MENVCFG_MASK    = 0x00000000
   val MENVCFGH_MASK   = 0x00000000

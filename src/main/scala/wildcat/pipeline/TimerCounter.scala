@@ -54,6 +54,7 @@ class TimerCounter extends Module {
   }
 
   // --- Timer Interrupt Comparison ---
+  // mtimecmpValue != 0 such that this will not trigger on reset/start. Might introduce some edge case problems?
   io.timerInterruptPending := (timeReg >= io.mtimecmpValue) && (io.mtimecmpValue =/= 0.U)
 
   // Output counter values

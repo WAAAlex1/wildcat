@@ -130,6 +130,8 @@ class ThreeCats() extends Wildcat() {
   // --------------------------- CSR IN DECODE (READ) ---------------------------------------
   // DECODE STAGE -> HERE WE READ CSR
   val csr = Module(new Csr())
+  // Input for mtimecmp (assuming added as per Issue #1 fix) ---
+  csr.io.mtimecmpVal := io.mtimecmpVal_in
 
   // READ CSR IN DECODE STAGE
   csr.io.readEnable := (decOut.isCsrrw && decEx.rd =/= 0.U) || decOut.isCsrrs || decOut.isCsrrc ||
@@ -143,7 +145,7 @@ class ThreeCats() extends Wildcat() {
   /**********************************************************************************************
    *                                                                                            *
    *                                      EXECUTE STAGE                                         *
-   *                This section handles execution of instructions, ALU, MEMORY                 *
+   *         This section handles execution, ALU, MEMORY READ, CSR WRITE, TRAPS                 *
    *                                                                                            *
    **********************************************************************************************/
 
@@ -156,9 +158,7 @@ class ThreeCats() extends Wildcat() {
 
   // ---------------------- EXCEPTION HANDLING ----------------------------------------------
   val exceptionCause = WireDefault(0.U(32.W))
-  // Detect illegal instruction
-  val illegalInstr = decExReg.valid && decExReg.decOut.isIllegal && processorInitialized  // Detect ECALL
-  // Detect ECALL
+  val illegalInstr = decExReg.valid && decExReg.decOut.isIllegal && processorInitialized
   val ecallM = decExReg.valid && decExReg.decOut.isECall
 
   when(illegalInstr) {
@@ -168,14 +168,11 @@ class ThreeCats() extends Wildcat() {
   }
 
   // Combine exception signals
-  val exceptionOccurred = illegalInstr || ecallM
+  val exceptionOccurred = (illegalInstr || ecallM) && decExReg.valid
 
-  // Connect exception signals to CSR module
-  csr.io.exception := exceptionOccurred
-  csr.io.exceptionCause := exceptionCause
-  csr.io.exceptionPC := decExReg.pc
-  csr.io.instruction := decExReg.instruction
-  // ---------------------------------------------------------------------------------------
+  // ---------------------- INTERRUPT HANDLING ---------------------------------------------
+  // Check for interrupt request *only if* no synchronous exception occurred in this stage
+  val takeInterrupt = csr.io.interruptRequest && !exceptionOccurred && decExReg.valid
 
   // --------------------- CSR HANDLING IN EXECUTE STAGE (WRITE) ---------------------------
   // Signals
@@ -212,7 +209,14 @@ class ThreeCats() extends Wildcat() {
   // Counting for CSR
   val instrComplete = decExReg.valid && !stall
   csr.io.instrComplete := instrComplete
-  // ----------------------------------------------------------------
+
+  // --- Connect Trap Information to CSR Module ---
+  // Inform CSR module *if* a trap (exception OR interrupt) is being taken *now*
+  csr.io.takeTrap := (exceptionOccurred || takeInterrupt) // Trap occurs if exception or interrupt taken
+  csr.io.trapIsInterrupt := takeInterrupt                 // Specify if it's an interrupt
+  csr.io.exceptionCause := exceptionCause                 // Provide synchronous cause code
+  csr.io.trapPC := decExReg.pc                            // PC of instruction causing trap/interrupt
+  csr.io.trapInstruction := decExReg.instruction          // Instruction causing exception (mtval)
 
   // ALU Operations and result selection
   val res = Wire(UInt(32.W))
@@ -238,29 +242,34 @@ class ThreeCats() extends Wildcat() {
     wbData := decExReg.pc + 4.U
   }
 
+  // --- Write Enable Logic ---
+  // Ensure write enable is only active if the instruction is valid and requests a write (and not stalling)
+  val isStalledLoad = decExReg.decOut.isLoad && io.dmem.stall
+  wrEna := decExReg.valid && decExReg.decOut.rfWrite && (wbDest =/= 0.U) && !isStalledLoad
+
   // Branching and jumping
-  // Prioritize Exceptions and MRET
-  when(exceptionOccurred) {
+  // Calculate the target address based on priority: Exception > MRET > Interrupt > JALR > JAL/Branch
+  when(exceptionOccurred) { // Sync exceptions have highest priority for redirection
     branchTarget := csr.io.trapVector
   }.elsewhen(decExReg.decOut.isMret && decExReg.valid) {
     branchTarget := csr.io.mretTarget
-  }.elsewhen(decExReg.decOut.isJalr) {
-    branchTarget := res
-  }.otherwise{ //Default - normal branching
+  }.elsewhen(takeInterrupt) { // Interrupts redirect *after* current instruction
+    branchTarget := csr.io.trapVector
+  }.elsewhen(decExReg.decOut.isJalr) { // JALR target from ALU result
+    branchTarget := (res & 0xFFFF_FFFE.U ) // Ensure target is 2-byte aligned
+  }.otherwise { // JAL or Branch target calculated with immediate
     branchTarget := (decExReg.pc.asSInt + decExReg.decOut.imm).asUInt
   }
-
-  wrEna := decExReg.valid && decExReg.decOut.rfWrite
 
   // Branch condition - ordered by priority:
   // 1. Branch instructions that evaluate to true (when valid)
   // 2. JAL, JALR, MRET instructions and exceptions (when valid)
-  when(((compare(decExReg.func3, v1, v2) && decExReg.decOut.isBranch) || (
+  when(decExReg.valid && ((compare(decExReg.func3, v1, v2) && decExReg.decOut.isBranch) ||
     decExReg.decOut.isJal ||
     decExReg.decOut.isJalr||
     decExReg.decOut.isMret||
-    exceptionOccurred))   &&
-    decExReg.valid
+    exceptionOccurred     ||
+    takeInterrupt         )
   ) {
     doBranch := true.B
   }
@@ -268,7 +277,7 @@ class ThreeCats() extends Wildcat() {
   // Memory read access
   when(decExReg.decOut.isLoad && !doBranch) {
     when(!io.dmem.stall) {
-      res := selectLoadData(io.dmem.rdData, decExReg.func3, decExReg.memLow)
+      wbData := selectLoadData(io.dmem.rdData, decExReg.func3, decExReg.memLow)
     }.otherwise{
       // Freeze inputs to pipeline stages
       pcNext := pcReg
@@ -277,12 +286,11 @@ class ThreeCats() extends Wildcat() {
 
       // Guard writes
       exFwdReg.valid := false.B
-      decExReg.valid := false.B
     }
   }
 
   // Forwarding register values to ALU
-  exFwdReg.valid := wrEna && (wbDest =/= 0.U)
+  exFwdReg.valid := wrEna
   exFwdReg.wbDest := wbDest
   exFwdReg.wbData := wbData
 

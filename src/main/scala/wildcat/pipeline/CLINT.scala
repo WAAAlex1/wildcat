@@ -6,33 +6,33 @@ import chisel3.util._
 import wildcat.CSR.MemoryMap // Import the memory map definitions
 
 /**
- * Interface bundle for connecting CLINT directly to MemoryController
+ * Interface bundle for connecting CLINT directly to WildcatTop
  */
 class CLINTLink extends Bundle {
-  // From MemoryController to CLINT
+  // From WildcatTop to CLINT
   val enable  = Input(Bool())      // Indicates a valid access to CLINT address range
   val isWrite = Input(Bool())      // Indicates write operation
-  val address = Input(UInt(32.W))  // Full address from MemoryController
+  val address = Input(UInt(32.W))  // Full address from WildcatTop
   val wrData  = Input(UInt(32.W))  // Data to be written (32-bit chunks)
 
-  // From CLINT to MemoryController
+  // From CLINT
   val rdData  = Output(UInt(32.W)) // Data read from CLINT registers
 }
 
 /**
  * Core Local Interruptor (CLINT) module (simplified).
  * Provides memory-mapped access to mtime and mtimecmp for Hart 0
- * via a direct interface to the MemoryController.
+ * via a direct interface to wildcatTop (where it is to be instantiated).
  * Assumes RV32 access width.
  */
 class CLINT extends Module {
   val io = IO(new Bundle {
-    // Interface to Memory Controller
+    // Interface to wildcatTop
     val link = new CLINTLink()
 
     // Interface to TimerCounter
     val currentTimeIn   = Input(UInt(64.W))     // Current mtime value from TimerCounter
-    val mtimecmpValueOut= Output(UInt(64.W)) // mtimecmp value to TimerCounter for comparison
+    val mtimecmpValueOut= Output(UInt(64.W))    // mtimecmp value to TimerCounter for comparison
   })
 
   // --- Registers ---
@@ -42,7 +42,11 @@ class CLINT extends Module {
 
   // --- Internal Wires ---
   val rdDataWire = WireDefault(0.U(32.W))   // Default read data is 0
-  val address = io.link.address             // Address provided by MemoryController
+  val address = io.link.address             // Address provided by wildcatTop
+
+  // --- Registers for safe 64-bit write ---
+  val tempMtimecmpHigh = Reg(UInt(32.W)) // Temporarily store the high word
+  val highWordWritten = RegInit(false.B) // Flag: True if high word was written, waiting for low
 
   // Decode specific register access based on address
   val isMtimecmpAccess = (address === MemoryMap.MTIMECMP_HART0_ADDR_L.U) || (address === MemoryMap.MTIMECMP_HART0_ADDR_H.U)
@@ -50,26 +54,40 @@ class CLINT extends Module {
   val isLowWordAccess  = (address === MemoryMap.MTIMECMP_HART0_ADDR_L.U) || (address === MemoryMap.MTIME_ADDR_L.U)
   val isHighWordAccess = (address === MemoryMap.MTIMECMP_HART0_ADDR_H.U) || (address === MemoryMap.MTIME_ADDR_H.U)
 
-  // --- Write Logic ---
+  // --- Write Logic (Modified for safety) ---
+  // Expect standard high-to-low writesequence for writing to 64 bit reg.
   when(io.link.enable && io.link.isWrite) {
     when(isMtimecmpAccess) {
       val writeData = io.link.wrData
-      when(isLowWordAccess) {
-        // Write lower 32 bits of mtimecmp
-        // Simple direct write - assumes SW will handle safe 64-bit sequence if needed
-        mtimecmpReg := Cat(mtimecmpReg(63, 32), writeData)
-        // printf(p"[CLINT] Write mtimecmp_L: Addr=0x${Hexadecimal(address)}, Data=0x${Hexadecimal(writeData)}\n")
-      }.elsewhen(isHighWordAccess) {
-        // Write upper 32 bits of mtimecmp
-        mtimecmpReg := Cat(writeData, mtimecmpReg(31, 0))
-        // printf(p"[CLINT] Write mtimecmp_H: Addr=0x${Hexadecimal(address)}, Data=0x${Hexadecimal(writeData)}\n")
+      when(isHighWordAccess) {
+        // High word write: Store it temporarily and set the flag
+        tempMtimecmpHigh := writeData
+        highWordWritten := true.B
+        printf(p"[CLINT] Write mtimecmp_H (staged): Addr=0x${Hexadecimal(address)}, Data=0x${Hexadecimal(writeData)}\n")
+      }.elsewhen(isLowWordAccess) {
+        // Low word write:
+        // If high word was written previously, commit the full 64-bit value
+        when(highWordWritten) {
+          mtimecmpReg := Cat(tempMtimecmpHigh, writeData)
+          highWordWritten := false.B // Clear the flag, sequence complete
+          printf(p"[CLINT] Write mtimecmp_L (commit): Addr=0x${Hexadecimal(address)}, Data=0x${Hexadecimal(writeData)}, Full=0x${Hexadecimal(Cat(tempMtimecmpHigh, writeData))}\n")
+        }.otherwise {
+          // Low word written *without* prior high word write (unconventional sequence)
+          // Update only the low part. This maintains the previous high word.
+          // Alternatively, could ignore this write if strict high-then-low sequence is assumed.
+          mtimecmpReg := Cat(mtimecmpReg(63, 32), writeData)
+          printf(p"[CLINT] Write mtimecmp_L (low only): Addr=0x${Hexadecimal(address)}, Data=0x${Hexadecimal(writeData)}\n")
+        }
       }
-      // NOTE: Writing mtimecmp implicitly clears the pending interrupt (MTIP)
-      // because TimerCounter will re-evaluate the comparison next cycle.
+    }.elsewhen(isMtimeAccess) {
+      // Attempt to write to mtime (read-only)
+      printf(p"[CLINT] Write ERROR: Addr=0x${Hexadecimal(address)} (mtime) is read-only\n")
     }.otherwise {
-      // Attempt to write to mtime (read-only) or invalid CLINT address
-      printf(p"[CLINT] Write ERROR: Addr=0x${Hexadecimal(address)} is read-only or invalid within CLINT range\n")
+      // Attempt to write to invalid CLINT address
+      printf(p"[CLINT] Write ERROR: Addr=0x${Hexadecimal(address)} is invalid within CLINT range\n")
     }
+  }.otherwise {
+    // Could clear the highword flag here. Current solution is just to keep it high, waiting for a low-word write.
   }
 
   // --- Read Logic ---
