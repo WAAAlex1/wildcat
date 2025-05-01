@@ -27,6 +27,9 @@ class MemoryControllerTester (implicit val config:TilelinkConfig) extends Module
     val dReqAck = Output(Bool())
     val iReqAck = Output(Bool())
     val masterID = Output(Bool())
+    val rspHandled = Output(Bool())
+    val iCacheRspInValid = Output(Bool())
+    val iCacheRspInDataResponse = Output(UInt(32.W))
   })
   val CTRL = Module(new MemoryController())
   CTRL.io.bootloading := false.B
@@ -43,10 +46,17 @@ class MemoryControllerTester (implicit val config:TilelinkConfig) extends Module
   io.dReqAck := DontCare
   io.iReqAck := DontCare
   io.masterID := DontCare
+  io.rspHandled := DontCare
+  io.iCacheRspInValid := DontCare
+  io.iCacheRspInDataResponse := DontCare
 
   BoringUtils.bore(CTRL.dReqAck,Seq(io.dReqAck))
   BoringUtils.bore(CTRL.iReqAck,Seq(io.iReqAck))
   BoringUtils.bore(CTRL.masterID, Seq(io.masterID))
+  BoringUtils.bore(CTRL.rspHandled, Seq(io.rspHandled))
+  BoringUtils.bore(CTRL.io.iCacheRspIn.valid, Seq(io.iCacheRspInValid))
+  BoringUtils.bore(CTRL.io.iCacheRspIn.bits.dataResponse, Seq(io.iCacheRspInDataResponse))
+
 }
 
 class MemoryControllerTest extends AnyFlatSpec with ChiselScalatestTester {
@@ -124,18 +134,23 @@ class MemoryControllerTest extends AnyFlatSpec with ChiselScalatestTester {
       dut.io.SPIctrl(1).size.expect(4.U)
       dut.io.SPIctrl(1).dataIn.expect(0.U)
       dut.io.SPIctrl(0).en.expect(false.B)
-
+      println("First step success with rspHandled = " + dut.io.rspHandled.peekBoolean())
       step()
       dut.io.SPIctrl(1).dataOut.poke("hBEEBBEEB".U)
       dut.io.SPIctrl(1).done.poke(true.B)
       dut.io.masterID.expect(true.B)
+      println("Second step success with rspHandled = " + dut.io.rspHandled.peekBoolean())
       step()
       dut.io.iCacheRspIn.valid.expect(true.B)
       dut.io.iCacheRspIn.bits.dataResponse.expect("hBEEBBEEB".U)
       dut.io.SPIctrl(1).done.poke(false.B)
+      println("Third step success with rspHandled = " + dut.io.rspHandled.peekBoolean())
       step()
+      println("iCacheRspIn.valid = " + dut.io.iCacheRspInValid.peekBoolean())
+      println(f"iCacheRspIn.bits.dataResponse = 0x${dut.io.iCacheRspInDataResponse.peekInt()}%08x")
       dut.io.iCacheRspIn.valid.expect(false.B)
       dut.io.iCacheRspIn.bits.dataResponse.expect(0.U)
+      println("Final step success with rspHandled = " + dut.io.rspHandled.peekBoolean())
 
     }
   }

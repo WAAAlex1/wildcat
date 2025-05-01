@@ -137,10 +137,7 @@ object CSR {
   val MIP_MTIP_BIT    = 7  // Machine Timer Interrupt Pending bit
 
   // --------- Interrupt cause code -------------
-  val CAUSE_MACHINE_TIMER_INTERRUPT = 7
-  // Interrupt causes have MSB set
-  val MCAUSE_INTERRUPT_MASK = (1 << 31)
-  val TRAP_CAUSE_MACHINE_TIMER_INTERRUPT = MCAUSE_INTERRUPT_MASK | CAUSE_MACHINE_TIMER_INTERRUPT
+  val TRAP_CAUSE_MACHINE_TIMER_INTERRUPT = 0x80000007
 
   // Add write mask definitions extracted from the simulator
   // Defines which bits are writable for each CSR (1 = writable, 0 = read-only)

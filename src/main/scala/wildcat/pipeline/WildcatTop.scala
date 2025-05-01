@@ -35,6 +35,7 @@ class WildcatTop(file: String, dmemNrByte: Int = 4096) extends Module {
   imem.io.address := cpu.io.imem.address
   cpu.io.imem.data := imem.io.data
   cpu.io.imem.stall := imem.io.stall
+  cpu.io.mtimecmpVal_in := 0.U
   // TODO: stalling
 
 

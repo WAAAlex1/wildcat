@@ -44,7 +44,7 @@ class InterruptController extends Module {
   val timerInterruptActive = mstatus_mie && mie_mtie && mip_mtip
   // TODO: Add logic for other interrupt sources
   io.interruptRequest := timerInterruptActive
-  io.interruptCause   := Mux(timerInterruptActive, CSR.TRAP_CAUSE_MACHINE_TIMER_INTERRUPT.U, 0.U)
+  io.interruptCause := Mux(timerInterruptActive, "h80000007".U, 0.U)
 
   // CSR Read Logic (Only for MSTATUS, MIE, MIP)
   val readDataWire = WireDefault(0.U(32.W))

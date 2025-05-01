@@ -32,7 +32,6 @@ class MemoryController(implicit val config:TilelinkConfig) extends Module {
     val iCacheReqOut = Flipped(Decoupled(new TLRequest))
     val iCacheRspIn = Decoupled(new TLResponse)
 
-
     // To/From SPI controllers
     val SPIctrl = Vec(2, Flipped(new SpiCTRLIO)) // SPI0 is RAM0, SPI1 is RAM1, SPI2 is Flash
   })
@@ -44,8 +43,8 @@ class MemoryController(implicit val config:TilelinkConfig) extends Module {
   io.stall := io.bootloading || false.B
 
   //Address mapping
-  when(io.memIO.rdAddress(31,28) === 0xF.U){
-    //Do nothing cause memory mapped IO defined in Wildcattop?
+  when(io.memIO.rdAddress(31,28) === "hF".U){
+    //Do nothing cause memory mapped IO defined in WildcatTop?
   }.elsewhen(io.memIO.rdAddress(23) === 1.U){
     //DataMem.read addresser (23,0)
   }.otherwise {

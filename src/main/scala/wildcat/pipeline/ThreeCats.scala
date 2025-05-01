@@ -256,7 +256,7 @@ class ThreeCats() extends Wildcat() {
   }.elsewhen(takeInterrupt) { // Interrupts redirect *after* current instruction
     branchTarget := csr.io.trapVector
   }.elsewhen(decExReg.decOut.isJalr) { // JALR target from ALU result
-    branchTarget := (res & 0xFFFF_FFFE.U ) // Ensure target is 2-byte aligned
+    branchTarget := (res & "hFFFF_FFFE".U ) // Ensure target is 2-byte aligned
   }.otherwise { // JAL or Branch target calculated with immediate
     branchTarget := (decExReg.pc.asSInt + decExReg.decOut.imm).asUInt
   }
