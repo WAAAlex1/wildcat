@@ -18,5 +18,6 @@ abstract class Wildcat() extends Module {
     val dmem = new MemIO()
 
     val mtimecmpVal_in = Input(UInt(64.W))
+    val timerCounter_out = Output(UInt(64.W))
   })
 }

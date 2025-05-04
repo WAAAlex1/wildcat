@@ -35,6 +35,7 @@ class Csr() extends Module {
     val data         = Output(UInt(32.W)) // Data read from CSR (after forwarding)
     val mretTarget   = Output(UInt(32.W)) // MEPC value for MRET jump
     val trapVector   = Output(UInt(32.W)) // MTVEC value for trap handler jump
+    val timerCounter = Output(UInt(64.W)) // TimerCounter to CLINT (through toplevel)
 
     // Interrupt Request to Pipeline
     val interruptRequest = Output(Bool())   // An interrupt is pending and enabled
@@ -54,7 +55,7 @@ class Csr() extends Module {
   // Connect mtimecmp value from CLINT (MUST BE DONE AT TOP LEVEL)
   timerCounter.io.mtimecmpValue := io.mtimecmpVal
   // Connect currentTime output to CLINT (MUST BE DONE AT TOP LEVEL)
-  // val clint_currentTime = timerCounter.io.currentTime // Example if CLINT instantiated here
+  io.timerCounter := timerCounter.io.currentTime
 
   // Interrupt Controller Module (Handles MSTATUS.MIE, MIE, MIP)
   val interruptController = Module(new InterruptController())

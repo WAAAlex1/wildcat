@@ -39,7 +39,7 @@ class MemoryController(implicit val config:TilelinkConfig) extends Module {
   val memory = Module(new TestMem(4096))
   io.memIO <> memory.io
 
-  //I assume stalling will also be enabled by the caches and slower mem so the OR is for that.
+  //Assume stalling will also be enabled by the caches and slower mem so the OR is for that.
   io.stall := io.bootloading || false.B
 
   //Address mapping
@@ -61,7 +61,6 @@ class MemoryController(implicit val config:TilelinkConfig) extends Module {
   val masterID = RegInit(false.B) // Master (cache) identifier
   val rspValid = WireInit(false.B)
 
-  // NEW ----------------------------------------------------------------------------
   // signal for correct handshaking and usage of SPI
   val rspHandled = RegInit(true.B) // true = handled (no pending response)
 
@@ -92,13 +91,11 @@ class MemoryController(implicit val config:TilelinkConfig) extends Module {
     currentReq := io.dCacheReqOut.bits
     rspPending := true.B
     masterID := false.B  // dCache
-    // NEW ----------------------------------------------------------------------------
     rspHandled := false.B  // response currently being handled
   }.elsewhen(iReqAck){
     currentReq := io.iCacheReqOut.bits
     rspPending := true.B
     masterID := true.B   // iCache
-    // NEW ----------------------------------------------------------------------------
     rspHandled := false.B  // response currently being handled
   }
 
@@ -123,8 +120,6 @@ class MemoryController(implicit val config:TilelinkConfig) extends Module {
   when(rspPending){
     when(currentReq.addrRequest(31, 28) === 0xF.U) {
       //Do nothing cause memory mapped IO defined in Wildcattop?
-      // NEW ----------------------------------------------------------------------------
-      // add this to not get stuck (rspPending is never cleared otherwise)
       readData := 0.U
       rspValid := true.B
       rspPending := false.B
@@ -133,34 +128,24 @@ class MemoryController(implicit val config:TilelinkConfig) extends Module {
       // RAM 1 read/write
       io.SPIctrl(1).en := true.B
 
-      // NEW ----------------------------------------------------------------------------
-      // Check for completion // responses
-      when(io.SPIctrl(1).done && !rspHandled) {
-        rspPending := false.B
-        when(!currentReq.isWrite) {
-          readData := io.SPIctrl(1).dataOut
-        }
-        rspValid := true.B
-        rspHandled := true.B // Mark response as handled
-      }
-
     }.elsewhen(!currentReq.addrRequest(24)) {
       // RAM 0 read/ write
       io.SPIctrl(0).en := true.B
 
-      // NEW ----------------------------------------------------------------------------
-      // Check for completion // responses
-      when(io.SPIctrl(0).done && !rspHandled) {
-        rspPending := false.B
-        when(!currentReq.isWrite) {
-          readData := io.SPIctrl(0).dataOut
-        }
-        rspValid := true.B
-        rspHandled := true.B // Mark response as handled
-      }
-
     }.otherwise{
       // Flash read=?
+    }
+  }
+
+  // Process responses
+  for (i <- 0 until 2) {
+    when(io.SPIctrl(i).done) {
+      rspPending := false.B
+      when(!currentReq.isWrite) {
+        readData := io.SPIctrl(i).dataOut
+      }
+      rspValid := true.B
+      rspHandled := true.B // Mark response as handled
     }
   }
 
@@ -181,5 +166,4 @@ class MemoryController(implicit val config:TilelinkConfig) extends Module {
   }
 
 }
-
 
