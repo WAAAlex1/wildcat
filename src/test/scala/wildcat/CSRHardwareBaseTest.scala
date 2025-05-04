@@ -92,8 +92,10 @@ abstract class CSRHardwareBaseTest extends AnyFlatSpec with ChiselScalatestTeste
     val csrResult = dut.io.debug_csrResult.peekInt()
     val csrWrite = dut.io.debug_csrWrite.peekBoolean()
     val isIllegal = dut.io.debug_isIllegal.peekBoolean()
+    val isValid = dut.io.debug_isValid.peekBoolean()
+    val timer = dut.io.debug_timer.peekInt()
 
-    println(f"PC=0x${pc}%08x Instr=0x${instrValue}%08x Branch=${branch} Target=0x${target}%08x, WRITE CSR=${csrWrite}, isIllegal=${isIllegal}, CCnum = ${numCycles}")
+    println(f"PC=0x${pc}%08x Instr=0x${instrValue}%08x Branch=${branch} Target=0x${target}%08x, WRITE CSR=${csrWrite}, isIllegal=${isIllegal}, isValid =${isValid}, CCnum = ${numCycles}, mtime = ${timer}")
   }
 
   def printDebugInfo(dut: WildcatTestTop, numCycles: Int = 0): Unit = {
@@ -284,8 +286,8 @@ class CSRHardwareTimeEventTest extends CSRHardwareBaseTest {
     REGS.x10 -> 1         // Final overall result
   )
 
-  val testFreqHz = 10000
-  val numCycles = 5000  // With 10kHz test frequency (safe)
+  val testFreqHz = 1000
+  val numCycles = 2000  // With 1kHz test frequency (safe)
 
     "Exception Handling Test" should "pass on the ThreeCats processor" in {
       runCSRTest("CSR_time_event_test", timeEventTestExpected, numCycles, testFreqHz, 1)
@@ -298,18 +300,22 @@ class CSRHardwareTimeEventTest extends CSRHardwareBaseTest {
 class CSRHardwareTimerEdgecasesTest extends CSRHardwareBaseTest {
   // Define the expected register values
   val timerEdgeCasesTestExpected = Map(
-    REGS.x30 -> 1,        // Zero mtimecmp test result
-    REGS.x31 -> 1,        // Counter overflow test result
-    REGS.x29 -> 1,        // TIME write protection test result
-    REGS.x28 -> 1,        // mtimecmp > mtime clears interrupt test result
-    REGS.x10 -> 1         // Final overall result
+    REGS.x10 -> 1,        // Overall test result (1 = all passed)
+    REGS.x21 -> 1,        // Test 1: Counter increments & mcycle writability
+    REGS.x22 -> 1,        // Test 2: TIME CSR write protection
+    REGS.x23 -> 1,        // Test 3: mtimecmp=0 does not trigger interrupts
+    REGS.x24 -> 1,        // Test 4: Basic timer interrupt trigger
+    REGS.x25 -> 1,        // Test 5: Interrupt clearing works
+    REGS.x26 -> 1,        // Test 6: mtimecmp=MAX disables interrupts
+    REGS.x27 -> 1,        // Test 7: mie.MTIE disable/enable works
+    REGS.x30 -> 1,        // Volatile interrupt flag (set by handler)
   )
 
   val testFreqHz = 10000
-  val numCycles = 130000  // With 10kHz test frequency
+  val numCycles = 5000  // With 10kHz test frequency
 
     "Exception Handling Test" should "pass on the ThreeCats processor" in {
-      runCSRTest("CSR_timer_edgecases_test", timerEdgeCasesTestExpected, numCycles, testFreqHz, 1)
+      runCSRTest("CSR_timer_edgecases_test", timerEdgeCasesTestExpected, numCycles, testFreqHz, 0)
     }
 }
 

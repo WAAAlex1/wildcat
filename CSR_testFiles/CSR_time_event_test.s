@@ -114,7 +114,7 @@ handle_timer_interrupt:
     lw      t2, 0(t0)        # Read high 32 bits of mtime
 
     # Set mtimecmp to mtime + small increment
-    addi    t1, t1, 2        # Add just 2 to low word (at 10kHz/100Hz = ~20 cycles)
+    addi    t1, t1, 10       # Add just 10 to low word (at 10kHz/100Hz = ~100 cycles)
 
     # CORRECTED ORDER: First write high word, then low word
     li      t0, 0xF0104004   # MTIMECMP_HART0_ADDR_H

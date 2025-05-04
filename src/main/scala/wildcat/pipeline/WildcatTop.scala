@@ -108,7 +108,7 @@ class WildcatTop(file: String, dmemNrByte: Int = 4096, freqHz: Int = 100000000) 
     when (isClintWrite) {
       // Write to CLINT handled by CLINT module
     } .elsewhen (cpu.io.dmem.wrAddress(19,16) === 0.U && cpu.io.dmem.wrAddress(3, 0) === 4.U) {
-      printf(" %c %d\n", cpu.io.dmem.wrData(7, 0), cpu.io.dmem.wrData(7, 0))
+      //printf(" %c %d\n", cpu.io.dmem.wrData(7, 0), cpu.io.dmem.wrData(7, 0))
       tx.io.channel.valid := true.B
     } .elsewhen (cpu.io.dmem.wrAddress(19,16) === 1.U) {
       ledReg := cpu.io.dmem.wrData(7, 0)
@@ -121,7 +121,7 @@ class WildcatTop(file: String, dmemNrByte: Int = 4096, freqHz: Int = 100000000) 
   io.led := 1.U ## 0.U(7.W) ## RegNext(ledReg)
 
   when(isClintAccess) {
-    printf(p"[WildcatTop] CLINT Access: Addr=0x${Hexadecimal(memAddressReg)}, isWrite=${isClintWrite}\n")
+    //printf(p"[WildcatTop] CLINT Access: Addr=0x${Hexadecimal(memAddressReg)}, isWrite=${isClintWrite}\n")
   }
 }
 

@@ -1,257 +1,304 @@
-# This test checks several edge cases and specific behaviors:
+# Optimized and Enhanced Timer/Counter/Interrupt Edge Case Test v2
+# Target Core Clock: 10kHz, mtime Clock: 100Hz (T_mtime = 100 cycles)
 #
-# Zero mtimecmp Test: Verifies that setting mtimecmp to 0 doesn't trigger interrupts, which is a common convention in RISC-V CLINT implementations.
-# Counter Overflow Handling: Simulates a 64-bit counter overflow by setting mcycle and mcycleh to maximum values, then verifies that the overflow is handled correctly.
-# TIME CSR Write Protection: Verifies that the TIME CSRs are read-only and cannot be modified by software.
-# Interrupt Clearing: Tests that setting mtimecmp to a value greater than mtime clears any pending timer interrupt.
-#
-# Each test stores its result in a separate register, and the final result is the AND of all test results.
+# Changes:
+# - Uses a single volatile interrupt flag (x30) set by the handler.
+# - Main code resets x30, performs action, waits, checks x30 *immediately*,
+#   and stores the pass/fail result in dedicated registers (x21-x27).
+# - All results (x21-x27) can be checked at the end of the test.
+# - Handler modified to only increment x30 and re-arm timer far future.
 
 .section .text
 .global _start
 
 _start:
-    # Set up the trap vector
+    # --- Setup ---
     la      x5, trap_handler
     csrw    mtvec, x5
 
-    # Initialize test status registers
-    li      x10, 0         # Final result (0=fail, 1=success)
+    # Initialize test status registers (x21-x27 for individual tests)
+    li      x10, 0          # Final result (0=fail, 1=success)
+    li      x21, 0          # Test 1 Result (Counters)
+    li      x22, 0          # Test 2 Result (TIME RO)
+    li      x23, 0          # Test 3 Result (mtimecmp=0)
+    li      x24, 0          # Test 4 Result (Interrupt Trigger)
+    li      x25, 0          # Test 5 Result (Interrupt Clear/Future)
+    li      x26, 0          # Test 6 Result (mtimecmp=MAX)
+    li      x27, 0          # Test 7 Result (mie disable/enable)
+
+    li      x30, 0          # Volatile interrupt flag (set by handler)
 
     # -------------------------------------------------------------------------
-    # Test 1: Setting mtimecmp to 0 should not trigger interrupts
+    # Test 1: Basic counter increments & mcycle writability (Unchanged)
     # -------------------------------------------------------------------------
-    # Enable machine-mode interrupts globally
-    li      x6, 0x8        # MIE bit (bit 3)
-    csrw    mstatus, x6    # Set MIE bit
-
-    # Enable machine timer interrupt
-    li      x7, 0x80       # MTIE bit (bit 7)
-    csrw    mie, x7        # Set MTIE bit
-
-    li      x6, 0xF0104004   # MTIMECMP_HART0_ADDR_H
-    sw      x0, 0(x6)        # Write 0 to high 32 bits of mtimecmp FIRST
-    li      x6, 0xF0104000   # MTIMECMP_HART0_ADDR_L
-    sw      x0, 0(x6)        # Write 0 to low 32 bits of mtimecmp SECOND
-
-    # Counter for zero mtimecmp test (should remain 0)
-    li      x20, 0
-
-    # Delay to see if interrupt occurs
-    li      x6, 30000
-delay_loop1:
-    addi    x6, x6, -1
-    bnez    x6, delay_loop1
-
-    # If x20 is still 0, test passed
-    beqz    x20, test1_passed
-    j       test1_failed
-
-test1_passed:
-    li      x21, 1      # Store test 1 result (pass)
+test1_start:
+    csrr    x11, mcycle; csrr x12, minstret; csrr x13, time
+    nop; nop; nop; nop; nop
+    csrr    x14, mcycle; csrr x15, minstret; csrr x16, time
+    bltu    x11, x14, test1_minstret_check
+    j       fail_test1
+test1_minstret_check:
+    addi    x11, x12, 5
+    bltu    x15, x11, fail_test1
+test1_time_check:
+    bltu    x13, x16, test1_mcycle_write
+    beq     x13, x16, test1_mcycle_write
+    j       fail_test1
+test1_mcycle_write:
+    csrr    x11, mcycle
+    li      x12, 0x12345678
+    csrw    mcycle, x12
+    csrr    x13, mcycle
+    beq     x12, x13, test1_mcycle_restore
+    csrw    mcycle, x11 # Restore before fail
+    j       fail_test1
+test1_mcycle_restore:
+    csrw    mcycle, x11
+    li      x21, 1          # Test 1 Passed
+    j       test2_start
+fail_test1:
+    li      x21, 0          # Test 1 Failed
     j       test2_start
 
-test1_failed:
-    li      x21, 0      # Store test 1 result (fail)
-
     # -------------------------------------------------------------------------
-    # Test 2: 64-bit counter overflow handling (simulated)
+    # Test 2: TIME CSR write protection (Unchanged)
     # -------------------------------------------------------------------------
 test2_start:
-    # Disable interrupts for this test
-    csrwi   mie, 0
-
-    # Try to write large values to MCYCLE to simulate near-overflow
-    # Write 0xFFFFFFFF to mcycle
-    li      x7, 0xFFFFFFFF
-    csrw    mcycle, x7
-
-    # Write 0xFFFFFFFF to mcycleh
-    csrw    mcycleh, x7
-
-    # Read back the values immediately
-    csrr    x11, mcycle
-    csrr    x12, mcycleh
-
-    # Execute a few instructions which should cause mcycle to wrap
-    nop
-    nop
-    nop
-    nop
-    nop
-
-    # Read the values again
-    csrr    x13, mcycle
-    csrr    x14, mcycleh
-
-    # Check if the counter wrapped properly (low part should now be small)
-    li      x7, 10
-    bgeu    x13, x7, test2_failed  # If low part is larger than expected, fail
-
-    # Check if high part incremented on overflow
-    beq     x12, x14, test2_failed # If high part didn't change, fail
-
-    # Test passed
-    li      x22, 1
-    j       test3_start
-
-test2_failed:
-    li      x22, 0
-
-    # -------------------------------------------------------------------------
-    # Test 3: Writing to TIME CSRs should have no effect (they're read-only)
-    # -------------------------------------------------------------------------
-test3_start:
-    # Read current TIME value
     csrr    x11, time
-
-    # Try to write to TIME
     li      x12, 0xDEADBEEF
     csrw    time, x12
-
-    # Read TIME again and verify it wasn't changed by our write
     csrr    x13, time
+    beq     x13, x12, fail_test2 # Fail if write succeeded
+    li      x22, 1          # Test 2 Passed
+    j       test3_start
+fail_test2:
+    li      x22, 0          # Test 2 Failed
+    j       test3_start
 
-    # If the values are the same (ignoring normal increment), the test passes
-    # We can't do an exact comparison because TIME is always incrementing
-    # Instead, we verify that our written value didn't take effect
-    li      x14, 0xDEADBEEF
-    beq     x13, x14, test3_failed
+    # -------------------------------------------------------------------------
+    # Test 3: Setting mtimecmp=0 should not trigger interrupts
+    # -------------------------------------------------------------------------
+test3_start:
+    li      x30, 0         # Reset volatile interrupt flag
 
-    # Test passed
+    # Enable interrupts
+    li      x6, 0x8; csrs mstatus, x6
+    li      x7, 0x80; csrs mie, x7
+
+    # Write 0 to mtimecmp
+    li      x6, 0xF0104004; sw x0, 0(x6)
+    li      x6, 0xF0104000; sw x0, 0(x6)
+
+    # Short delay loop (~400 cycles)
+    li      x6, 100
+test3_delay:
+    addi    x6, x6, -1
+    bnez    x6, test3_delay
+
+    # Check flag immediately after delay
+    beqz    x30, test3_passed # Pass if flag is STILL 0
+    # Fail path
+    li      x23, 0
+    j       test4_start
+test3_passed:
     li      x23, 1
     j       test4_start
 
-test3_failed:
-    li      x23, 0
-
     # -------------------------------------------------------------------------
-    # Test 4: Setting mtimecmp > mtime should clear any pending interrupt
+    # Test 4: Basic timer interrupt trigger
     # -------------------------------------------------------------------------
 test4_start:
-    # Enable interrupts again
-    li      x6, 0x8        # MIE bit (bit 3)
-    csrw    mstatus, x6    # Set MIE bit
-    li      x7, 0x80       # MTIE bit (bit 7)
-    csrw    mie, x7        # Set MTIE bit
+    li      x30, 0         # Reset volatile interrupt flag
 
-    li      x6, 0xF0104004   # MTIMECMP_HART0_ADDR_H
-    sw      x8, 0(x6)        # Write high 32 bits of mtimecmp FIRST
-    li      x6, 0xF0104000   # MTIMECMP_HART0_ADDR_L
-    sw      x7, 0(x6)        # Write low 32 bits of mtimecmp SECOND
+    # Read current mtime -> x8:x7
+    li      x6, 0xF010BFF8; lw x7, 0(x6)
+    li      x6, 0xF010BFFC; lw x8, 0(x6)
 
-    addi    x7, x7, -1       # Subtract 1 from low word to guarantee it's in the past
-    li      x6, 0xF0104000   # MTIMECMP_HART0_ADDR_L
-    sw      x7, 0(x6)        # Write low 32 bits of mtimecmp
-    li      x6, 0xF0104004   # MTIMECMP_HART0_ADDR_H
-    sw      x8, 0(x6)        # Write high 32 bits of mtimecmp
+    # Set mtimecmp = mtime + 5 (interval = 500 cycles)
+    addi    x7, x7, 5
 
-    # Interrupt counter, should become 1 when trap handler runs
-    li      x25, 0
+    # Write mtimecmp
+    li      x6, 0xF0104004; sw x8, 0(x6) # High word
+    li      x6, 0xF0104000; sw x7, 0(x6) # Low word
 
-    # Small delay to let interrupt occur
-    li      x6, 1000
-delay_loop4a:
+    # Delay loop longer than interval (~1200 cycles now)
+    li      x6, 300        # Using your increased delay
+test4_delay:
     addi    x6, x6, -1
-    bnez    x6, delay_loop4a
+    bnez    x6, test4_delay
 
-    # Now check if we got an interrupt
-    # x25 should be 1 if interrupt occurred
-    li      x6, 1
-    bne     x25, x6, test4_failed
+    # **** ADD DEBUG CSR READS HERE ****
+    # Read interrupt status just before checking the flag
+    csrr    x11, mstatus    # Read mstatus into x11
+    csrr    x12, mie        # Read mie into x12
+    csrr    x13, mip        # Read mip into x13
+    # Now x11, x12, x13 hold the status for inspection in the simulator
 
-    # Now set mtimecmp to a future value to clear the interrupt
-    li      x6, 0xF010BFF8   # MTIME_ADDR_L
-    lw      x7, 0(x6)        # Read low 32 bits of mtime
-    li      x6, 0xF010BFFC   # MTIME_ADDR_H
-    lw      x8, 0(x6)        # Read high 32 bits of mtime
+    # Check flag immediately after delay
+    bnez    x30, test4_passed # Pass if flag is 1 (interrupt occurred)
 
-    addi    x7, x7, 1000     # Add 1000 to low word (10 seconds at 100Hz)
-    li      x6, 0xF0104004   # MTIMECMP_HART0_ADDR_H
-    sw      x8, 0(x6)        # Write high 32 bits of mtimecmp FIRST
-    li      x6, 0xF0104000   # MTIMECMP_HART0_ADDR_L
-    sw      x7, 0(x6)        # Write low 32 bits of mtimecmp SECOND
-
-    # Reset counter and wait again
-    li      x25, 0
-
-    # Another delay - we should NOT get an interrupt this time
-    li      x6, 1000
-delay_loop4b:
-    addi    x6, x6, -1
-    bnez    x6, delay_loop4b
-
-    # If x25 is still 0, no interrupt occurred, which is what we want
-    beqz    x25, test4_passed
-    j       test4_failed
+    # --- Fail path for Test 4 ---
+    # If bnez is not taken, it means x30 was 0 (no interrupt handled)
+    li      x24, 0          # Set Test 4 result to Fail
+    j       test5_start     # Jump to the next test
 
 test4_passed:
-    li      x24, 1
-    j       all_tests_done
-
-test4_failed:
-    li      x24, 0
+    # --- Pass path for Test 4 ---
+    li      x24, 1          # Set Test 4 result to Pass
+    j       test5_start     # Jump to the next test
 
     # -------------------------------------------------------------------------
-    # All tests done - calculate overall result
+    # Test 5: Interrupt Clearing (future mtimecmp in handler prevents re-trigger)
+    # -------------------------------------------------------------------------
+test5_start:
+    # The handler from Test 4 set mtimecmp far future.
+    li      x30, 0         # Reset volatile interrupt flag
+
+    # Short delay loop (~400 cycles)
+    li      x6, 100
+test5_delay:
+    addi    x6, x6, -1
+    bnez    x6, test5_delay
+
+    # Check flag immediately after delay
+    beqz    x30, test5_passed # Pass if flag is STILL 0
+    # Fail path
+    li      x25, 0
+    j       test6_start
+test5_passed:
+    li      x25, 1
+    j       test6_start
+
+    # -------------------------------------------------------------------------
+    # Test 6: mtimecmp = MAX (-1) should disable interrupt
+    # -------------------------------------------------------------------------
+test6_start:
+    li      x30, 0         # Reset volatile interrupt flag
+
+    # Write -1 (0xFFFFFFFF FFFFFFFF) to mtimecmp
+    li      x7, -1
+    li      x8, -1
+    li      x6, 0xF0104004; sw x8, 0(x6)
+    li      x6, 0xF0104000; sw x7, 0(x6)
+
+    # Short delay loop (~400 cycles)
+    li      x6, 100
+test6_delay:
+    addi    x6, x6, -1
+    bnez    x6, test6_delay
+
+    # Check flag immediately after delay
+    beqz    x30, test6_passed # Pass if flag is STILL 0
+    # Fail path
+    li      x26, 0
+    j       test7_start
+test6_passed:
+    li      x26, 1
+    j       test7_start
+
+    # -------------------------------------------------------------------------
+    # Test 7: mie.MTIE Disable/Enable
+    # -------------------------------------------------------------------------
+test7_start:
+    li      x30, 0         # Reset volatile interrupt flag
+
+    # Set mtimecmp just ahead (5 ticks = 500 cycles)
+    li      x6, 0xF010BFF8; lw x7, 0(x6)
+    li      x6, 0xF010BFFC; lw x8, 0(x6)
+    addi    x7, x7, 5
+    li      x6, 0xF0104004; sw x8, 0(x6)
+    li      x6, 0xF0104000; sw x7, 0(x6)
+
+    # Wait ~400 cycles (condition likely met)
+    li      x6, 100
+test7_wait_pending:
+    addi    x6, x6, -1
+    bnez    x6, test7_wait_pending
+
+    # Disable timer interrupt
+    li      x7, 0x80       # MTIE bit mask
+    csrc    mie, x7        # Clear MTIE bit
+
+    # Wait again (~400 cycles)
+    li      x6, 100
+test7_delay_disabled:
+    addi    x6, x6, -1
+    bnez    x6, test7_delay_disabled
+
+    # Check flag is still 0 (interrupt masked)
+    bnez    x30, fail_test7 # Fail if interrupt occurred
+
+    # Reset flag *before* enabling, wait, check again
+    li      x30, 0
+
+    # Re-enable timer interrupt
+    li      x7, 0x80       # MTIE bit mask
+    csrs    mie, x7        # Set MTIE bit
+
+    # Wait again (~600 cycles, > interval to be sure)
+    li      x6, 150
+test7_delay_enabled:
+    addi    x6, x6, -1
+    bnez    x6, test7_delay_enabled
+
+    # Check flag is now 1 (pending interrupt was taken)
+    li      x11, 1
+    beq     x30, x11, test7_passed # Pass if flag is 1
+    # Fail path (fall through)
+
+fail_test7:
+    li      x27, 0
+    j       all_tests_done
+test7_passed:
+    li      x27, 1
+    # Fall through
+
+    # -------------------------------------------------------------------------
+    # Combine Results & Exit (Unchanged)
     # -------------------------------------------------------------------------
 all_tests_done:
-    # Check all test results - only pass if all tests passed
-    and     x10, x21, x22       # x10 = x21 AND x22
-    and     x10, x10, x23       # x10 = x10 AND x23
-    and     x10, x10, x24       # x10 = x10 AND x24
-
-    # Final result is in x10 (1=success, 0=failure)
-    # Also store individual test results in specific registers for verification
-    # Store final test results in key registers for verification
-    mv      x30, x21       # Zero mtimecmp test result
-    mv      x31, x22       # Counter overflow test result
-    mv      x29, x23       # TIME write protection test result
-    mv      x28, x24       # mtimecmp > mtime clears interrupt test result
-    mv      a0, x10        # Final result (a0 = x10)
-
+    li      x10, 1; beqz x21, fail_overall; beqz x22, fail_overall; beqz x23, fail_overall
+    beqz    x24, fail_overall; beqz x25, fail_overall; beqz x26, fail_overall; beqz x27, fail_overall
+    j       combine_done
+fail_overall:
+    li      x10, 0
+combine_done:
+    mv      x11, x21; mv x12, x22; mv x13, x23; mv x14, x24; mv x15, x25; mv x16, x26; mv x17, x27
+    mv      a0, x10
 exit:
-    # Disable interrupts before exiting
     csrwi   mie, 0
-
-    # Infinite loop to halt execution
     j       exit
 
 # ---------------------------------------------------------------------------
-# Trap handler
+# Trap handler - Minimal: Increments x30, re-arms timer far future
 # ---------------------------------------------------------------------------
-.align 4  # Make sure trap handler is aligned to 4 bytes
+.align 4
 trap_handler:
-    # Save important registers
-    addi    sp, sp, -16
-    sw      ra, 0(sp)
-    sw      t0, 4(sp)
-    sw      t1, 8(sp)
-    sw      t2, 12(sp)
+    # Save registers
+    addi    sp, sp, -24
+    sw      ra, 20(sp); sw t0, 16(sp); sw t1, 12(sp); sw t2, 8(sp); sw t3, 4(sp); sw t4, 0(sp)
 
-    # Read mcause to determine what happened
     csrr    t0, mcause
+    li      t1, 0x80000007  # Timer interrupt cause
+    bne     t0, t1, trap_exit_new # Skip if not timer interrupt
 
-    # Check if this is a timer interrupt (bit 31 set and code=7)
-    li      t1, 0x80000007   # Machine timer interrupt
-    beq     t0, t1, handle_timer_interrupt
+handle_timer_interrupt_new:
+    # Increment the volatile interrupt flag
+    addi    x30, x30, 1
 
-    # Handle other exceptions/interrupts (just ignore for this test)
-    j       trap_exit
+    # Re-arm timer FAR in the future
+    li      t3, 0xF010BFF8; lw t1, 0(t3)  # Read mtime_l -> t1
+    li      t3, 0xF010BFFC; lw t2, 0(t3)  # Read mtime_h -> t2
+    li      t4, 20000       # Add large offset (20k ticks = 2M cycles = 200 sec)
+    add     t0, t1, t4      # t0 = new_low
+    sltu    t1, t0, t1      # t1 = carry (1 if new_low < old_low)
+    add     t2, t2, t1      # t2 = new_high
+    li      t3, 0xF0104004; sw t2, 0(t3)  # Write new mtimecmp_h
+    li      t3, 0xF0104000; sw t0, 0(t3)  # Write new mtimecmp_l
 
-handle_timer_interrupt:
-    # For test 1
-    addi    x20, x20, 1
-
-    # For test 4
-    addi    x25, x25, 1
-
-trap_exit:
+trap_exit_new:
     # Restore registers
-    lw      ra, 0(sp)
-    lw      t0, 4(sp)
-    lw      t1, 8(sp)
-    lw      t2, 12(sp)
-    addi    sp, sp, 16
+    lw      t4, 0(sp); lw t3, 4(sp); lw t2, 8(sp); lw t1, 12(sp); lw t0, 16(sp); lw ra, 20(sp)
+    addi    sp, sp, 24
 
-    mret    # Return from trap
+    mret

@@ -63,28 +63,28 @@ class CLINT extends Module {
         // High word write: Store it temporarily and set the flag
         tempMtimecmpHigh := writeData
         highWordWritten := true.B
-        printf(p"[CLINT] Write mtimecmp_H (staged): Addr=0x${Hexadecimal(address)}, Data=0x${Hexadecimal(writeData)}\n")
+        //printf(p"[CLINT] Write mtimecmp_H (staged): Addr=0x${Hexadecimal(address)}, Data=0x${Hexadecimal(writeData)}\n")
       }.elsewhen(isLowWordAccess) {
         // Low word write:
         // If high word was written previously, commit the full 64-bit value
         when(highWordWritten) {
           mtimecmpReg := Cat(tempMtimecmpHigh, writeData)
           highWordWritten := false.B // Clear the flag, sequence complete
-          printf(p"[CLINT] Write mtimecmp_L (commit): Addr=0x${Hexadecimal(address)}, Data=0x${Hexadecimal(writeData)}, Full=0x${Hexadecimal(Cat(tempMtimecmpHigh, writeData))}\n")
+          //printf(p"[CLINT] Write mtimecmp_L (commit): Addr=0x${Hexadecimal(address)}, Data=0x${Hexadecimal(writeData)}, Full=0x${Hexadecimal(Cat(tempMtimecmpHigh, writeData))}\n")
         }.otherwise {
           // Low word written *without* prior high word write (unconventional sequence)
           // Update only the low part. This maintains the previous high word.
           // Alternatively, could ignore this write if strict high-then-low sequence is assumed.
           mtimecmpReg := Cat(mtimecmpReg(63, 32), writeData)
-          printf(p"[CLINT] Write mtimecmp_L (low only): Addr=0x${Hexadecimal(address)}, Data=0x${Hexadecimal(writeData)}\n")
+          //printf(p"[CLINT] Write mtimecmp_L (low only): Addr=0x${Hexadecimal(address)}, Data=0x${Hexadecimal(writeData)}\n")
         }
       }
     }.elsewhen(isMtimeAccess) {
       // Attempt to write to mtime (read-only)
-      printf(p"[CLINT] Write ERROR: Addr=0x${Hexadecimal(address)} (mtime) is read-only\n")
+      //printf(p"[CLINT] Write ERROR: Addr=0x${Hexadecimal(address)} (mtime) is read-only\n")
     }.otherwise {
       // Attempt to write to invalid CLINT address
-      printf(p"[CLINT] Write ERROR: Addr=0x${Hexadecimal(address)} is invalid within CLINT range\n")
+      //printf(p"[CLINT] Write ERROR: Addr=0x${Hexadecimal(address)} is invalid within CLINT range\n")
     }
   }.otherwise {
     // Could clear the highword flag here. Current solution is just to keep it high, waiting for a low-word write.
@@ -101,7 +101,7 @@ class CLINT extends Module {
       //printf(p"[CLINT] Read mtime: Addr=0x${Hexadecimal(address)}, Data=0x${Hexadecimal(rdDataWire)}\n")
     }.otherwise {
       // Attempt to read invalid CLINT address
-      printf(p"[CLINT] Read ERROR: Addr=0x${Hexadecimal(address)} is invalid within CLINT range\n")
+      //printf(p"[CLINT] Read ERROR: Addr=0x${Hexadecimal(address)} is invalid within CLINT range\n")
       rdDataWire := 0.U // Or some error indication if bus supports it
     }
   }

@@ -27,6 +27,8 @@ class WildcatTestTop(file: String, freqHz: Int = 100000000) extends Module {
     val debug_csrWrite = Output(Bool())
     val debug_csrResult = Output(UInt(32.W))
     val debug_isIllegal = Output(Bool())
+    val debug_isValid = Output(Bool())
+    val debug_timer = Output(UInt(64.W))
   })
   val cpuTop = Module(new WildcatTop(file = file, freqHz = freqHz))
 
@@ -46,6 +48,8 @@ class WildcatTestTop(file: String, freqHz: Int = 100000000) extends Module {
   io.debug_csrWrite := false.B
   io.debug_csrResult := 0.U
   io.debug_isIllegal := false.B
+  io.debug_isValid := false.B
+  io.debug_timer := 0.U
 
   BoringUtils.bore(cpuTop.cpu.decExReg.pc, Seq(io.debug_pc))
   BoringUtils.bore(cpuTop.cpu.decExReg.instruction, Seq(io.debug_instr))
@@ -55,7 +59,8 @@ class WildcatTestTop(file: String, freqHz: Int = 100000000) extends Module {
   BoringUtils.bore(cpuTop.cpu.csr.io.writeEnable, Seq(io.debug_csrWrite))
   BoringUtils.bore(cpuTop.cpu.csr.io.data, Seq(io.debug_csrResult))
   BoringUtils.bore(cpuTop.cpu.decExReg.decOut.isIllegal, Seq(io.debug_isIllegal))
-
+  BoringUtils.bore(cpuTop.cpu.decExReg.valid, Seq(io.debug_isValid))
+  BoringUtils.bore(cpuTop.cpu.io.timerCounter_out, Seq(io.debug_timer))
   cpuTop.io.rx := io.rx
   io.tx := cpuTop.io.tx
 }
