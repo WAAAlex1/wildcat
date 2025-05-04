@@ -49,9 +49,9 @@ class WildcatTop(file: String, dmemNrByte: Int = 4096, freqHz: Int = 100000000) 
   // bit 0 TX ready (TDE)
   // bit 1 RX data available (RDF)
   // 0xf000_0004 send and receive register
-
-  val tx = Module(new BufferedTx(freqHz, 115200))
-  val rx = Module(new Rx(freqHz, 115200))
+  // BUG: If using freqhz instead of 100000000 we might get an error if freqhz > baudrate (will get negative number).
+  val tx = Module(new BufferedTx(100000000, 115200))
+  val rx = Module(new Rx(100000000, 115200))
   io.tx := tx.io.txd
   rx.io.rxd := io.rx
 
@@ -59,28 +59,29 @@ class WildcatTop(file: String, dmemNrByte: Int = 4096, freqHz: Int = 100000000) 
   tx.io.channel.valid := false.B
   rx.io.channel.ready := false.B
 
+  // Default values for memory accesses
+  val uartStatusReg = RegNext(rx.io.channel.valid ## tx.io.channel.ready)
+  val memAddressReg = RegNext(cpu.io.dmem.rdAddress)
+  val writeAddressReg = RegNext(cpu.io.dmem.wrAddress)
+
+
   // Instantiate CLINT module
   val clint = Module(new CLINT())
-  val isClintAccess = Wire(Bool())
-  val isClintWrite = Wire(Bool())
-  isClintAccess := (memAddressReg >= MemoryMap.CLINT_BASE.U) &&
-    (memAddressReg < (MemoryMap.CLINT_BASE + 0xC000).U)
-  isClintWrite := cpu.io.dmem.wrEnable.asUInt.orR &&
-    (cpu.io.dmem.wrAddress >= MemoryMap.CLINT_BASE.U) &&
-    (cpu.io.dmem.wrAddress < (MemoryMap.CLINT_BASE + 0xC000).U)
+  val isClintAccess = RegNext((memAddressReg >= MemoryMap.CLINT_BASE.U) &&
+    (memAddressReg < (MemoryMap.CLINT_BASE + 0xC000).U))
+  val isClintWrite = RegNext(cpu.io.dmem.wrEnable.asUInt.orR &&
+    (writeAddressReg >= MemoryMap.CLINT_BASE.U) &&
+    (writeAddressReg < (MemoryMap.CLINT_BASE + 0xC000).U))
+  val clintWriteDataReg = RegNext(cpu.io.dmem.wrData)
 
   // Connect CLINT to CLINTLink interface
   clint.io.link.enable := isClintAccess
   clint.io.link.isWrite := isClintWrite
-  clint.io.link.address := Mux(isClintWrite, cpu.io.dmem.wrAddress, memAddressReg)
-  clint.io.link.wrData := cpu.io.dmem.wrData
+  clint.io.link.address := Mux(isClintWrite, writeAddressReg, memAddressReg)
+  clint.io.link.wrData := clintWriteDataReg
 
   clint.io.currentTimeIn := cpu.io.timerCounter_out
   cpu.io.mtimecmpVal_in := clint.io.mtimecmpValueOut
-
-  // Default values for memory accesses
-  val uartStatusReg = RegNext(rx.io.channel.valid ## tx.io.channel.ready)
-  val memAddressReg = RegNext(cpu.io.dmem.rdAddress)
 
   // Memory access logic with added CLINT handling
   when(memAddressReg(31, 28) === 0xf.U) {

@@ -25,7 +25,7 @@ _start:
     csrr    x12, mcycleh   # Read mcycle (high 32 bits)
 
     # Delay loop to ensure counter changes
-    li      x3, 1000
+    li      x3, 20
 delay_loop1:
     addi    x3, x3, -1
     bnez    x3, delay_loop1
@@ -62,7 +62,7 @@ test2_start:
 
     # Longer delay loop to ensure time register changes
     # This needs to be much longer due to clock division
-    li      x3, 20000
+    li      x3, 200
 delay_loop2:
     addi    x3, x3, -1
     bnez    x3, delay_loop2

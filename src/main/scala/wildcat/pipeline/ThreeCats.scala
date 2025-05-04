@@ -130,9 +130,9 @@ class ThreeCats(freqHz: Int = 100000000) extends Wildcat() {
   // --------------------------- CSR IN DECODE (READ) ---------------------------------------
   // DECODE STAGE -> HERE WE READ CSR
   val csr = Module(new Csr(freqHz))
+  io.timerCounter_out := csr.io.timerCounter
   // Input for mtimecmp (assuming added as per Issue #1 fix) ---
   csr.io.mtimecmpVal := io.mtimecmpVal_in
-
   // READ CSR IN DECODE STAGE
   csr.io.readEnable := (decOut.isCsrrw && decEx.rd =/= 0.U) || decOut.isCsrrs || decOut.isCsrrc ||
     (decOut.isCsrrwi && decEx.rd =/= 0.U) || decOut.isCsrrsi || decOut.isCsrrci

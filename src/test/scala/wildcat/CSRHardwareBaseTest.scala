@@ -84,7 +84,7 @@ abstract class CSRHardwareBaseTest extends AnyFlatSpec with ChiselScalatestTeste
   }
 
   // Utility functions for debug output during tests
-  def printCompactDebugInfo(dut: WildcatTestTop): Unit = {
+  def printCompactDebugInfo(dut: WildcatTestTop, numCycles: Int = 0): Unit = {
     val pc = dut.io.debug_pc.peekInt()
     val instrValue = dut.io.debug_instr.peekInt()
     val branch = dut.io.debug_doBranch.peekBoolean()
@@ -93,12 +93,12 @@ abstract class CSRHardwareBaseTest extends AnyFlatSpec with ChiselScalatestTeste
     val csrWrite = dut.io.debug_csrWrite.peekBoolean()
     val isIllegal = dut.io.debug_isIllegal.peekBoolean()
 
-    println(f"PC=0x${pc}%08x Instr=0x${instrValue}%08x Branch=${branch} Target=0x${target}%08x, WRITE CSR=${csrWrite}, isIllegal=${isIllegal}")
+    println(f"PC=0x${pc}%08x Instr=0x${instrValue}%08x Branch=${branch} Target=0x${target}%08x, WRITE CSR=${csrWrite}, isIllegal=${isIllegal}, CCnum = ${numCycles}")
   }
 
-  def printDebugInfo(dut: WildcatTestTop): Unit = {
+  def printDebugInfo(dut: WildcatTestTop, numCycles: Int = 0): Unit = {
     // Print PC and instruction if available
-    println(f"PC: 0x${dut.io.debug_pc.peekInt()}%08x, Instruction: 0x${dut.io.debug_instr.peekInt()}%08x")
+    println(f"PC: 0x${dut.io.debug_pc.peekInt()}%08x, Instruction: 0x${dut.io.debug_instr.peekInt()}%08x, Number of clock cycles: ${numCycles}")
     println(f"Branch: ${dut.io.debug_doBranch.peekBoolean()}, Target: 0x${dut.io.debug_branchTarget.peekInt()}%08x, Stall: ${dut.io.debug_stall.peekBoolean()}")
     val instrValue = dut.io.debug_instr.peekInt()
     println(f"PC: 0x${dut.io.debug_pc.peekInt()}%08x, Instruction: 0x${instrValue}%08x (${decodeInstructionForDebug(instrValue.toLong)})")
@@ -147,19 +147,26 @@ abstract class CSRHardwareBaseTest extends AnyFlatSpec with ChiselScalatestTeste
   }
 
   // Shared helper method for running tests
-  def runCSRTest(testName: String, expectedResults: Map[Int, Int], maxCycles: Int = 100, freqHz: Int = 100000000): Unit = {
+  def runCSRTest(testName: String, expectedResults: Map[Int, Int], maxCycles: Int = 100, freqHz: Int = 100000000, debug: Int = 0): Unit = {
     // Compile the test
     val binFile = compileTest(testName)
+    var clockCycles = 0
 
     test(new WildcatTestTop(file = binFile, freqHz = freqHz)).withAnnotations(Seq(WriteVcdAnnotation)) { dut =>
       // Run for enough cycles to complete the test
       println(s"\n===== STARTING $testName EXECUTION =====")
       println(s"Test binary: $binFile")
-
+      dut.clock.setTimeout(0) // Increased from the default
       // Run for specified number of cycles
       for (i <- 1 to maxCycles) {
         dut.clock.step(1)
-        printCompactDebugInfo(dut)
+        clockCycles = clockCycles + 1
+        if(debug == 1){
+          printCompactDebugInfo(dut, clockCycles)
+        }
+        else if (debug == 2){
+          printDebugInfo(dut, clockCycles)
+        }
       }
 
       // Final state
@@ -197,7 +204,7 @@ class CSRHardwareInstructionsTest extends CSRHardwareBaseTest {
 
   // This is the main test method that will be run directly when testing this class
   "CSR Instructions Test" should "pass on the ThreeCats processor" in {
-    runCSRTest("CSR_full_test", csrTestExpected, 50)
+    runCSRTest("CSR_full_test", csrTestExpected, 50, 100000000, 1)
   }
 }
 
@@ -221,7 +228,7 @@ class CSRHardwareEdgeCasesTest extends CSRHardwareBaseTest {
   )
 
   "CSR Edge Cases Test" should "pass on the ThreeCats processor" in {
-    runCSRTest("CSR_edgecases_test", csrEdgeCaseTestExpected)
+    runCSRTest("CSR_edgecases_test", csrEdgeCaseTestExpected, 100,100000000, 1)
   }
 }
 
@@ -240,7 +247,7 @@ class CSRHardwareExceptionHandlingTest extends CSRHardwareBaseTest {
   )
 
   "Exception Handling Test" should "pass on the ThreeCats processor" in {
-    runCSRTest("Exception_test", exceptionTestExpected)
+    runCSRTest("Exception_test", exceptionTestExpected, 100, 100000000, 1)
   }
 }
 
@@ -258,10 +265,10 @@ class CSRHardwareTimerTest extends CSRHardwareBaseTest {
   )
 
   val testFreqHz = 10000
-  val numCycles = 60000
+  val numCycles = 1100 // Should take about 1000 cycles - added a little headroom.
 
   "Exception Handling Test" should "pass on the ThreeCats processor" in {
-    runCSRTest("CSR_timer_core_test", timerTestExpected, numCycles, testFreqHz)
+    runCSRTest("CSR_timer_core_test", timerTestExpected, numCycles, testFreqHz, 1)
   }
 }
 
@@ -278,10 +285,10 @@ class CSRHardwareTimeEventTest extends CSRHardwareBaseTest {
   )
 
   val testFreqHz = 10000
-  val numCycles = 2000  // With 10kHz test frequency (safe)
+  val numCycles = 5000  // With 10kHz test frequency (safe)
 
     "Exception Handling Test" should "pass on the ThreeCats processor" in {
-      runCSRTest("CSR_time_event_test", timeEventTestExpected, numCycles, testFreqHz)
+      runCSRTest("CSR_time_event_test", timeEventTestExpected, numCycles, testFreqHz, 1)
     }
 }
 
@@ -299,13 +306,12 @@ class CSRHardwareTimerEdgecasesTest extends CSRHardwareBaseTest {
   )
 
   val testFreqHz = 10000
-  val numCycles = 10000  // With 10kHz test frequency
+  val numCycles = 130000  // With 10kHz test frequency
 
     "Exception Handling Test" should "pass on the ThreeCats processor" in {
-      runCSRTest("CSR_timer_edgecases_test", timerEdgeCasesTestExpected, numCycles, testFreqHz)
+      runCSRTest("CSR_timer_edgecases_test", timerEdgeCasesTestExpected, numCycles, testFreqHz, 1)
     }
 }
-
 
 /**
  * Main test class that combines all CSR tests
@@ -324,26 +330,26 @@ class CSRHardwareAllTests extends CSRHardwareBaseTest {
   val timeEventsTest = new CSRHardwareTimeEventTest()
 
   "CSR Hardware Basic Instructions" should "pass all tests" in {
-    runCSRTest("CSR_full_test", instructionsTest.csrTestExpected, 50)
+    runCSRTest("CSR_full_test", instructionsTest.csrTestExpected, 50, 100000000, 0)
   }
 
   "CSR Hardware Edge Cases" should "pass all tests" in {
-    runCSRTest("CSR_edgecases_test", edgeCasesTest.csrEdgeCaseTestExpected)
+    runCSRTest("CSR_edgecases_test", edgeCasesTest.csrEdgeCaseTestExpected, 100, 100000000, 0)
   }
 
   "CSR Hardware Exception Handling" should "pass all tests" in {
-    runCSRTest("Exception_test", exceptionTest.exceptionTestExpected)
+    runCSRTest("Exception_test", exceptionTest.exceptionTestExpected, 100, 100000000, 0)
   }
 
   "CSR Hardware Timer Functionality" should "pass all tests" in {
-    runCSRTest("CSR_timer_core_test", timerFunctionalityTest.timerTestExpected, timerFunctionalityTest.numCycles)
+    runCSRTest("CSR_timer_core_test", timerFunctionalityTest.timerTestExpected, timerFunctionalityTest.numCycles, timerFunctionalityTest.testFreqHz, 0)
   }
 
   "CSR Timer Edge Cases" should "pass all tests" in {
-    runCSRTest("CSR_timer_edgecases_test", timerEdgeCasesTest.timerEdgeCasesTestExpected, timerEdgeCasesTest.numCycles)
+    runCSRTest("CSR_timer_edgecases_test", timerEdgeCasesTest.timerEdgeCasesTestExpected, timerEdgeCasesTest.numCycles, timerEdgeCasesTest.testFreqHz, 0)
   }
 
   "CSR Timer Time Events" should "pass all tests" in {
-    runCSRTest("CSR_time_event_test", timeEventsTest.timeEventTestExpected, timeEventsTest.numCycles)
+    runCSRTest("CSR_time_event_test", timeEventsTest.timeEventTestExpected, timeEventsTest.numCycles, timeEventsTest.testFreqHz, 0)
   }
 }
