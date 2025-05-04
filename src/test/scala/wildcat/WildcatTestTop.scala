@@ -9,7 +9,7 @@ import wildcat.pipeline._
  * Top-level for testing and verification
  *
  */
-class WildcatTestTop(file: String) extends Module {
+class WildcatTestTop(file: String, freqHz: Int = 100000000) extends Module {
 
   val io = IO(new Bundle {
     val regFile = Output(Vec(32,UInt(32.W)))
@@ -28,7 +28,7 @@ class WildcatTestTop(file: String) extends Module {
     val debug_csrResult = Output(UInt(32.W))
     val debug_isIllegal = Output(Bool())
   })
-  val cpuTop = Module(new WildcatTop(file))
+  val cpuTop = Module(new WildcatTop(file = file, freqHz = freqHz))
 
   io.regFile := DontCare
   BoringUtils.bore(cpuTop.cpu.debugRegs, Seq(io.regFile))

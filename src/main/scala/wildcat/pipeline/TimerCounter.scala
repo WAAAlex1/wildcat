@@ -10,7 +10,7 @@ import wildcat.CSR // Import CSR definitions
  * Implements standard counters. mtimecmp is now handled externally
  * via memory-mapped access (e.g., through a CLINT module).
  */
-class TimerCounter extends Module {
+class TimerCounter(freqHz: Int = 100000000) extends Module {
   val io = IO(new Bundle {
     // --- Inputs ---
     val instrComplete = Input(Bool())           // From pipeline
@@ -39,7 +39,7 @@ class TimerCounter extends Module {
   val instretReg = RegInit(0.U(64.W))
 
   // Clock division logic (Existing)
-  val cyclesPerTimeIncrement = 1000000 // Assuming 100MHz clock for 100Hz timer
+  val cyclesPerTimeIncrement = freqHz / 100 // Assuming 100MHz clock for 100Hz timer
   val timeCounter = RegInit(0.U(log2Ceil(cyclesPerTimeIncrement).W))
 
   cycleReg := cycleReg + 1.U

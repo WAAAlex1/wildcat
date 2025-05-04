@@ -13,7 +13,7 @@ import wildcat.CSR // Make sure CSR object/definitions are accessible
  * generic CSR storage, and interfaces with TimerCounter and InterruptController modules.
  * Includes forwarding logic.
  */
-class Csr() extends Module {
+class Csr(freqHz: Int = 100000000) extends Module {
   val io = IO(new Bundle {
     // === INPUTS ===
     val readAddress    = Input(UInt(12.W))  // Address for read operation
@@ -47,7 +47,7 @@ class Csr() extends Module {
   //----------------------------------------------------------------------------
 
   // Timer/Counter Module (Handles TIME, CYCLE, INSTRET CSRs)
-  val timerCounter = Module(new TimerCounter())
+  val timerCounter = Module(new TimerCounter(freqHz))
   timerCounter.io.instrComplete := io.instrComplete
   timerCounter.io.csrAddr        := io.readAddress // Pass raw read address
   timerCounter.io.csrWriteEnable := io.writeEnable && isCounterCSR(io.writeAddress) // Qualify write enable

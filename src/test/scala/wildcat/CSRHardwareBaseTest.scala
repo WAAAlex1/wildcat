@@ -147,11 +147,11 @@ abstract class CSRHardwareBaseTest extends AnyFlatSpec with ChiselScalatestTeste
   }
 
   // Shared helper method for running tests
-  def runCSRTest(testName: String, expectedResults: Map[Int, Int], maxCycles: Int = 100): Unit = {
+  def runCSRTest(testName: String, expectedResults: Map[Int, Int], maxCycles: Int = 100, freqHz: Int = 100000000): Unit = {
     // Compile the test
     val binFile = compileTest(testName)
 
-    test(new WildcatTestTop(binFile)).withAnnotations(Seq(WriteVcdAnnotation)) { dut =>
+    test(new WildcatTestTop(file = binFile, freqHz = freqHz)).withAnnotations(Seq(WriteVcdAnnotation)) { dut =>
       // Run for enough cycles to complete the test
       println(s"\n===== STARTING $testName EXECUTION =====")
       println(s"Test binary: $binFile")
@@ -245,6 +245,69 @@ class CSRHardwareExceptionHandlingTest extends CSRHardwareBaseTest {
 }
 
 /**
+ * Test for timer/counter functionality in the ThreeCats Processor.
+ */
+class CSRHardwareTimerTest extends CSRHardwareBaseTest {
+  // Define the expected register values
+  val timerTestExpected = Map(
+    REGS.x30 -> 1,        // CYCLE test result
+    REGS.x31 -> 1,        // TIME test result
+    REGS.x29 -> 1,        // INSTRET test result
+    REGS.x28 -> 1,        // MCYCLE write test result
+    REGS.x10 -> 1         // Final overall result
+  )
+
+  val testFreqHz = 10000
+  val numCycles = 60000
+
+  "Exception Handling Test" should "pass on the ThreeCats processor" in {
+    runCSRTest("CSR_timer_core_test", timerTestExpected, numCycles, testFreqHz)
+  }
+}
+
+/**
+ * Test for timer/counter functionality in the ThreeCats Processor.
+ */
+class CSRHardwareTimeEventTest extends CSRHardwareBaseTest {
+  // Define the expected register values
+
+  val timeEventTestExpected = Map(
+    REGS.x20 -> 2,        // Number of timer interrupts received
+    REGS.x29 -> 0xDEADBEEF, // Marker showing test completed
+    REGS.x10 -> 1         // Final overall result
+  )
+
+  val testFreqHz = 10000
+  val numCycles = 2000  // With 10kHz test frequency (safe)
+
+    "Exception Handling Test" should "pass on the ThreeCats processor" in {
+      runCSRTest("CSR_time_event_test", timeEventTestExpected, numCycles, testFreqHz)
+    }
+}
+
+/**
+ * Test for timer/counter functionality in the ThreeCats Processor.
+ */
+class CSRHardwareTimerEdgecasesTest extends CSRHardwareBaseTest {
+  // Define the expected register values
+  val timerEdgeCasesTestExpected = Map(
+    REGS.x30 -> 1,        // Zero mtimecmp test result
+    REGS.x31 -> 1,        // Counter overflow test result
+    REGS.x29 -> 1,        // TIME write protection test result
+    REGS.x28 -> 1,        // mtimecmp > mtime clears interrupt test result
+    REGS.x10 -> 1         // Final overall result
+  )
+
+  val testFreqHz = 10000
+  val numCycles = 10000  // With 10kHz test frequency
+
+    "Exception Handling Test" should "pass on the ThreeCats processor" in {
+      runCSRTest("CSR_timer_edgecases_test", timerEdgeCasesTestExpected, numCycles, testFreqHz)
+    }
+}
+
+
+/**
  * Main test class that combines all CSR tests
  * This class can be run directly to execute all tests
  */
@@ -256,6 +319,9 @@ class CSRHardwareAllTests extends CSRHardwareBaseTest {
   val instructionsTest = new CSRHardwareInstructionsTest()
   val edgeCasesTest = new CSRHardwareEdgeCasesTest()
   val exceptionTest = new CSRHardwareExceptionHandlingTest()
+  val timerFunctionalityTest = new CSRHardwareTimerTest()
+  val timerEdgeCasesTest = new CSRHardwareTimerEdgecasesTest()
+  val timeEventsTest = new CSRHardwareTimeEventTest()
 
   "CSR Hardware Basic Instructions" should "pass all tests" in {
     runCSRTest("CSR_full_test", instructionsTest.csrTestExpected, 50)
@@ -267,5 +333,17 @@ class CSRHardwareAllTests extends CSRHardwareBaseTest {
 
   "CSR Hardware Exception Handling" should "pass all tests" in {
     runCSRTest("Exception_test", exceptionTest.exceptionTestExpected)
+  }
+
+  "CSR Hardware Timer Functionality" should "pass all tests" in {
+    runCSRTest("CSR_timer_core_test", timerFunctionalityTest.timerTestExpected, timerFunctionalityTest.numCycles)
+  }
+
+  "CSR Timer Edge Cases" should "pass all tests" in {
+    runCSRTest("CSR_timer_edgecases_test", timerEdgeCasesTest.timerEdgeCasesTestExpected, timerEdgeCasesTest.numCycles)
+  }
+
+  "CSR Timer Time Events" should "pass all tests" in {
+    runCSRTest("CSR_time_event_test", timeEventsTest.timeEventTestExpected, timeEventsTest.numCycles)
   }
 }

@@ -18,7 +18,7 @@ import wildcat.pipeline.Functions._
  * CSR Instruction handling / Exception handling added by:
  * Alexander Aakersø and Georg Dyvad
  */
-class ThreeCats() extends Wildcat() {
+class ThreeCats(freqHz: Int = 100000000) extends Wildcat() {
   // some forward declarations
   val stall = WireDefault(false.B)
   val wbData = Wire(UInt(32.W))
@@ -129,7 +129,7 @@ class ThreeCats() extends Wildcat() {
 
   // --------------------------- CSR IN DECODE (READ) ---------------------------------------
   // DECODE STAGE -> HERE WE READ CSR
-  val csr = Module(new Csr())
+  val csr = Module(new Csr(freqHz))
   // Input for mtimecmp (assuming added as per Issue #1 fix) ---
   csr.io.mtimecmpVal := io.mtimecmpVal_in
 
