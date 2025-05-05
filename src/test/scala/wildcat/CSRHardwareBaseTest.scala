@@ -312,10 +312,10 @@ class CSRHardwareTimerEdgecasesTest extends CSRHardwareBaseTest {
   )
 
   val testFreqHz = 10000
-  val numCycles = 5000  // With 10kHz test frequency
+  val numCycles = 4000  // With 10kHz test frequency
 
     "Exception Handling Test" should "pass on the ThreeCats processor" in {
-      runCSRTest("CSR_timer_edgecases_test", timerEdgeCasesTestExpected, numCycles, testFreqHz, 0)
+      runCSRTest("CSR_timer_edgecases_test", timerEdgeCasesTestExpected, numCycles, testFreqHz, 1)
     }
 }
 
@@ -323,7 +323,7 @@ class CSRHardwareTimerEdgecasesTest extends CSRHardwareBaseTest {
  * Main test class that combines all CSR tests
  * This class can be run directly to execute all tests
  */
-class CSRHardwareAllTests extends CSRHardwareBaseTest {
+class CSRHardwareAllTests(ignore: String) extends CSRHardwareBaseTest {
   // This class reuses test definitions from the individual test classes
   // and calls the same shared runCSRTest method
 

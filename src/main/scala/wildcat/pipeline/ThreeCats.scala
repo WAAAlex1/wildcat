@@ -39,10 +39,8 @@ class ThreeCats(freqHz: Int = 100000000) extends Wildcat() {
 
   // PC generation
   val pcReg = RegInit(0.U(32.W)) // Start at address 0
-  val pcPlus4 = pcReg + 4.U
-  // Update PC only if not stalled
-  val pcNext = WireDefault(Mux(stall, pcReg, Mux(doBranch, branchTarget, pcPlus4))) // Assign default first
-  when(!stall) { pcReg := pcNext }
+  val pcNext = WireDefault(Mux(stall, pcReg, Mux(doBranch, branchTarget, pcReg + 4.U)))   // Update PC only if not stalled
+  pcReg := pcNext
   io.imem.address := pcNext
 
   // Simple initialization flag
@@ -60,7 +58,7 @@ class ThreeCats(freqHz: Int = 100000000) extends Wildcat() {
    * ******************************************************************************************** */
 
   val instr = WireDefault(io.imem.data)
-  when (io.imem.stall) {
+  when (io.imem.stall ) {
     instr := 0x00000013.U
     pcNext := pcReg
   }
@@ -98,9 +96,9 @@ class ThreeCats(freqHz: Int = 100000000) extends Wildcat() {
   decEx.decOut := decOut
   decEx.valid := !doBranch
   decEx.pc := pcRegReg
-  decEx.rs1 := instrReg(19, 15)
-  decEx.rs2 := instrReg(24, 20)
-  decEx.rd := instrReg(11, 7)
+  decEx.rs1 := rs1
+  decEx.rs2 := rs2
+  decEx.rd := rd
   decEx.rs1Val := rs1Val
   decEx.rs2Val := rs2Val
   decEx.func3 := instrReg(14, 12)
@@ -111,30 +109,26 @@ class ThreeCats(freqHz: Int = 100000000) extends Wildcat() {
   val address = Mux(wrEna && (wbDest =/= 0.U) && wbDest === decEx.rs1, wbData, rs1Val)
   val data = Mux(wrEna && (wbDest =/= 0.U) && wbDest === decEx.rs2, wbData, rs2Val)
 
+  // Data Memory Access Initiation
   val memAddress = (address.asSInt + decOut.imm).asUInt
   decEx.memLow := memAddress(1, 0)
 
-  // Instantiate CSR Module
-  val csr = Module(new Csr(freqHz))
-  io.timerCounter_out := csr.io.timerCounter
-  csr.io.mtimecmpVal := io.mtimecmpVal_in
-
-  // Data Memory Access Initiation
-  val (wrd, wre) = getWriteData(data, decEx.func3, memAddress(1, 0))
-
-  io.dmem.rdEnable := decOut.isLoad && !doBranch
   io.dmem.rdAddress := memAddress
-
-  io.dmem.wrEnable := VecInit(Seq.fill(4)(false.B))
   io.dmem.wrAddress := memAddress
-  io.dmem.wrData := data
+  io.dmem.rdEnable  := decOut.isLoad && !doBranch
+  io.dmem.wrEnable  := VecInit(Seq.fill(4)(false.B))
+  io.dmem.wrData    := data
 
   when(decOut.isStore && !doBranch && !stall) {
+    val (wrd, wre) = getWriteData(data, decEx.func3, memAddress(1, 0))
     io.dmem.wrData := wrd
     io.dmem.wrEnable := wre
   }
 
-  // READ CSR IN DECODE STAGE
+  // Instantiate CSR Module and read
+  val csr = Module(new Csr(freqHz))
+  io.timerCounter_out := csr.io.timerCounter
+  csr.io.mtimecmpVal := io.mtimecmpVal_in
   csr.io.readAddress := decEx.csrAddr
   csr.io.readEnable := (decOut.isCsrrw && decEx.rd =/= 0.U) || decOut.isCsrrs || decOut.isCsrrc ||
     (decOut.isCsrrwi && decEx.rd =/= 0.U) || decOut.isCsrrsi || decOut.isCsrrci
@@ -145,13 +139,16 @@ class ThreeCats(freqHz: Int = 100000000) extends Wildcat() {
    **********************************************************************************************/
   // Pipeline registers for EX stage
   val decExReg = RegNext(decEx)
-  when(stall){ decExReg := decExReg }
+  when(stall){
+    decExReg := decExReg
+    decExReg.valid := false.B
+  }
 
   // Forwarding of wbData from EX stage to EX stage
   val v1 = Mux(exFwdReg.valid && exFwdReg.wbDest === decExReg.rs1, exFwdReg.wbData, decExReg.rs1Val)
   val v2 = Mux(exFwdReg.valid && exFwdReg.wbDest === decExReg.rs2, exFwdReg.wbData, decExReg.rs2Val)
 
-  // ---------------------- EXCEPTION HANDLING ----------------------------------------------
+  // Trap handling
   val exceptionCause = WireDefault(0.U(32.W))
   val illegalInstr = decExReg.valid && decExReg.decOut.isIllegal && processorInitialized
   val ecallM = decExReg.valid && decExReg.decOut.isECall
@@ -214,12 +211,12 @@ class ThreeCats(freqHz: Int = 100000000) extends Wildcat() {
   when(decExReg.decOut.isLoad && !doBranch && !stall) { // LOAD
     finalResult := selectLoadData(io.dmem.rdData, decExReg.func3, decExReg.memLow)
   }
-  when(decExReg.decOut.isJal || decExReg.decOut.isJalr) { finalResult := decExReg.pc + 4.U } // JAL / JALR
 
   // Write Back Data and Destination Calculation (Result from EX stage)
   wbDest := decExReg.rd
   wbData := finalResult
 
+  when(decExReg.decOut.isJal || decExReg.decOut.isJalr) { wbData := decExReg.pc + 4.U } // JAL / JALR
 
   // --- Write Enable Logic ---
   // Ensure write enable is only active if the instruction is valid and requests a write (and not stalling)
@@ -239,12 +236,12 @@ class ThreeCats(freqHz: Int = 100000000) extends Wildcat() {
   }.elsewhen(decExReg.valid && decExReg.decOut.isJal) {
     doBranch := true.B
     branchTarget := (decExReg.pc.asSInt + decExReg.decOut.imm).asUInt
-  }.elsewhen(decExReg.valid && decExReg.decOut.isBranch && (compare(decExReg.func3, v1, v2) && decExReg.decOut.isBranch)) {
+  }.elsewhen(decExReg.valid && decExReg.decOut.isBranch && compare(decExReg.func3, v1, v2)) {
     doBranch := true.B
     branchTarget := (decExReg.pc.asSInt + decExReg.decOut.imm).asUInt
   }.otherwise {
     doBranch := false.B
-    branchTarget := pcPlus4 // Default target
+    branchTarget := (decExReg.pc.asSInt + decExReg.decOut.imm).asUInt // Default target
   }
 
   // Forwarding register values to ALU

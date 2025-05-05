@@ -63,20 +63,20 @@ class CLINT extends Module {
         // High word write: Store it temporarily and set the flag
         tempMtimecmpHigh := writeData
         highWordWritten := true.B
-        //printf(p"[CLINT] Write mtimecmp_H (staged): Addr=0x${Hexadecimal(address)}, Data=0x${Hexadecimal(writeData)}\n")
+        printf(p"[CLINT] Write mtimecmp_H (staged): Addr=0x${Hexadecimal(address)}, Data=0x${Hexadecimal(writeData)}\n")
       }.elsewhen(isLowWordAccess) {
         // Low word write:
         // If high word was written previously, commit the full 64-bit value
         when(highWordWritten) {
           mtimecmpReg := Cat(tempMtimecmpHigh, writeData)
           highWordWritten := false.B // Clear the flag, sequence complete
-          //printf(p"[CLINT] Write mtimecmp_L (commit): Addr=0x${Hexadecimal(address)}, Data=0x${Hexadecimal(writeData)}, Full=0x${Hexadecimal(Cat(tempMtimecmpHigh, writeData))}\n")
+          printf(p"[CLINT] Write mtimecmp_L (commit): Addr=0x${Hexadecimal(address)}, Data=0x${Hexadecimal(writeData)}, Full=0x${Hexadecimal(Cat(tempMtimecmpHigh, writeData))}\n")
         }.otherwise {
           // Low word written *without* prior high word write (unconventional sequence)
           // Update only the low part. This maintains the previous high word.
           // Alternatively, could ignore this write if strict high-then-low sequence is assumed.
           mtimecmpReg := Cat(mtimecmpReg(63, 32), writeData)
-          //printf(p"[CLINT] Write mtimecmp_L (low only): Addr=0x${Hexadecimal(address)}, Data=0x${Hexadecimal(writeData)}\n")
+          printf(p"[CLINT] Write mtimecmp_L (low only): Addr=0x${Hexadecimal(address)}, Data=0x${Hexadecimal(writeData)}\n")
         }
       }
     }.elsewhen(isMtimeAccess) {

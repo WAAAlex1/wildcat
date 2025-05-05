@@ -117,7 +117,7 @@ class Csr(freqHz: Int = 100000000) extends Module {
       mcauseReg := io.exceptionCause // MSB should be 0 for exceptions
       mtvalReg  := io.trapInstruction // Save faulting instruction/address
     }
-    // printf("[Csr] Trap Taken: PC=0x%x, Cause=0x%x, isInterrupt=%b, mtval=0x%x\n", io.trapPC, Mux(io.trapIsInterrupt, io.interruptCause, io.exceptionCause), io.trapIsInterrupt, Mux(io.trapIsInterrupt, 0.U, io.trapInstruction))
+    printf("[Csr] Trap Taken: PC=0x%x, Cause=0x%x, isInterrupt=%b, mtval=0x%x\n", io.trapPC, Mux(io.trapIsInterrupt, io.interruptCause, io.exceptionCause), io.trapIsInterrupt, Mux(io.trapIsInterrupt, 0.U, io.trapInstruction))
   }
 
   //----------------------------------------------------------------------------

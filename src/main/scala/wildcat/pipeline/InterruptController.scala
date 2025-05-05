@@ -112,7 +112,7 @@ class InterruptController extends Module {
   when(io.takeTrap) {
     mstatus_mpie := mstatus_mie // Save current MIE state to MPIE
     mstatus_mie := false.B // Disable global interrupts
-    // printf("[InterruptController] Trap Taken: MIE(%b) -> MPIE, MIE -> false\n", mstatus_mie) // Use value *before* update for print
+    printf("[InterruptController] Trap Taken: MIE(%b) -> MPIE, MIE -> false\n", mstatus_mie) // Use value *before* update for print
   }
 
   // MRET Logic
@@ -120,8 +120,7 @@ class InterruptController extends Module {
   when(io.mret_executing) {
     mstatus_mie := mstatus_mpie // Restore global interrupt enable from MPIE
     mstatus_mpie := true.B      // Set MPIE to 1 (interrupts were enabled prior to trap)
-    // printf("[InterruptController] MRET Executing: MIE <- MPIE(%b), MPIE -> true\n", mstatus_mpie) // Use value *before* update for print
+    printf("[InterruptController] MRET Executing: MIE <- MPIE(%b), MPIE -> true\n", mstatus_mpie) // Use value *before* update for print
   }
-
 
 }

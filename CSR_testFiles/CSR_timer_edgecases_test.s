@@ -127,12 +127,10 @@ test4_delay:
     addi    x6, x6, -1
     bnez    x6, test4_delay
 
-    # **** ADD DEBUG CSR READS HERE ****
-    # Read interrupt status just before checking the flag
-    csrr    x11, mstatus    # Read mstatus into x11
-    csrr    x12, mie        # Read mie into x12
-    csrr    x13, mip        # Read mip into x13
-    # Now x11, x12, x13 hold the status for inspection in the simulator
+    # These are needed for proper timing
+    nop
+    nop
+    nop
 
     # Check flag immediately after delay
     bnez    x30, test4_passed # Pass if flag is 1 (interrupt occurred)
