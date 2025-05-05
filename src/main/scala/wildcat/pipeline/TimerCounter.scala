@@ -55,7 +55,12 @@ class TimerCounter(freqHz: Int = 100000000) extends Module {
 
   // --- Timer Interrupt Comparison ---
   // mtimecmpValue != 0 such that this will not trigger on reset/start. Might introduce some edge case problems?
-  io.timerInterruptPending := (timeReg >= io.mtimecmpValue) && (io.mtimecmpValue =/= 0.U)
+  val timeValue = timeReg // Current time value
+  val compareValue = io.mtimecmpValue // Value to compare against
+  val isGreaterOrEqual = timeValue >= compareValue // True if time >= compare
+  val isValid = compareValue =/= 0.U // Don't trigger if mtimecmp is 0
+  val timerInterruptPendingWire = isGreaterOrEqual && isValid
+  io.timerInterruptPending := timerInterruptPendingWire
 
   // Output counter values
   io.cycle := cycleReg
@@ -90,4 +95,23 @@ class TimerCounter(freqHz: Int = 100000000) extends Module {
       is(CSR.MINSTRETH.U)  { instretReg := Cat(io.csrWriteData, instretReg(31, 0)) }
     }
   }
+
+  // DEBUGGING
+
+  // Debug tracking of pending state changes
+  val prev_pending = RegNext(timerInterruptPendingWire)
+  when(prev_pending =/= timerInterruptPendingWire) {
+    printf("[TimerCounter] timerInterruptPending changed: %d -> %d (time=0x%x, mtimecmp=0x%x)\n",
+      prev_pending, timerInterruptPendingWire, timeReg, io.mtimecmpValue)
+  }
+
+  // Add debugging to see the actual values
+  when(RegNext(timerInterruptPendingWire) =/= timerInterruptPendingWire) {
+    printf("[TimerCounter] Interrupt pending changed: %d -> %d\n",
+      RegNext(timerInterruptPendingWire), timerInterruptPendingWire)
+    printf("[TimerCounter] Time: 0x%x, Compare: 0x%x, IsGreaterOrEqual: %d, IsValid: %d\n",
+      timeValue, compareValue, isGreaterOrEqual, isValid)
+  }
+
+
 }

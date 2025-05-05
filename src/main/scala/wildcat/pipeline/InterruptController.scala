@@ -41,11 +41,13 @@ class InterruptController extends Module {
   val mie_mtie    = RegInit(false.B) // Only Timer Enable bit for now
   val mip_mtip    = RegInit(false.B) // Only Timer Pending bit for now
 
-  //FOR WFI TO PIPELINE
-  io.mstatusInterruptEnable := mstatus_mie
-
   // Update mip.MTIP based on hardware signal
-  mip_mtip := io.timerInterruptPendingIn
+  val raw_timer_pending = io.timerInterruptPendingIn
+  when(raw_timer_pending) {
+    mip_mtip := true.B
+  }.otherwise {
+    mip_mtip := false.B
+  }
 
   // Interrupt Request Logic
   val timerInterruptActive = mstatus_mie && mie_mtie && mip_mtip
@@ -126,5 +128,30 @@ class InterruptController extends Module {
     mstatus_mpie := true.B      // Set MPIE to 1 (interrupts were enabled prior to trap)
     printf("[InterruptController] MRET Executing: MIE <- MPIE(%b), MPIE -> true\n", mstatus_mpie) // Use value *before* update for print
   }
+
+  //FOR WFI TO PIPELINE
+  io.mstatusInterruptEnable := mstatus_mie
+
+
+  // DEBUGGING
+
+  val prev_mip_mtip = RegNext(mip_mtip)
+  when(prev_mip_mtip =/= mip_mtip) {
+    printf("[InterruptController] mip_mtip changed: %d -> %d\n", prev_mip_mtip, mip_mtip)
+  }
+
+  // Track when interrupt state changes (for debugging)
+  val prev_interrupt_req = RegNext(timerInterruptActive)
+  when(prev_interrupt_req =/= timerInterruptActive) {
+    printf("[InterruptController] interruptRequest changed: %d -> %d (mie=%d, mtie=%d, mtip=%d)\n",
+      prev_interrupt_req, timerInterruptActive, mstatus_mie, mie_mtie, mip_mtip)
+  }
+
+  printf("[InterruptController] timerInterruptPendingIn: %d\n", io.timerInterruptPendingIn)
+
+  // Print each component of timerInterruptActive
+  printf("[InterruptController] mstatus_mie: %d, mie_mtie: %d, mip_mtip: %d, active: %d\n",
+    mstatus_mie, mie_mtie, mip_mtip, timerInterruptActive)
+
 
 }

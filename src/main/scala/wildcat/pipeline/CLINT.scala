@@ -38,7 +38,6 @@ class CLINT extends Module {
   // --- Registers ---
   // MTIMECMP for Hart 0 (64-bit)
   val mtimecmpReg = RegInit(0.U(64.W))
-  // MTIME is read directly from TimerCounter via io.currentTimeIn
 
   // --- Internal Wires ---
   val rdDataWire = WireDefault(0.U(32.W))   // Default read data is 0
