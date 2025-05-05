@@ -25,6 +25,7 @@ class InterruptController extends Module {
     // Interrupt Control Outputs (to Csr module)
     val interruptRequest = Output(Bool())
     val interruptCause   = Output(UInt(32.W))
+    val mstatusInterruptEnable = Output(Bool())
 
     // Trap Handling Inputs (from Csr module)
     val takeTrap       = Input(Bool())
@@ -39,6 +40,9 @@ class InterruptController extends Module {
   val mstatus_mpie = RegInit(true.B) // Machine Previous Interrupt Enable - Start enabled (as per spec)
   val mie_mtie    = RegInit(false.B) // Only Timer Enable bit for now
   val mip_mtip    = RegInit(false.B) // Only Timer Pending bit for now
+
+  //FOR WFI TO PIPELINE
+  io.mstatusInterruptEnable := mstatus_mie
 
   // Update mip.MTIP based on hardware signal
   mip_mtip := io.timerInterruptPendingIn

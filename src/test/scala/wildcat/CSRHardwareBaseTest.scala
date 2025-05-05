@@ -320,6 +320,45 @@ class CSRHardwareTimerEdgecasesTest extends CSRHardwareBaseTest {
 }
 
 /**
+ * Test for WFI instruction in the ThreeCats processor
+ */
+class CSRHardwareWfiTest extends CSRHardwareBaseTest {
+  // Define the expected register values
+  val wfiTestExpected = Map(
+    REGS.x10 -> 1,           // Success code
+    REGS.x20 -> 1,           // Interrupt handler flag
+    REGS.x29 -> 0xDEADBEEF   // Test completion marker
+  )
+
+  val testFreqHz = 10000     // 10kHz for faster simulation
+  val numCycles = 550        // Should be enough for interrupt to trigger
+
+  "WFI and Timer Interrupt Test" should "pass on the ThreeCats processor" in {
+    runCSRTest("WFI_test", wfiTestExpected, numCycles, testFreqHz, 1)
+  }
+}
+
+/**
+ * Test for WFI immediate wakeup with pending interrupt
+ */
+class CSRHardwareWfiImmediateWakeupTest extends CSRHardwareBaseTest {
+  // Define the expected register values
+  val wfiImmediateWakeupExpected = Map(
+    REGS.x10 -> 1,           // Success code
+    REGS.x20 -> 2,           // Interrupt handler execution counter (should run twice)
+    REGS.x21 -> 2,           // Program flow tracking (1=before WFI, 2=after WFI)
+    REGS.x29 -> 0xDEADBEEF   // Test completion marker
+  )
+
+  val testFreqHz = 10000     // 10kHz for faster simulation
+  val numCycles = 1500       // Should be enough to run the test
+
+  "WFI Immediate Wakeup Test" should "wake immediately with pending interrupt" in {
+    runCSRTest("WFI_immediate_wakeup_test", wfiImmediateWakeupExpected, numCycles, testFreqHz, 1)
+  }
+}
+
+/**
  * Main test class that combines all CSR tests
  * This class can be run directly to execute all tests
  */
@@ -334,6 +373,8 @@ class CSRHardwareAllTests() extends CSRHardwareBaseTest {
   val timerFunctionalityTest = new CSRHardwareTimerTest()
   val timerEdgeCasesTest = new CSRHardwareTimerEdgecasesTest()
   val timeEventsTest = new CSRHardwareTimeEventTest()
+  val WFITest = new CSRHardwareWfiTest()
+  val WFIImmWakeupTest = new CSRHardwareWfiImmediateWakeupTest()
 
   "CSR Hardware Basic Instructions" should "pass all tests" in {
     runCSRTest("CSR_full_test", instructionsTest.csrTestExpected, 50, 100000000, 0)
@@ -358,4 +399,13 @@ class CSRHardwareAllTests() extends CSRHardwareBaseTest {
   "CSR Timer Time Events" should "pass all tests" in {
     runCSRTest("CSR_time_event_test", timeEventsTest.timeEventTestExpected, timeEventsTest.numCycles, timeEventsTest.testFreqHz, 0)
   }
+
+  "CSR WFI" should "pass all tests" in {
+    runCSRTest("WFI_test", WFITest.wfiTestExpected, WFITest.numCycles, WFITest.testFreqHz, 0)
+  }
+
+  "WFI Immediate Wakeup Test" should "wake immediately with pending interrupt" in {
+    runCSRTest("WFI_immediate_wakeup_test", WFIImmWakeupTest.wfiImmediateWakeupExpected, WFIImmWakeupTest.numCycles, WFIImmWakeupTest.testFreqHz, 1)
+  }
+
 }

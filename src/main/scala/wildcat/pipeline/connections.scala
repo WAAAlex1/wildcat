@@ -39,6 +39,7 @@ class DecodedInstr extends Bundle {
   //Added for CSR / SYS Instructions
   val isECall = Bool()
   val isMret = Bool()
+  val isWfi = Bool()
   val isCsrrw = Bool()
   val isCsrrs = Bool()
   val isCsrrc = Bool()

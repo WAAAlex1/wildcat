@@ -27,7 +27,9 @@ class ThreeCats(freqHz: Int = 100000000) extends Wildcat() {
   // Control signals
   val doBranch = WireDefault(false.B)
   val branchTarget = WireDefault(0.U(32.W))
-  val stall = WireDefault(io.dmem.stall) // Basic stall based on memory readiness (include io.imem.stall? )
+  val inSleepMode = RegInit(false.B)
+  val stall = WireDefault(io.dmem.stall || inSleepMode) // Basic stall based on memory readiness (include io.imem.stall? )
+
 
   // Forwarding data and register
   val exFwd = new Bundle() {
@@ -159,6 +161,27 @@ class ThreeCats(freqHz: Int = 100000000) extends Wildcat() {
   val exceptionOccurred = (illegalInstr || ecallM) && decExReg.valid
   val takeInterrupt = csr.io.interruptRequest && !exceptionOccurred && decExReg.valid
 
+  when(decExReg.valid && decExReg.decOut.isWfi && !stall && processorInitialized) {
+    printf("[CPU] WFI instruction at PC=0x%x, interruptEnabled=%b, interruptPending=%b\n",
+       decExReg.pc, csr.io.interruptEnabled, csr.io.interruptRequest)
+
+    // If interrupts already pending, WFI should immediately continue
+    when(csr.io.interruptRequest) {
+      printf("[CPU] WFI with pending interrupt - continuing immediately\n")
+      // Don't enter sleep mode since we'll take the interrupt immediately
+    }.elsewhen(csr.io.interruptEnabled) {
+      inSleepMode := true.B
+      printf("[CPU] Entering sleep mode\n")
+    }.otherwise {
+      printf("[CPU] WFI with interrupts disabled - continuing as NOP\n")
+    }
+  }
+  // WFI handling - Leaving Sleep mode
+  when(inSleepMode && csr.io.interruptRequest) {
+    inSleepMode := false.B
+    printf("[CPU] Wake up! Interrupt detected during sleep mode\n")
+  }
+
   // CSR Connections driven from EX stage
   csr.io.writeAddress := decExReg.instruction(31, 20)
   val zimm = decExReg.rs1(4,0)
@@ -267,6 +290,11 @@ class ThreeCats(freqHz: Int = 100000000) extends Wildcat() {
   //    printf("ECALL DETECTED: PC=0x%x, ExceptionPC=0x%x, ExceptionCause=0x%x\n",
   //      decExReg.pc, csr.io.exceptionPC, csr.io.exceptionCause)
   //  }
+
+  // Add debugging to track processor state during each cycle:
+  when(inSleepMode) {
+    printf("[CPU] In sleep mode, waiting for interrupt\n")
+  }
 
   // Add debug wires
   val debug_isJal = Wire(Bool())
