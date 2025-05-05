@@ -120,7 +120,7 @@ class PSRAM_Model (nbytes: Int) extends Module{
           }.otherwise {
             idx := idx + 1.U
           }
-        }.otherwise{ // Read continuesly
+        }.otherwise{ // Read after waiting 7 cycles
           when(idx === 1.U){
             io.OUT := readMemVal(3,0)
             idx := 0.U

@@ -42,7 +42,6 @@ class CacheTop(blockSize: Int)(implicit val config:TilelinkConfig) extends Modul
   Controller.io.CPUdataIn := io.CPUmemIO.wrData
   Controller.io.memDataIn := io.CacheRspIn.bits.dataResponse
   io.CPUmemIO.rdData := Controller.io.CPUdataOut
-  io.CPUmemIO.stall := false.B
 
 
   //Default TL Req/Rsp
@@ -65,6 +64,9 @@ class CacheTop(blockSize: Int)(implicit val config:TilelinkConfig) extends Modul
     Controller.io.rw := true.B
     Controller.io.memAdd := io.CPUmemIO.rdAddress
 
+    when(Controller.io.memReq =/= 0.U){ // When busy allocating or write through
+      io.CPUmemIO.stall := true.B
+    }
   }
 
 
@@ -76,7 +78,7 @@ class CacheTop(blockSize: Int)(implicit val config:TilelinkConfig) extends Modul
     Controller.io.rw := false.B
     Controller.io.memAdd := io.CPUmemIO.wrAddress
 
-    when(!Controller.io.ready){ // Ensure stalling when busy writing
+    when(!Controller.io.ready){ // Ensure stalling when busy allocating or writing
       io.CPUmemIO.stall := true.B
     }
   }
