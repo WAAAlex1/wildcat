@@ -96,9 +96,9 @@ class ThreeCats(freqHz: Int = 100000000) extends Wildcat() {
   decEx.decOut := decOut
   decEx.valid := !doBranch
   decEx.pc := pcRegReg
-  decEx.rs1 := rs1
-  decEx.rs2 := rs2
-  decEx.rd := rd
+  decEx.rs1 := instrReg(19, 15)
+  decEx.rs2 := instrReg(24, 20)
+  decEx.rd := instrReg(11, 7)
   decEx.rs1Val := rs1Val
   decEx.rs2Val := rs2Val
   decEx.func3 := instrReg(14, 12)
@@ -154,7 +154,7 @@ class ThreeCats(freqHz: Int = 100000000) extends Wildcat() {
   val ecallM = decExReg.valid && decExReg.decOut.isECall
 
   when(illegalInstr)  { exceptionCause := 2.U}
-  .elsewhen(ecallM)   { exceptionCause := 11.U}
+    .elsewhen(ecallM)   { exceptionCause := 11.U}
 
   val exceptionOccurred = (illegalInstr || ecallM) && decExReg.valid
   val takeInterrupt = csr.io.interruptRequest && !exceptionOccurred && decExReg.valid
@@ -173,12 +173,12 @@ class ThreeCats(freqHz: Int = 100000000) extends Wildcat() {
     )
   // Compute CSR write data
   when(decExReg.decOut.isCsrrw)         { csr.io.writeData := v1 }
-  .elsewhen(decExReg.decOut.isCsrrs)    { csr.io.writeData := decExReg.csr_data | v1 }
-  .elsewhen(decExReg.decOut.isCsrrc)    { csr.io.writeData := decExReg.csr_data & (~v1).asUInt }
-  .elsewhen(decExReg.decOut.isCsrrwi)   { csr.io.writeData := zimm }
-  .elsewhen(decExReg.decOut.isCsrrsi)   { csr.io.writeData := decExReg.csr_data | zimm }
-  .elsewhen(decExReg.decOut.isCsrrci)   { csr.io.writeData := decExReg.csr_data & (~zimm).asUInt }
-  .otherwise                            { csr.io.writeData := 0.U }
+    .elsewhen(decExReg.decOut.isCsrrs)    { csr.io.writeData := decExReg.csr_data | v1 }
+    .elsewhen(decExReg.decOut.isCsrrc)    { csr.io.writeData := decExReg.csr_data & (~v1).asUInt }
+    .elsewhen(decExReg.decOut.isCsrrwi)   { csr.io.writeData := zimm }
+    .elsewhen(decExReg.decOut.isCsrrsi)   { csr.io.writeData := decExReg.csr_data | zimm }
+    .elsewhen(decExReg.decOut.isCsrrci)   { csr.io.writeData := decExReg.csr_data & (~zimm).asUInt }
+    .otherwise                            { csr.io.writeData := 0.U }
 
   // Counting for CSR
   val instrComplete = decExReg.valid && !stall && !decExReg.decOut.isECall // ECALL Should not increment instret CSR
@@ -254,19 +254,19 @@ class ThreeCats(freqHz: Int = 100000000) extends Wildcat() {
 
 
   // ------------------------------ DEBUGGING -------------------------------------
-//  when(illegalInstr) {
-//    printf("ILLEGAL INSTRUCTION DETECTED: PC=0x%x, Instruction=0x%x\n",
-//      decExReg.pc, decExReg.instruction)
-//  }
-//
-//  when(decExReg.decOut.isMret){
-//    printf("MRET DETECTED: PC=0x%x, TARGET=0x%x\n",
-//      decExReg.pc, csr.io.mretTarget )
-//  }
-//  when(ecallM){
-//    printf("ECALL DETECTED: PC=0x%x, ExceptionPC=0x%x, ExceptionCause=0x%x\n",
-//      decExReg.pc, csr.io.exceptionPC, csr.io.exceptionCause)
-//  }
+  //  when(illegalInstr) {
+  //    printf("ILLEGAL INSTRUCTION DETECTED: PC=0x%x, Instruction=0x%x\n",
+  //      decExReg.pc, decExReg.instruction)
+  //  }
+  //
+  //  when(decExReg.decOut.isMret){
+  //    printf("MRET DETECTED: PC=0x%x, TARGET=0x%x\n",
+  //      decExReg.pc, csr.io.mretTarget )
+  //  }
+  //  when(ecallM){
+  //    printf("ECALL DETECTED: PC=0x%x, ExceptionPC=0x%x, ExceptionCause=0x%x\n",
+  //      decExReg.pc, csr.io.exceptionPC, csr.io.exceptionCause)
+  //  }
 
   // Add debug wires
   val debug_isJal = Wire(Bool())

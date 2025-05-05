@@ -87,7 +87,6 @@ class Csr(freqHz: Int = 100000000) extends Module {
   val lastWriteAddr = RegNext(io.writeAddress)
   // Qualify forwarding enable: Write must be enabled, target must not be RO,
   // and target must not be handled by InterruptController or TimerCounter directly.
-  val canForwardWrite = io.writeEnable && !isReadOnly(io.writeAddress) && !isInterruptCSR(io.writeAddress) && !isCounterCSR(io.writeAddress)
   val lastWriteEnable = RegNext(io.writeEnable && !isReadOnly(io.writeAddress) && !isInterruptCSR(io.writeAddress) && !isCounterCSR(io.writeAddress), false.B)
   val lastWriteData = RegNext(io.writeData)
 

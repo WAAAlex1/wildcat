@@ -323,7 +323,7 @@ class CSRHardwareTimerEdgecasesTest extends CSRHardwareBaseTest {
  * Main test class that combines all CSR tests
  * This class can be run directly to execute all tests
  */
-class CSRHardwareAllTests(ignore: String) extends CSRHardwareBaseTest {
+class CSRHardwareAllTests() extends CSRHardwareBaseTest {
   // This class reuses test definitions from the individual test classes
   // and calls the same shared runCSRTest method
 
