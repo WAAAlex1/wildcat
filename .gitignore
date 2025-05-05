@@ -6,3 +6,4 @@
 *.properties
 /risc-v-lab
 *.fir
+*.vcd
