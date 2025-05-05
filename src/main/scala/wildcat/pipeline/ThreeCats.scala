@@ -162,26 +162,19 @@ class ThreeCats(freqHz: Int = 100000000) extends Wildcat() {
   val takeInterrupt = csr.io.interruptRequest && !exceptionOccurred && decExReg.valid
 
   when(decExReg.valid && decExReg.decOut.isWfi && !stall && processorInitialized) {
-    printf("[CPU] WFI instruction at PC=0x%x, interruptEnabled=%b, interruptPending=%b\n",
-       decExReg.pc, csr.io.interruptEnabled, csr.io.interruptRequest)
-    // Log the interrupt state
-    printf("[CPU] interruptRequest: %d, interruptEnabled: %d\n",
-      csr.io.interruptRequest, csr.io.interruptEnabled)
     // If interrupts already pending, WFI should immediately continue
     when(csr.io.interruptRequest) {
-      printf("[CPU] WFI with pending interrupt - continuing immediately\n")
       inSleepMode := false.B  // Ensure we're not in sleep mode
     }.elsewhen(csr.io.interruptEnabled) {
       inSleepMode := true.B
-      printf("[CPU] Entering sleep mode\n")
     }.otherwise {
-      printf("[CPU] WFI with interrupts disabled - continuing as NOP\n")
+      //printf("[CPU] WFI with interrupts disabled - continuing as NOP\n")
     }
   }
   // WFI handling - Leaving Sleep mode
   when(inSleepMode && csr.io.interruptRequest) {
     inSleepMode := false.B
-    printf("[CPU] Wake up! Interrupt detected during sleep mode\n")
+    //printf("[CPU] Wake up! Interrupt detected during sleep mode\n")
   }
 
   // CSR Connections driven from EX stage
@@ -295,7 +288,7 @@ class ThreeCats(freqHz: Int = 100000000) extends Wildcat() {
 
   // Add debugging to track processor state during each cycle:
   when(inSleepMode) {
-    printf("[CPU] In sleep mode, waiting for interrupt\n")
+    printf("[CPU] In sleep mode, waiting for interrupt !! --- ")
   }
 
   // Add debug wires

@@ -1,100 +1,129 @@
-# WFI Immediate Wakeup Test - Revised
+# RISC-V Assembly code demonstrating timer interrupts and WFI
+# Corrected version with 'success' and 'exit' labels
+# Reduced timer offset, added mcause debugging, and added pre-WFI delay
+
 .section .text
 .global _start
 
 _start:
-    # Set up trap vector
-    la      x5, trap_handler
-    csrw    mtvec, x5
+    # --- Setup ---
+    # Set up trap vector address
+    la      x5, trap_handler    # Load address of the trap handler function into x5
+    csrw    mtvec, x5           # Write x5 to the Machine Trap Vector CSR (mtvec)
 
     # Initialize test registers
-    li      x10, 0              # Test result
-    li      x20, 0              # Interrupt handler flag
+    li      x10, 0              # Test result register (0 = fail, 1 = success)
+    li      x20, 0              # Interrupt handler execution counter
+    li      x21, 0              # Execution progress marker
+    li      x22, 0              # Register to store mcause value seen by handler
 
-    # THIS IS IMPORTANT - We need to explicitly enable interrupts
-    li      x6, 0x8             # MIE bit (bit 3)
-    csrw    mstatus, x6         # Enable machine-mode interrupts
+    # --- Enable Interrupts ---
+    # Enable Machine-mode interrupts globally in mstatus CSR
+    li      x6, 0x8             # MIE bit (Machine Interrupt Enable, bit 3)
+    csrs    mstatus, x6         # Set the MIE bit in mstatus (using csrs for atomic set)
 
-    # Enable timer interrupt
-    li      x7, 0x80            # MTIE bit (bit 7)
-    csrw    mie, x7             # Enable timer interrupts
+    # Enable Machine Timer Interrupt specifically in mie CSR
+    li      x7, 0x80            # MTIE bit (Machine Timer Interrupt Enable, bit 7)
+    csrs    mie, x7             # Set the MTIE bit in mie (using csrs for atomic set)
 
-    # Read current time, then set mtimecmp SLIGHTLY IN THE FUTURE
-    li      x6, 0xF010BFF8      # MTIME_ADDR_L
+    # --- First Timer Interrupt Setup ---
+    # Read current time from mtime register
+    li      x6, 0x0200BFF8      # MTIME Address (use correct platform address)
+    lw      x7, 0(x6)           # Read low 32 bits of mtime into x7
+
+    # Set mtimecmp slightly in the future (100 ticks)
+    addi    x7, x7, 100         # Add offset
+    li      x8, 0               # High word = 0
+    li      x6, 0x02004004      # MTIMECMP_HART0_ADDR_H
+    sw      x8, 0(x6)           # Write high 32 bits
+    li      x6, 0x02004000      # MTIMECMP_HART0_ADDR_L
+    sw      x7, 0(x6)           # Write low 32 bits
+
+    # --- Wait for First Interrupt ---
+    li      x21, 1              # Mark pre-first-interrupt point
+    # NOPs to allow interrupt processing
+    nop
+    nop
+    nop
+    nop
+    # At this point, the first interrupt should have occurred (x20 should be 1).
+
+    # --- Second Timer Interrupt Setup ---
+    # Read current time again
+    li      x6, 0x0200BFF8      # MTIME Address
     lw      x7, 0(x6)           # Read low 32 bits of mtime
 
-    # Set mtimecmp to current time + small value (5)
-    addi    x7, x7, 5           # Just a few ticks in the future
+    # Set mtimecmp again, slightly in the future (100 ticks)
+    addi    x7, x7, 100         # Add offset
+    li      x6, 0x02004000      # MTIMECMP_HART0_ADDR_L
+    sw      x7, 0(x6)           # Write low 32 bits
 
-    # Write mtimecmp (high word first, then low word)
-    li      x8, 0               # High word = 0
-    li      x6, 0xF0104004      # MTIMECMP_HART0_ADDR_H
-    sw      x8, 0(x6)           # Write high 32 bits FIRST
-    li      x6, 0xF0104000      # MTIMECMP_HART0_ADDR_L
-    sw      x7, 0(x6)           # Write low 32 bits SECOND
+    # --- Execute WFI (Wait For Interrupt) ---
+    # The second interrupt should be pending now or become pending very shortly.
 
-    # Now do a delay loop until we know the interrupt is pending
-    li      x6, 50
-delay_loop:
-    addi    x6, x6, -1
-    bnez    x6, delay_loop
+    # *** ADDED DELAY LOOP BEFORE WFI ***
+    # Insert a small delay to ensure mtime >= mtimecmp and the
+    # interrupt is actively pending before executing wfi.
+    li      x6, 10             # Small delay counter (adjust if needed)
+delay_loop_wfi:
+    addi    x6, x6, -1          # Decrement counter
+    bnez    x6, delay_loop_wfi  # Loop if counter not zero
 
-    # Add a marker to track execution progress
-    li      x21, 1              # Mark pre-WFI execution point
-
-    # Execute WFI - it should immediately continue due to pending interrupt
+    # Now execute WFI. If the setup is correct, an interrupt is pending,
+    # WFI should wake immediately, and the handler should be called.
     wfi
 
-    # Add another marker to track post-WFI execution
+    # --- Post-WFI Check ---
+    # If WFI returned and the handler ran, x20 should be 2.
     li      x21, 2              # Mark post-WFI execution point
 
-    # If we reach here, WFI didn't wait because the interrupt
-    # was pending (SUCCESS for this part of the test)
-    li      x10, 1              # Success
+    # Assume success initially if we passed WFI
+    li      x10, 1              # Set success code
 
-    # Check if the interrupt handler executed
-    bnez    x20, success        # x20 is set by the handler
+    # Verify that the interrupt handler executed exactly twice
+    li      x7, 2               # Expected interrupt count
+    beq     x20, x7, success    # Branch to 'success' label if x20 == 2
 
-    # If no interrupt happened, we still made progress but need to mark it
-    li      x29, 0xFEEDFACE     # Special marker - WFI continued but no interrupt
-    j       exit
+    # --- Failure Path ---
+    # If x20 is not 2, clear success flag.
+    li      x10, 0              # Explicitly mark as failure
+
+    # Fall through to exit
 
 success:
-    # Full success marker
-    li      x29, 0xDEADBEEF
+    # The 'success' label target for the beq instruction.
+    nop                         # Placeholder
 
 exit:
+    # End of the program
     j       exit                # Infinite loop
 
-# Make sure trap_handler is defined in the same file and section
-.align 4                        # Ensure proper alignment
-trap_handler:
-    # Save registers we'll use
-    addi    sp, sp, -16
-    sw      ra, 0(sp)
-    sw      t0, 4(sp)
-    sw      t1, 8(sp)
 
-    # Check mcause to ensure it's a timer interrupt
+# --- Trap Handler ---
+.align 4                        # Ensure handler starts on a 4-byte boundary
+trap_handler:
+    # Save registers
+    addi    sp, sp, -16
+    sw      ra, 12(sp)
+    sw      t0, 8(sp)
+    sw      t1, 4(sp)
+    sw      t2, 0(sp)
+
+    # Check mcause
     csrr    t0, mcause
-    li      t1, 0x80000007      # Timer interrupt signature
+    mv      x22, t0             # Save mcause for debugging
+    li      t1, 0x80000007      # Machine Timer Interrupt cause code
     bne     t0, t1, wrong_interrupt
 
-    # Set flag indicating timer interrupt occurred
-    li      x20, 1
-
-    # Update mtimecmp to prevent repeat interrupts
-    li      t0, 0xF010BFF8      # MTIME_ADDR_L
-    lw      t1, 0(t0)           # Read current time
-    addi    t1, t1, 1000        # Set to far future
-    li      t0, 0xF0104000      # MTIMECMP_HART0_ADDR_L
-    sw      t1, 0(t0)           # Update mtimecmp
+    # --- Timer Interrupt Handling ---
+    addi    x20, x20, 1         # Increment handler execution counter
 
 wrong_interrupt:
     # Restore registers
-    lw      ra, 0(sp)
-    lw      t0, 4(sp)
-    lw      t1, 8(sp)
+    lw      ra, 12(sp)
+    lw      t0, 8(sp)
+    lw      t1, 4(sp)
+    lw      t2, 0(sp)
     addi    sp, sp, 16
 
-    mret
+    mret                        # Return from trap
