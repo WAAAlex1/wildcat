@@ -3,7 +3,8 @@
 /project
 /target
 *.hex
-a.o
-a.out
 risc-v-lab/
 *.elf
+*.o
+*.out
+*.bin
