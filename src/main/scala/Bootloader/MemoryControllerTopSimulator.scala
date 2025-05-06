@@ -14,7 +14,7 @@ import chisel3.util.Decoupled
  * By Gustav Philip Junker
  */
 
-class MemoryControllerTop(implicit val config:TilelinkConfig) extends Module {
+class MemoryControllerTopSimulator(implicit val config:TilelinkConfig) extends Module {
   val io = IO(new Bundle {
     // To/From caches via bus
     val dCacheReqOut = Flipped(Decoupled(new TLRequest))
@@ -27,12 +27,7 @@ class MemoryControllerTop(implicit val config:TilelinkConfig) extends Module {
     val CS0 = Output(Bool())
     val CS1 = Output(Bool())
     val CS2 = Output(Bool())
-    /*
-    val IO0 = Analog(1.W)
-    val IO1 = Analog(1.W)
-    val IO2 = Analog(1.W)
-    val IO3 = Analog(1.W)
-    */
+
 
   })
   val MemCtrl = Module(new MemoryController())
@@ -68,37 +63,10 @@ class MemoryControllerTop(implicit val config:TilelinkConfig) extends Module {
   RAM1.io.IN := SpiCtrl.io.si
   RAM1.io.CS := SpiCtrl.io.CS1out
   SpiCtrl.io.so := 0.U
-  when(!SpiCtrl.io.CS0out){
+  when(!SpiCtrl.io.CS0out) {
     SpiCtrl.io.so := RAM0.io.OUT
-  }.elsewhen(!SpiCtrl.io.CS1out){
+  }.elsewhen(!SpiCtrl.io.CS1out) {
     SpiCtrl.io.so := RAM1.io.OUT
   }
-
-  // Below is need for FPGA only
-  /*
-  val SPIbuffer0 = Module(new IOBUFFER)
-  val SPIbuffer1 = Module(new IOBUFFER)
-  val SPIbuffer2 = Module(new IOBUFFER)
-  val SPIbuffer3 = Module(new IOBUFFER)
-
-  SPIbuffer0.io.dir := SpiCtrl.io.dir
-  SPIbuffer1.io.dir := SpiCtrl.io.dir
-  SPIbuffer2.io.dir := SpiCtrl.io.dir
-  SPIbuffer3.io.dir := SpiCtrl.io.dir
-
-  SPIbuffer0.io.out := SpiCtrl.io.si(0)
-  SPIbuffer1.io.out := SpiCtrl.io.si(1)
-  SPIbuffer2.io.out := SpiCtrl.io.si(2)
-  SPIbuffer3.io.out := SpiCtrl.io.si(3)
-  SpiCtrl.io.so(0) := SPIbuffer0.io.in
-  SpiCtrl.io.so(1) := SPIbuffer1.io.in
-  SpiCtrl.io.so(2) := SPIbuffer2.io.in
-  SpiCtrl.io.so(3) := SPIbuffer3.io.in
-
-  attach(io.IO0,SPIbuffer0.io.io)
-  attach(io.IO1,SPIbuffer1.io.io)
-  attach(io.IO2,SPIbuffer2.io.io)
-  attach(io.IO3,SPIbuffer3.io.io)
-  */
 
 }

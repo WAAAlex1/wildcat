@@ -1,10 +1,15 @@
 /.idea
 /generated
 /project
-/target
-*.hex
 risc-v-lab/
+/target
+
+
+*.fir
+*.vcd
 *.elf
 *.o
 *.out
 *.bin
+*.hex
+*.properties

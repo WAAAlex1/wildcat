@@ -291,11 +291,6 @@ class ThreeCats(freqHz: Int = 100000000) extends Wildcat() {
   //      decExReg.pc, csr.io.exceptionPC, csr.io.exceptionCause)
   //  }
 
-  // Add debugging to track processor state during each cycle:
-  when(inSleepMode) {
-    printf("[CPU] In sleep mode, waiting for interrupt !! --- ")
-  }
-
   // Add debug wires
   val debug_isJal = Wire(Bool())
   val debug_isJalr = Wire(Bool())
