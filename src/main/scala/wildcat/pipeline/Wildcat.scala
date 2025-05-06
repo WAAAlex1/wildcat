@@ -12,9 +12,12 @@ import chisel3._
  * Author: Martin Schoeberl (martin@jopdesign.com)
  *
  */
-abstract class Wildcat() extends Module {
+abstract class Wildcat(freqHz: Int = 100000000) extends Module {
   val io = IO(new Bundle {
     val imem = new InstrIO()
     val dmem = new MemIO()
+
+    val mtimecmpVal_in = Input(UInt(64.W))
+    val timerCounter_out = Output(UInt(64.W))
   })
 }

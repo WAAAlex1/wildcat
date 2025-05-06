@@ -1,21 +1,22 @@
+// OLD / ORIGINAL MEMORYCONTROLLER
+
 package Bootloader
 
 import caravan.bus.tilelink.{TLRequest, TLResponse, TilelinkConfig}
 import chisel3._
 import chisel3.util._
 import chisel3.experimental.ChiselEnum
-
+import wildcat.CSR.MemoryMap
+import wildcat.pipeline.CLINTLink
 
 /**
  * First draft of memory controller module for the Wildcat.
  *
  * Address space:
- * [0xf000_0000] is the IO space for the Wildcat
+ * [0xfxxx_xxxx] is the IO space for the Wildcat
  * [23,0] is the real address space of the memory
- * [23] is the toggling bit between instr and data mem. So far they are equal in size but it can change.
  * [27,24] are so far unused control signal bits we might need later
  * [0x1000_0000 etc.] is also unused so far.
- * By Georg Brink Dyvad, @GeorgBD
  */
 
 class MemoryController(implicit val config:TilelinkConfig) extends Module {
@@ -31,30 +32,27 @@ class MemoryController(implicit val config:TilelinkConfig) extends Module {
     val iCacheReqOut = Flipped(Decoupled(new TLRequest))
     val iCacheRspIn = Decoupled(new TLResponse)
 
-    // To/Form SPI controllers
+    // To/From SPI controllers
     val SPIctrl = Vec(2, Flipped(new SpiCTRLIO)) // SPI0 is RAM0, SPI1 is RAM1, SPI2 is Flash
   })
 
   val memory = Module(new TestMem(4096))
   io.memIO <> memory.io
 
+  //Assume stalling will also be enabled by the caches and slower mem so the OR is for that.
+  io.stall := io.bootloading || false.B
+
   //Address mapping
-  when(io.memIO.rdAddress(31,28) === "hf".U){
-    //Do nothing cause memory mapped IO defined in Wildcattop?
+  when(io.memIO.rdAddress(31,28) === "hF".U){
+    //Do nothing cause memory mapped IO defined in WildcatTop?
   }.elsewhen(io.memIO.rdAddress(23) === 1.U){
     //DataMem.read addresser (23,0)
-  }.elsewhen(true.B){
+  }.otherwise {
     //instrMem.read addresser (23,0)
   }
 
-  //I assume stalling will also be enabled by the caches and slower mem so the OR is for that.
-  io.stall := io.bootloading || false.B
-
-
-
-
   val dReqAck = io.dCacheReqOut.valid && io.dCacheReqOut.ready // Request acknowledged
-  val iReqAck = io.iCacheReqOut.valid && io.iCacheReqOut.ready
+  val iReqAck = io.iCacheReqOut.valid && io.iCacheReqOut.ready // Request acknowledged
   val currentReq = Reg(new TLRequest()) // TileLink request format
   val dataSize = WireInit(4.U(3.W)) // Number of bytes to transfer
   val rspPending = RegInit(false.B)
@@ -63,11 +61,12 @@ class MemoryController(implicit val config:TilelinkConfig) extends Module {
   val masterID = RegInit(false.B) // Master (cache) identifier
   val rspValid = WireInit(false.B)
 
-
+  // signal for correct handshaking and usage of SPI
+  val rspHandled = RegInit(true.B) // true = handled (no pending response)
 
   // Arbitration on ready for requests. Data cache has priority
-  io.dCacheReqOut.ready := Mux(io.dCacheReqOut.valid, true.B, false.B)
-  io.iCacheReqOut.ready := Mux(!io.dCacheReqOut.valid && io.iCacheReqOut.valid, true.B, false.B)
+  io.dCacheReqOut.ready := io.dCacheReqOut.valid
+  io.iCacheReqOut.ready := !io.dCacheReqOut.valid && io.iCacheReqOut.valid
 
   // Default Responses
   io.dCacheRspIn.bits.dataResponse := readData
@@ -76,7 +75,6 @@ class MemoryController(implicit val config:TilelinkConfig) extends Module {
   io.iCacheRspIn.bits.error := false.B // dummy
   io.dCacheRspIn.valid := false.B
   io.iCacheRspIn.valid := false.B
-
 
   // Default settings for SPI controllers
   for (i <- 0 until 2) {
@@ -88,17 +86,17 @@ class MemoryController(implicit val config:TilelinkConfig) extends Module {
     io.SPIctrl(i).size := dataSize
   }
 
-
-
   // Process requests
   when(dReqAck){
     currentReq := io.dCacheReqOut.bits
     rspPending := true.B
-    masterID := 0.U
+    masterID := false.B  // dCache
+    rspHandled := false.B  // response currently being handled
   }.elsewhen(iReqAck){
     currentReq := io.iCacheReqOut.bits
     rspPending := true.B
-    masterID := 1.U
+    masterID := true.B   // iCache
+    rspHandled := false.B  // response currently being handled
   }
 
   // Modify data to write
@@ -120,8 +118,12 @@ class MemoryController(implicit val config:TilelinkConfig) extends Module {
 
   // Address decoding on response
   when(rspPending){
-    when(currentReq.addrRequest(31, 28) === "hf".U) {
+    when(currentReq.addrRequest(31, 28) === 0xF.U) {
       //Do nothing cause memory mapped IO defined in Wildcattop?
+      readData := 0.U
+      rspValid := true.B
+      rspPending := false.B
+
     }.elsewhen(currentReq.addrRequest(24)) {
       // RAM 1 read/write
       io.SPIctrl(1).en := true.B
@@ -136,16 +138,16 @@ class MemoryController(implicit val config:TilelinkConfig) extends Module {
   }
 
   // Process responses
-  for(i <- 0 until 2) {
+  for (i <- 0 until 2) {
     when(io.SPIctrl(i).done) {
       rspPending := false.B
       when(!currentReq.isWrite) {
         readData := io.SPIctrl(i).dataOut
       }
       rspValid := true.B
+      rspHandled := true.B // Mark response as handled
     }
   }
-
 
   when(rspValid){
     when(masterID){ // iCache requested
@@ -155,4 +157,13 @@ class MemoryController(implicit val config:TilelinkConfig) extends Module {
     }
   }
 
+  // NEW ----------------------------------------------------------------------------
+  // Deassert SPI enable signals when done with transaction
+  when(rspHandled && !rspPending) {
+    // Safe to deassert all device enables when response is handled and no pending request
+    io.SPIctrl(0).en := false.B
+    io.SPIctrl(1).en := false.B
+  }
+
 }
+
