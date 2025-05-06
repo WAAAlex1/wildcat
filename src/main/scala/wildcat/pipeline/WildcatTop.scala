@@ -1,5 +1,8 @@
 package wildcat.pipeline
 
+import Bootloader._
+import Caches.BusInterconnect
+import caravan.bus.tilelink.TilelinkConfig
 import chisel3._
 import wildcat.Util
 
@@ -35,7 +38,23 @@ class WildcatTop(file: String, dmemNrByte: Int = 4096) extends Module {
   imem.io.address := cpu.io.imem.address
   cpu.io.imem.data := imem.io.data
   cpu.io.imem.stall := imem.io.stall
-  // TODO: stalling
+
+
+  // Cache, bus and memory controller connections
+  implicit val config = new TilelinkConfig
+  val bus = Module(new BusInterconnect()) // Includes caches
+
+  bus.io.CPUiCacheMemIO := DontCare
+  bus.io.CPUdCacheMemIO := DontCare
+
+  // Choose between simulated main memory or physical
+  val MCU = Module(new MemoryControllerTopSimulator())
+  //val MCU = Module(new MemoryControllerTopPhysical())
+
+  MCU.io.dCacheReqOut <> bus.io.dCacheReqOut
+  bus.io.dCacheRspIn <> MCU.io.dCacheRspIn
+  MCU.io.iCacheReqOut <> bus.io.iCacheReqOut
+  bus.io.iCacheRspIn <> MCU.io.iCacheRspIn
 
 
   // Here IO stuff
