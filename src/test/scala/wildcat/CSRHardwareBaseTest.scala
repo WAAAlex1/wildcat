@@ -344,62 +344,63 @@ class CSRHardwareWfiTest extends CSRHardwareBaseTest {
  */
 class CSRHardwareWfiEdgeCasesTest extends CSRHardwareBaseTest {
 
-  val testFreqHz = 1000      // 1kHz for faster simulation
+  val pendingInterruptExpected = Map(
+    REGS.x10 -> 1, // Success code
+    REGS.x20 -> 1, // Interrupt handler executed once
+    REGS.x21 -> 2, // Execution reached post-WFI point (2)
+    REGS.x29 -> 0xDEADBEEF // Test completion marker
+  )
+  val disabledInterruptsExpected = Map(
+    REGS.x10 -> 1, // Success code
+    REGS.x20 -> 0, // Handler should not execute
+    REGS.x21 -> 2, // Execution reached post-WFI point
+    REGS.x29 -> 0xDEADBEEF // Test completion marker
+  )
+  val wakeupTimingExpected = Map(
+    REGS.x10 -> 1, // Success code
+    REGS.x20 -> 1, // Interrupt handler executed once
+    REGS.x21 -> 2, // Execution reached post-WFI point
+    REGS.x29 -> 0xDEADBEEF // Test completion marker
+  )
+  val interruptMaskingExpected = Map(
+    REGS.x10 -> 1, // Success code
+    REGS.x20 -> 1, // Interrupt handler executed once
+    REGS.x21 -> 4, // Execution reached final phase
+    REGS.x29 -> 0xCAFEBABE // Test completion marker
+  )
+  val reexecutionExpected = Map(
+    REGS.x10 -> 1, // Success code
+    REGS.x20 -> 2, // Interrupt handler executed twice
+    REGS.x21 -> 2, // WFI executed twice
+    REGS.x22 -> 3, // Test reached final phase
+    REGS.x29 -> 0xDEADBEEF // Test completion marker
+  )
+
+  val testFreqHz = 10000      // 1kHz for faster simulation
   val numCycles = 600        // Enough cycles to complete each test
 
   // Test 1: WFI with already pending interrupt
-  "WFI Pending Interrupt Test" should "exit immediately when interrupt is already pending" in {
-    val pendingInterruptExpected = Map(
-      REGS.x10 -> 1,           // Success code
-      REGS.x20 -> 1,           // Interrupt handler executed once
-      REGS.x21 -> 2,           // Execution reached post-WFI point (2)
-      REGS.x29 -> 0xDEADBEEF   // Test completion marker
-    )
-    runCSRTest("WFI_Pending_Interrupt_test", pendingInterruptExpected, numCycles, testFreqHz, 1)
+  "WFI Short Nap Test" should "quickly exit sleep upon interrupt" in {
+    runCSRTest("WFI_Short_Nap_test", pendingInterruptExpected, numCycles, testFreqHz, 1)
   }
 
   // Test 2: WFI with disabled interrupts
   "WFI Disabled Interrupts Test" should "act as NOP when interrupts are globally disabled" in {
-    val disabledInterruptsExpected = Map(
-      REGS.x10 -> 1,           // Success code
-      REGS.x20 -> 0,           // Handler should not execute
-      REGS.x21 -> 2,           // Execution reached post-WFI point
-      REGS.x29 -> 0xDEADBEEF   // Test completion marker
-    )
     runCSRTest("WFI_Disabled_Interrupt_test", disabledInterruptsExpected, numCycles, testFreqHz, 1)
   }
 
   // Test 3: WFI wake-up timing
   "WFI Wake-up Timing Test" should "wake up at the correct time when interrupt triggers" in {
-    val wakeupTimingExpected = Map(
-      REGS.x10 -> 1,           // Success code
-      REGS.x20 -> 1,           // Interrupt handler executed once
-      REGS.x21 -> 2,           // Execution reached post-WFI point
-      REGS.x29 -> 0xDEADBEEF   // Test completion marker
-    )
     runCSRTest("WFI_WakeUp_timing_test", wakeupTimingExpected, numCycles, testFreqHz, 1)
   }
 
   // Test 4: WFI with interrupt masking
   "WFI Interrupt Masking Test" should "only respond to enabled interrupt sources" in {
-    val interruptMaskingExpected = Map(
-      REGS.x10 -> 1,           // Success code
-      REGS.x20 -> 1,           // Interrupt handler executed once
-      REGS.x21 -> 4,           // Execution reached final phase
-      REGS.x29 -> 0xDEADBEEF   // Test completion marker
-    )
     runCSRTest("WFI_Interrupt_mask_test", interruptMaskingExpected, numCycles, testFreqHz, 1)
   }
 
   // Test 5: WFI re-execution
   "WFI Re-execution Test" should "handle consecutive WFI instructions correctly" in {
-    val reexecutionExpected = Map(
-      REGS.x10 -> 1,           // Success code
-      REGS.x20 -> 2,           // Interrupt handler executed twice
-      REGS.x21 -> 2,           // WFI executed twice
-      REGS.x22 -> 3,           // Test reached final phase
-      REGS.x29 -> 0xDEADBEEF   // Test completion marker
-    )
     runCSRTest("WFI_reExecution_test", reexecutionExpected, numCycles, testFreqHz, 1)
   }
 }
@@ -407,8 +408,9 @@ class CSRHardwareWfiEdgeCasesTest extends CSRHardwareBaseTest {
 /**
  * Main test class that combines all CSR tests
  * This class can be run directly to execute all tests
+ * argument for sbt test to ignore as part of extensive test.
  */
-class CSRHardwareAllTests() extends CSRHardwareBaseTest {
+class CSRHardwareAllTests(Ignore: String) extends CSRHardwareBaseTest {
   // This class reuses test definitions from the individual test classes
   // and calls the same shared runCSRTest method
 
@@ -420,7 +422,7 @@ class CSRHardwareAllTests() extends CSRHardwareBaseTest {
   val timerEdgeCasesTest = new CSRHardwareTimerEdgecasesTest()
   val timeEventsTest = new CSRHardwareTimeEventTest()
   val WFITest = new CSRHardwareWfiTest()
-  //val WFIImmWakeupTest = new CSRHardwareWfiImmediateWakeupTest()
+  val WFIEdgeCasesTest = new CSRHardwareWfiEdgeCasesTest()
 
   "CSR Hardware Basic Instructions" should "pass all tests" in {
     runCSRTest("CSR_full_test", instructionsTest.csrTestExpected, 50, 100000000, 0)
@@ -449,9 +451,25 @@ class CSRHardwareAllTests() extends CSRHardwareBaseTest {
   "CSR WFI" should "pass all tests" in {
     runCSRTest("WFI_test", WFITest.wfiTestExpected, WFITest.numCycles, WFITest.testFreqHz, 0)
   }
-  /*
-  "WFI Immediate Wakeup Test" should "wake immediately with pending interrupt" in {
-    runCSRTest("WFI_immediate_wakeup_test", WFIImmWakeupTest.wfiImmediateWakeupExpected, WFIImmWakeupTest.numCycles, WFIImmWakeupTest.testFreqHz, 1)
+
+  "WFI Short Nap Test" should "quickly exit sleep upon interrupt" in {
+    runCSRTest("WFI_Short_Nap_test", WFIEdgeCasesTest.pendingInterruptExpected, WFIEdgeCasesTest.numCycles, WFIEdgeCasesTest.testFreqHz, 1)
   }
-  */
+
+  "WFI Disabled Interrupts Test" should "act as NOP when interrupts are globally disabled" in {
+    runCSRTest("WFI_Disabled_Interrupt_test", WFIEdgeCasesTest.disabledInterruptsExpected, WFIEdgeCasesTest.numCycles, WFIEdgeCasesTest.testFreqHz, 1)
+  }
+
+  "WFI Wake-up Timing Test" should "wake up at the correct time when interrupt triggers" in {
+    runCSRTest("WFI_WakeUp_timing_test", WFIEdgeCasesTest.wakeupTimingExpected, WFIEdgeCasesTest.numCycles, WFIEdgeCasesTest.testFreqHz, 1)
+  }
+
+  "WFI Interrupt Masking Test" should "only respond to enabled interrupt sources" in {
+    runCSRTest("WFI_Interrupt_mask_test", WFIEdgeCasesTest.interruptMaskingExpected, WFIEdgeCasesTest.numCycles, WFIEdgeCasesTest.testFreqHz, 1)
+  }
+
+  "WFI Re-execution Test" should "handle consecutive WFI instructions correctly" in {
+    runCSRTest("WFI_reExecution_test", WFIEdgeCasesTest.reexecutionExpected, WFIEdgeCasesTest.numCycles, WFIEdgeCasesTest.testFreqHz, 1)
+  }
+
 }

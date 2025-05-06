@@ -29,7 +29,8 @@ class ThreeCats(freqHz: Int = 100000000) extends Wildcat() {
   val branchTarget = WireDefault(0.U(32.W))
   val inSleepMode = RegInit(false.B)
   val stall = WireDefault(io.dmem.stall || inSleepMode) // Basic stall based on memory readiness (include io.imem.stall? )
-
+  val exceptionOccurred = WireDefault(false.B)
+  val takeInterrupt = WireDefault(false.B)
 
   // Forwarding data and register
   val exFwd = new Bundle() {
@@ -41,7 +42,7 @@ class ThreeCats(freqHz: Int = 100000000) extends Wildcat() {
 
   // PC generation
   val pcReg = RegInit(0.U(32.W)) // Start at address 0
-  val pcNext = WireDefault(Mux(stall, pcReg, Mux(doBranch, branchTarget, pcReg + 4.U)))   // Update PC only if not stalled
+  val pcNext = WireDefault(Mux(stall && !takeInterrupt, pcReg, Mux(doBranch, branchTarget, pcReg + 4.U)))   // Update PC only if not stalled
   pcReg := pcNext
   io.imem.address := pcNext
 
@@ -158,24 +159,8 @@ class ThreeCats(freqHz: Int = 100000000) extends Wildcat() {
   when(illegalInstr)  { exceptionCause := 2.U}
     .elsewhen(ecallM)   { exceptionCause := 11.U}
 
-  val exceptionOccurred = (illegalInstr || ecallM) && decExReg.valid
-  val takeInterrupt = csr.io.interruptRequest && !exceptionOccurred && decExReg.valid
-
-  when(decExReg.valid && decExReg.decOut.isWfi && !stall && processorInitialized) {
-    // If interrupts already pending, WFI should immediately continue
-    when(csr.io.interruptRequest) {
-      inSleepMode := false.B  // Ensure we're not in sleep mode
-    }.elsewhen(csr.io.interruptEnabled) {
-      inSleepMode := true.B
-    }.otherwise {
-      //printf("[CPU] WFI with interrupts disabled - continuing as NOP\n")
-    }
-  }
-  // WFI handling - Leaving Sleep mode
-  when(inSleepMode && csr.io.interruptRequest) {
-    inSleepMode := false.B
-    //printf("[CPU] Wake up! Interrupt detected during sleep mode\n")
-  }
+  exceptionOccurred := (illegalInstr || ecallM) && decExReg.valid
+  takeInterrupt := csr.io.interruptRequest && !exceptionOccurred && (decExReg.valid || inSleepMode)
 
   // CSR Connections driven from EX stage
   csr.io.writeAddress := decExReg.instruction(31, 20)
@@ -266,6 +251,26 @@ class ThreeCats(freqHz: Int = 100000000) extends Wildcat() {
   exFwdReg.valid := !stall && wrEna
   exFwdReg.wbDest := wbDest
   exFwdReg.wbData := wbData
+
+  // WFI Handling
+  when(decExReg.valid && decExReg.decOut.isWfi && !stall && processorInitialized) {
+    // If interrupts already pending, WFI should immediately continue
+    when(csr.io.interruptRequest) {
+      inSleepMode := false.B // Ensure we're not in sleep mode
+    }.elsewhen(csr.io.globalInterruptEnabled && csr.io.timerInterruptEnabled) {
+      inSleepMode := true.B
+      doBranch := true.B // Immediately flush the pipeline by branching to current pc
+      branchTarget := decExReg.pc
+    }.otherwise {
+      //printf("[CPU] WFI with interrupts disabled - continuing as NOP\n")
+    }
+  }
+  // WFI handling - Leaving Sleep mode
+  when(inSleepMode && csr.io.interruptRequest) {
+    inSleepMode := false.B
+    //printf("[CPU] Wake up! Interrupt detected during sleep mode\n")
+  }
+
 
   // Just to exit tests -- no longer sufficient with ecall handling
   val stop = decExReg.decOut.isECall && (pcNext === 0.U)

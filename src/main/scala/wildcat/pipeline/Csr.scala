@@ -39,7 +39,8 @@ class Csr(freqHz: Int = 100000000) extends Module {
     // Interrupt Request to Pipeline
     val interruptRequest = Output(Bool())   // An interrupt is pending and enabled
     val interruptCause   = Output(UInt(32.W)) // The specific interrupt cause
-    val interruptEnabled = Output(Bool())
+    val globalInterruptEnabled = Output(Bool())
+    val timerInterruptEnabled = Output(Bool())
   })
 
   //----------------------------------------------------------------------------
@@ -202,7 +203,9 @@ class Csr(freqHz: Int = 100000000) extends Module {
   //----------------------------------------------------------------------------
   io.mretTarget := mepcReg // MRET jumps to mepc
   io.trapVector := mtvecReg // Exceptions and Interrupts jump to mtvec
-  io.interruptEnabled := interruptController.io.mstatusInterruptEnable
+  io.globalInterruptEnabled := interruptController.io.mstatusInterruptEnable
+  io.timerInterruptEnabled := interruptController.io.timerInterruptEnabled
+
 
   //----------------------------------------------------------------------------
   // Helper Functions

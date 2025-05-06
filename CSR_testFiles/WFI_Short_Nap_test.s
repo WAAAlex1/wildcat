@@ -1,4 +1,4 @@
-# WFI_Pending_Interrupt_Test.s - Revised to handle initial mtime=0 case
+# WFI_Pending_Interrupt_Test.s - Fixed for early boot conditions
 .section .text
 .global _start
 
@@ -18,16 +18,18 @@ _start:
     li      x7, 0x80         # MTIE bit (bit 7)
     csrw    mie, x7          # Set MTIE bit
 
-    # Set mtimecmp to 0 to ensure an interrupt is pending
-    # Since mtime is likely at 0 or close to it at startup,
-    # setting mtimecmp to 0 will cause an immediate interrupt as
-    # soon as time advances to 1
+    # Read current mtime
+    li      x6, 0xF010BFF8   # MTIME_ADDR_L
+    lw      x7, 0(x6)        # Read current mtime
+
+    # Set mtimecmp to current mtime + 1 to ensure it triggers very soon
+    addi    x7, x7, 2        # Just one tick in the future
     li      x6, 0xF0104004   # MTIMECMP_HART0_ADDR_H
     sw      x0, 0(x6)        # Write high word first (0)
     li      x6, 0xF0104000   # MTIMECMP_HART0_ADDR_L
-    sw      x0, 0(x6)        # Write low word (0)
+    sw      x7, 0(x6)        # Write low word (current time + 1)
 
-    # Add a small delay to ensure mtime has advanced past 0
+    # Small delay to ensure timer advances past mtimecmp
     li      x6, 20
 delay_loop:
     addi    x6, x6, -1
@@ -36,22 +38,22 @@ delay_loop:
     # Mark execution point before WFI
     li      x21, 1
 
-    # Execute WFI - should continue immediately
+    # Execute WFI - should continue immediately due to pending interrupt
     wfi
 
-    # Mark execution point after WFI - should be reached immediately
+    # Mark execution point after WFI - should be reached after handler executes
     li      x21, 2
 
-    # Success if handler ran
-    li      x6, 0
-    bne     x20, x6, success    # If handler ran, succeed
+    # Success if handler ran once
+    li      x6, 1
+    bne     x20, x6, fail    # If handler ran exactly once, succeed
 
-    # If we reach here without handler running, the test failed
-    li      x10, 0
+    # If we reach here with handler executed once, test passed
+    li      x10, 1
     j       test_complete
 
-success:
-    li      x10, 1
+fail:
+    li      x10, 0
 
 test_complete:
     # Final marker to confirm test completed

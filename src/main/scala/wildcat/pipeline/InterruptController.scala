@@ -26,6 +26,7 @@ class InterruptController extends Module {
     val interruptRequest = Output(Bool())
     val interruptCause   = Output(UInt(32.W))
     val mstatusInterruptEnable = Output(Bool())
+    val timerInterruptEnabled = Output(Bool())
 
     // Trap Handling Inputs (from Csr module)
     val takeTrap       = Input(Bool())
@@ -126,6 +127,7 @@ class InterruptController extends Module {
 
   //FOR WFI TO PIPELINE
   io.mstatusInterruptEnable := mstatus_mie
+  io.timerInterruptEnabled := mie_mtie
 
 
 }
