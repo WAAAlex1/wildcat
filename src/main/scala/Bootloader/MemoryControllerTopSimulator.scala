@@ -1,7 +1,7 @@
 package Bootloader
 
 import ExtMemory.{IOBUFFER, PSRAM_Model}
-import SPI.SPITop
+import SPI.SpiControllerTop
 import caravan.bus.tilelink.{TLRequest, TLResponse, TilelinkConfig}
 import chisel3.experimental._
 import chisel3._
@@ -45,28 +45,28 @@ class MemoryControllerTopSimulator(implicit val config:TilelinkConfig) extends M
   MemCtrl.io.iCacheReqOut <> io.iCacheReqOut
   io.iCacheRspIn <> MemCtrl.io.iCacheRspIn
 
-  val SpiCtrl = Module(new SPITop)
+  val SpiCtrl = Module(new SpiControllerTop)
 
-  SpiCtrl.io.memSPIctrl(0) <> MemCtrl.io.SPIctrl(0)
-  SpiCtrl.io.memSPIctrl(1) <> MemCtrl.io.SPIctrl(1)
+  SpiCtrl.io.memSPIctrl <> MemCtrl.io.SPIctrl
+  SpiCtrl.io.moduleSel := MemCtrl.io.moduleSel
 
-  io.CS0 := SpiCtrl.io.CS0out
-  io.CS1 := SpiCtrl.io.CS1out
-  io.CS2 := true.B // Attach flash ctrl here
+  io.CS0 := SpiCtrl.io.CS0
+  io.CS1 := SpiCtrl.io.CS1
+  io.CS2 := SpiCtrl.io.CS2
 
   // For simulation
   val RAM0 = Module(new PSRAM_Model(2048))
   val RAM1 = Module(new PSRAM_Model(2048))
 
-  RAM0.io.CS := SpiCtrl.io.CS0out
-  RAM0.io.IN := SpiCtrl.io.si
-  RAM1.io.IN := SpiCtrl.io.si
-  RAM1.io.CS := SpiCtrl.io.CS1out
-  SpiCtrl.io.so := 0.U
-  when(!SpiCtrl.io.CS0out) {
-    SpiCtrl.io.so := RAM0.io.OUT
-  }.elsewhen(!SpiCtrl.io.CS1out) {
-    SpiCtrl.io.so := RAM1.io.OUT
+  RAM0.io.CS := SpiCtrl.io.CS1
+  RAM0.io.IN := SpiCtrl.io.outSio
+  RAM1.io.IN := SpiCtrl.io.outSio
+  RAM1.io.CS := SpiCtrl.io.CS2
+  SpiCtrl.io.inSio := 0.U
+  when(!SpiCtrl.io.CS1) {
+    SpiCtrl.io.inSio := RAM0.io.OUT
+  }.elsewhen(!SpiCtrl.io.CS1) {
+    SpiCtrl.io.inSio := RAM1.io.OUT
   }
 
 }

@@ -1,7 +1,7 @@
 package Bootloader
 
 import ExtMemory.{IOBUFFER, PSRAM_Model}
-import SPI.SPITop
+import SPI.{SPITop, SpiControllerTop}
 import caravan.bus.tilelink.{TLRequest, TLResponse, TilelinkConfig}
 import chisel3.experimental._
 import chisel3._
@@ -27,7 +27,7 @@ class MemoryControllerTopPhysical(implicit val config:TilelinkConfig) extends Mo
     val CS0 = Output(Bool())
     val CS1 = Output(Bool())
     val CS2 = Output(Bool())
-
+    val spiCLK = Output(Bool())
 
     val IO0 = Analog(1.W)
     val IO1 = Analog(1.W)
@@ -51,39 +51,17 @@ class MemoryControllerTopPhysical(implicit val config:TilelinkConfig) extends Mo
   MemCtrl.io.iCacheReqOut <> io.iCacheReqOut
   io.iCacheRspIn <> MemCtrl.io.iCacheRspIn
 
-  val SpiCtrl = Module(new SPITop)
-
-  SpiCtrl.io.memSPIctrl(0) <> MemCtrl.io.SPIctrl(0)
-  SpiCtrl.io.memSPIctrl(1) <> MemCtrl.io.SPIctrl(1)
-
-  io.CS0 := SpiCtrl.io.CS0out
-  io.CS1 := SpiCtrl.io.CS1out
-  io.CS2 := true.B // Attach flash ctrl here
+  val SpiCtrl = Module(new SpiControllerTop)
+  io.spiCLK := SpiCtrl.io.spiClk
+  SpiCtrl.io.memSPIctrl <> MemCtrl.io.SPIctrl
 
 
-  val SPIbuffer0 = Module(new IOBUFFER)
-  val SPIbuffer1 = Module(new IOBUFFER)
-  val SPIbuffer2 = Module(new IOBUFFER)
-  val SPIbuffer3 = Module(new IOBUFFER)
+  io.CS0 := SpiCtrl.io.CS0
+  io.CS1 := SpiCtrl.io.CS1
+  io.CS2 := SpiCtrl.io.CS2
 
-  SPIbuffer0.io.dir := SpiCtrl.io.dir
-  SPIbuffer1.io.dir := SpiCtrl.io.dir
-  SPIbuffer2.io.dir := SpiCtrl.io.dir
-  SPIbuffer3.io.dir := SpiCtrl.io.dir
 
-  SPIbuffer0.io.out := SpiCtrl.io.si(0)
-  SPIbuffer1.io.out := SpiCtrl.io.si(1)
-  SPIbuffer2.io.out := SpiCtrl.io.si(2)
-  SPIbuffer3.io.out := SpiCtrl.io.si(3)
-  SpiCtrl.io.so(0) := SPIbuffer0.io.in
-  SpiCtrl.io.so(1) := SPIbuffer1.io.in
-  SpiCtrl.io.so(2) := SPIbuffer2.io.in
-  SpiCtrl.io.so(3) := SPIbuffer3.io.in
 
-  attach(io.IO0, SPIbuffer0.io.io)
-  attach(io.IO1, SPIbuffer1.io.io)
-  attach(io.IO2, SPIbuffer2.io.io)
-  attach(io.IO3, SPIbuffer3.io.io)
 
 
 }

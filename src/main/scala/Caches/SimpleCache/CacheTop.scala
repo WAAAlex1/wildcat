@@ -70,10 +70,8 @@ class CacheTop(blockSize: Int)(implicit val config:TilelinkConfig) extends Modul
   }
 
 
-  val weBits = io.CPUmemIO.wrEnable.asUInt
-
   // Drive controller on write
-  when(weBits > 0.U){ // sb, sh or sw
+  when(io.CPUmemIO.wrEnable.asUInt > 0.U){ // sb, sh or sw
     Controller.io.validReq := true.B
     Controller.io.rw := false.B
     Controller.io.memAdd := io.CPUmemIO.wrAddress
@@ -97,7 +95,7 @@ class CacheTop(blockSize: Int)(implicit val config:TilelinkConfig) extends Modul
     io.CacheReqOut.bits.dataRequest := io.CPUmemIO.wrData
     io.CacheReqOut.bits.addrRequest := io.CPUmemIO.wrAddress
     io.CacheReqOut.bits.isWrite := true.B
-    io.CacheReqOut.bits.activeByteLane := weBits
+    io.CacheReqOut.bits.activeByteLane := io.CPUmemIO.wrEnable.asUInt
 
   }
 

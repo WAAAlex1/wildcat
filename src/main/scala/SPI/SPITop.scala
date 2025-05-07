@@ -25,7 +25,6 @@ class SPITop extends Module{
 
 
   // Dummy default connections, see future update below
-  SPICTRL0.io.rst := io.memSPIctrl(0).rst
   SPICTRL0.io.rw := io.memSPIctrl(0).rw
   SPICTRL0.io.en := io.memSPIctrl(0).en
   SPICTRL0.io.addr := io.memSPIctrl(0).addr
@@ -33,7 +32,7 @@ class SPITop extends Module{
   io.memSPIctrl(0).dataOut := SPICTRL0.io.dataOut
   io.memSPIctrl(0).done := SPICTRL0.io.done
 
-  SPICTRL1.io.rst := io.memSPIctrl(1).rst
+
   SPICTRL1.io.rw := io.memSPIctrl(1).rw
   SPICTRL1.io.en := io.memSPIctrl(1).en
   SPICTRL1.io.addr := io.memSPIctrl(1).addr
