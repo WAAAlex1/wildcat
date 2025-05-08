@@ -46,11 +46,11 @@ class SerialController extends Module {
     io.spiMosi := txShiftReg(63)
 
     val clockEnable = RegInit(false.B)
-    val CNT_MAX = (1.U << io.prescale)
+    val cntMax = (1.U << io.prescale) - 1.U
     val cntClk = RegInit(0.U(33.W))
     val spiClkReg = RegInit(false.B)
 
-    when (clockEnable) {
+    /*when (clockEnable) {
         when (io.prescale =/= 0.U) {
             cntClk := cntClk + 1.U
             when (cntClk === CNT_MAX) {
@@ -60,9 +60,20 @@ class SerialController extends Module {
         } .otherwise {
             spiClkReg := false.B
         }
-    }
+    }*/
 
-    //io.spiClk := Mux(io.mode(1), !spiClkReg, spiClkReg)
+    when (clockEnable) {
+        when (io.prescale =/= 1.U) {
+            cntClk := cntClk + 1.U
+
+            when (cntClk === cntMax) {
+                cntClk := 0.U
+                spiClkReg := ~spiClkReg  // toggle the SPI clock
+            }
+        } .otherwise {
+            spiClkReg := !spiClkReg  // direct pass-through (always high)
+        }
+    }
 
     io.spiClk := spiClkReg
 
@@ -90,19 +101,19 @@ class SerialController extends Module {
         is (loadData) {
             csReg := false.B
             clockEnable := true.B
-            //txShiftReg := io.txData << (64.U - io.sendLength)
             txShiftReg := io.txData
             bitCounter := totalCycles - 1.U
             stateReg := write
         }
         is (write) {
 
-            when (fallingEdge) {
+            when (risingEdge) {
                 txShiftReg := txShiftReg << 1
                 bitCounter := bitCounter - 1.U
                 when (bitCounter === 0.U) {
                     bitCounter := waitReadCycles
                     when (io.receiveLength === 0.U) {
+                        clockEnable := false.B
                         stateReg := deassertCS
                     } .otherwise {
                         stateReg := read
@@ -112,12 +123,12 @@ class SerialController extends Module {
 
         }
         is (read) {
-            when (risingEdge) {
+            when (fallingEdge) {
                 rxShiftReg := (rxShiftReg << 1) | io.spiMiso
                 bitCounter := bitCounter - 1.U
             }
 
-            when (fallingEdge) {
+            when (risingEdge) {
                 when (bitCounter === 0.U) {
                     stateReg := deassertCS
                 }

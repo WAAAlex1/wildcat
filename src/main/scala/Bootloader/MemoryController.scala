@@ -21,9 +21,6 @@ import wildcat.pipeline.CLINTLink
 
 class MemoryController(implicit val config:TilelinkConfig) extends Module {
   val io = IO(new Bundle {
-    val memIO = Flipped(new TestMemIO())
-    val stall = Output(Bool())
-    val bootloading = Input(Bool())
 
     // To/From caches via bus
     val dCacheReqOut = Flipped(Decoupled(new TLRequest))
@@ -33,28 +30,18 @@ class MemoryController(implicit val config:TilelinkConfig) extends Module {
     val iCacheRspIn = Decoupled(new TLResponse)
 
     // To/From SPI controllers
-    val SPIctrl = Vec(2, Flipped(new SpiCTRLIO)) // SPI0 is RAM0, SPI1 is RAM1, SPI2 is Flash
+    val SPIctrl = Flipped(new SpiCTRLIO)
+    val SpiCtrlValid = Input(Bool())
+    val moduleSel = Output(Vec(3, Bool())) // 0 for flash, 1 for psram a, 2 for psram b, (flash not working)
   })
 
-  val memory = Module(new TestMem(4096))
-  io.memIO <> memory.io
+  io.moduleSel := Seq.fill(3)(false.B) // No module selected
 
-  //Assume stalling will also be enabled by the caches and slower mem so the OR is for that.
-  io.stall := io.bootloading || false.B
-
-  //Address mapping
-  when(io.memIO.rdAddress(31,28) === "hF".U){
-    //Do nothing cause memory mapped IO defined in WildcatTop?
-  }.elsewhen(io.memIO.rdAddress(23) === 1.U){
-    //DataMem.read addresser (23,0)
-  }.otherwise {
-    //instrMem.read addresser (23,0)
-  }
 
   val dReqAck = io.dCacheReqOut.valid && io.dCacheReqOut.ready // Request acknowledged
   val iReqAck = io.iCacheReqOut.valid && io.iCacheReqOut.ready // Request acknowledged
   val currentReq = Reg(new TLRequest()) // TileLink request format
-  val dataSize = WireInit(4.U(3.W)) // Number of bytes to transfer
+  val dataSize = WireInit(8.U(6.W)) // Number of nibbles to read
   val rspPending = RegInit(false.B)
   val data2write = WireInit(0.U(32.W))
   val readData = WireInit(0.U(32.W))
@@ -77,43 +64,41 @@ class MemoryController(implicit val config:TilelinkConfig) extends Module {
   io.iCacheRspIn.valid := false.B
 
   // Default settings for SPI controllers
-  for (i <- 0 until 2) {
-    io.SPIctrl(i).en := false.B
-    io.SPIctrl(i).rw := currentReq.isWrite
-    io.SPIctrl(i).rst := false.B
-    io.SPIctrl(i).addr := currentReq.addrRequest(23, 0)
-    io.SPIctrl(i).dataIn := data2write
-    io.SPIctrl(i).size := dataSize
-  }
+  io.SPIctrl.en := rspPending
+  io.SPIctrl.rw := currentReq.isWrite
+  io.SPIctrl.addr := currentReq.addrRequest(23, 0)
+  io.SPIctrl.dataIn := data2write
+  io.SPIctrl.size := dataSize
+
 
   // Process requests
-  when(dReqAck){
+  when(dReqAck && !rspPending){
     currentReq := io.dCacheReqOut.bits
     rspPending := true.B
     masterID := false.B  // dCache
     rspHandled := false.B  // response currently being handled
-  }.elsewhen(iReqAck){
+  }.elsewhen(iReqAck && !rspPending){
     currentReq := io.iCacheReqOut.bits
     rspPending := true.B
     masterID := true.B   // iCache
     rspHandled := false.B  // response currently being handled
   }
 
+
+
+  // Compute dataSize based on number of active bits in the lane mask (size is in nibbles)
+  dataSize := MuxLookup(currentReq.activeByteLane, 2.U, Seq(
+    15.U -> 8.U,
+    12.U -> 4.U,
+    3.U -> 4.U
+  ))
+
   // Modify data to write
   when(currentReq.isWrite){
-    // Compute dataSize based on number of active bits in the lane mask
-    dataSize := MuxLookup(currentReq.activeByteLane, 1.U, Seq(
-      15.U -> 4.U,
-      12.U -> 2.U,
-      3.U -> 2.U
-    ))
-
     // Compute data2write based on the lowest set bit
     val shiftAmount = PriorityEncoder(currentReq.activeByteLane)
     data2write := (currentReq.dataRequest >> (shiftAmount * 8.U))
 
-  }.otherwise{
-    dataSize := 4.U // Standard for read
   }
 
   // Address decoding on response
@@ -126,27 +111,26 @@ class MemoryController(implicit val config:TilelinkConfig) extends Module {
 
     }.elsewhen(currentReq.addrRequest(24)) {
       // RAM 1 read/write
-      io.SPIctrl(1).en := true.B
+      io.moduleSel := Seq(false.B, false.B, true.B)
 
     }.elsewhen(!currentReq.addrRequest(24)) {
       // RAM 0 read/ write
-      io.SPIctrl(0).en := true.B
+      io.moduleSel := Seq(false.B, true.B, false.B)
 
     }.otherwise{
-      // Flash read=?
+      // Flash read/write
+      io.moduleSel := Seq(true.B, false.B, false.B)
     }
   }
 
   // Process responses
-  for (i <- 0 until 2) {
-    when(io.SPIctrl(i).done) {
-      rspPending := false.B
-      when(!currentReq.isWrite) {
-        readData := io.SPIctrl(i).dataOut
-      }
-      rspValid := true.B
-      rspHandled := true.B // Mark response as handled
+  when(io.SPIctrl.done) {
+    rspPending := false.B
+    when(!currentReq.isWrite) {
+      readData := io.SPIctrl.dataOut
     }
+    rspValid := true.B
+    rspHandled := true.B // Mark response as handled
   }
 
   when(rspValid){
@@ -161,8 +145,7 @@ class MemoryController(implicit val config:TilelinkConfig) extends Module {
   // Deassert SPI enable signals when done with transaction
   when(rspHandled && !rspPending) {
     // Safe to deassert all device enables when response is handled and no pending request
-    io.SPIctrl(0).en := false.B
-    io.SPIctrl(1).en := false.B
+    io.moduleSel := Seq.fill(3)(false.B)
   }
 
 }

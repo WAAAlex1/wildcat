@@ -32,12 +32,6 @@ class MemoryControllerTester (implicit val config:TilelinkConfig) extends Module
     val iCacheRspInDataResponse = Output(UInt(32.W))
   })
   val CTRL = Module(new MemoryController())
-  CTRL.io.bootloading := false.B
-  CTRL.io.memIO.wrData := DontCare
-  CTRL.io.memIO.wrEnable := DontCare
-  CTRL.io.memIO.rdEnable := DontCare
-  CTRL.io.memIO.rdAddress := DontCare
-  CTRL.io.memIO.wrAddress := DontCare
   CTRL.io.dCacheReqOut <> io.dCacheReqOut
   io.dCacheRspIn <> CTRL.io.dCacheRspIn
   CTRL.io.iCacheReqOut <> io.iCacheReqOut

@@ -1,3 +1,5 @@
+package SPI
+
 import org.scalatest.flatspec.AnyFlatSpec
 import chisel3._
 import chiseltest._
@@ -21,7 +23,7 @@ class FinalTest extends AnyFlatSpec with ChiselScalatestTester {
             // read
             dut.io.rw.poke(false.B)
             dut.io.addrIn.poke(0xFEDCBA.U)
-            dut.io.readSize.poke(4.U)
+            dut.io.dataLength.poke(4.U)
             dut.clock.step()
             dut.io.enable.poke(true.B)
             dut.clock.step()

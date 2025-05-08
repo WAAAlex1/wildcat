@@ -46,11 +46,12 @@ class QuadController extends Module {
     io.outSio := txShiftReg(63, 60)
 
     val clockEnable = RegInit(false.B)
-    val CNT_MAX = (1.U << io.prescale)
+    //val CNT_MAX = io.prescale
+    val cntMax = (1.U << io.prescale) - 1.U
     val cntClk = RegInit(0.U(33.W))
     val spiClkReg = RegInit(false.B)
 
-    when (clockEnable) {
+    /*when (clockEnable) {
         when (io.prescale =/= 0.U) {
             cntClk := cntClk + 1.U
             when (cntClk === CNT_MAX) {
@@ -60,6 +61,21 @@ class QuadController extends Module {
         } .otherwise {
             spiClkReg := false.B
         }
+    }*/
+
+    when (clockEnable) {
+        when (io.prescale =/= 1.U) {
+            cntClk := cntClk + 1.U
+
+            when (cntClk === cntMax) {
+                cntClk := 0.U
+                spiClkReg := ~spiClkReg  // toggle the SPI clock
+            }
+        } .otherwise {
+            spiClkReg := !spiClkReg  // direct pass-through (always high)
+        }
+    } .otherwise {
+        spiClkReg := false.B
     }
     io.spiClk := spiClkReg
 
@@ -90,12 +106,13 @@ class QuadController extends Module {
             stateReg := write
         }
         is (write) {
-            when (fallingEdge) {
+            when (risingEdge) {
                 txShiftReg := txShiftReg << 4
                 bitCounter := bitCounter - 1.U
                 when (bitCounter === 0.U) {
                     bitCounter := waitReadCycles
                     when (io.receiveLength === 0.U) {
+                        clockEnable := false.B
                         stateReg := deassertCS
                     } .otherwise {
                         stateReg := read
@@ -106,13 +123,14 @@ class QuadController extends Module {
 
         }
         is (read) {
-            when (risingEdge) {
-                rxShiftReg := (rxShiftReg << 4) | io.inSio
+            when (fallingEdge) {
                 bitCounter := bitCounter - 1.U
+                rxShiftReg := (rxShiftReg << 4) | io.inSio
             }
 
-            when (fallingEdge) {
+            when (risingEdge) {
                 when (bitCounter === 0.U) {
+                    clockEnable := false.B
                     stateReg := deassertCS
                 }
             }

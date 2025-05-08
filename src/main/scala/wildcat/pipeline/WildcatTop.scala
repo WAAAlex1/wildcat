@@ -49,8 +49,8 @@ class WildcatTop(file: String, dmemNrByte: Int = 4096, freqHz: Int = 100000000) 
   bus.io.CPUdCacheMemIO := DontCare
 
   // Choose between simulated main memory or physical
-  val MCU = Module(new MemoryControllerTopSimulator())
-  //val MCU = Module(new MemoryControllerTopPhysical())
+  val MCU = Module(new MemoryControllerTopSimulator(0.U))
+  //val MCU = Module(new MemoryControllerTopPhysical(2.U))
 
   MCU.io.dCacheReqOut <> bus.io.dCacheReqOut
   bus.io.dCacheRspIn <> MCU.io.dCacheRspIn

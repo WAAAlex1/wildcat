@@ -4,7 +4,7 @@ import Bootloader.SpiCTRLIO
 import chisel3._
 import chisel3.util._
 
-class SpiControllerTop extends Module {
+class SpiControllerTop(prescale: UInt) extends Module {
     val io = IO(new Bundle {
         val inSio = Input(UInt(4.W))
         val outSio = Output(UInt(4.W))
@@ -14,11 +14,11 @@ class SpiControllerTop extends Module {
         val CS1 = Output(Bool())
         val CS2 = Output(Bool())
 
-        val moduleSel = Input(UInt(2.W)) // 0 for flash, 1 for psram a, 2 for psram b, (flash not working)
+        val moduleSel = Input(Vec(3, Bool())) // 0 for flash, 1 for psram a, 2 for psram b, (flash not working)
 
         // To/Form SPI top controller
         val SPIctrl = new SpiCTRLIO
-
+        val startup = Output(Bool())
 
         val valid = Output(Bool())
         val dir = Output(Bool())
@@ -35,7 +35,7 @@ class SpiControllerTop extends Module {
 
     val quadReg = RegInit(false.B)
     val txDataReg = RegInit(0.U(64.W))
-    val dataRead = RegInit(0.U(32.W))
+    val dataRead = WireInit(0.U(32.W))
     val cmdReg = RegInit(0.U(8.W))
     val addrReg = RegInit(0.U(24.W))
     val dataReg = RegInit(0.U(32.W))
@@ -43,7 +43,7 @@ class SpiControllerTop extends Module {
     val waitCyclesReg = RegInit(0.U(7.W))
     val receiveLengthReg = RegInit(0.U(7.W))
     val delayCounter = RegInit(0.U(32.W))
-
+    val startupDone = RegInit(false.B)
     val dataOutReg = RegInit(0.U(32.W))
     io.SPIctrl.dataOut := dataOutReg
 
@@ -63,23 +63,9 @@ class SpiControllerTop extends Module {
         QController.io.inSio := 0.U
     }
 
-    when (io.moduleSel === 0.U) {
-        io.CS0 := Mux(quadReg, QController.io.spiCs, SController.io.spiCs)
-        io.CS1 := true.B
-        io.CS2 := true.B       
-    } .elsewhen (io.moduleSel === 1.U) {
-        io.CS0 := true.B
-        io.CS1 := Mux(quadReg, QController.io.spiCs, SController.io.spiCs)
-        io.CS2 := true.B
-    } .elsewhen (io.moduleSel === 2.U) {
-        io.CS0 := true.B
-        io.CS1 := true.B
-        io.CS2 := Mux(quadReg, QController.io.spiCs, SController.io.spiCs)        
-    } .otherwise {
-        io.CS0 := true.B
-        io.CS1 := true.B
-        io.CS2 := true.B       
-    }
+    io.CS0 := Mux(io.moduleSel(0),Mux(quadReg, QController.io.spiCs, SController.io.spiCs), true.B)
+    io.CS1 := Mux(io.moduleSel(1),Mux(quadReg, QController.io.spiCs, SController.io.spiCs), true.B)
+    io.CS2 := Mux(io.moduleSel(2),Mux(quadReg, QController.io.spiCs, SController.io.spiCs), true.B)
 
     txDataReg := Cat(cmdReg, addrReg, dataReg)
 
@@ -87,13 +73,13 @@ class SpiControllerTop extends Module {
     SController.io.sendLength := sendLengthReg
     SController.io.numWaitCycles := waitCyclesReg
     SController.io.receiveLength := receiveLengthReg
-    SController.io.prescale := 2.U
+    SController.io.prescale := prescale
 
     QController.io.txData := Cat(cmdReg, addrReg, dataReg)
     QController.io.sendLength := sendLengthReg
     QController.io.numWaitCycles := waitCyclesReg
     QController.io.receiveLength := receiveLengthReg
-    QController.io.prescale := 2.U
+    QController.io.prescale := prescale
 
     SController.io.enable := false.B
     QController.io.enable := false.B
@@ -121,7 +107,7 @@ class SpiControllerTop extends Module {
                 quadReg := true.B
             }
             delayCounter := delayCounter + 1.U
-            when (delayCounter === 0x35.U) {
+            when (delayCounter === 2.U + (16.U << prescale)) {
                 cmdReg := 0xC0.U
                 addrReg := 0.U
                 dataReg := 0.U
@@ -142,7 +128,7 @@ class SpiControllerTop extends Module {
                 addrReg := io.SPIctrl.addr
                 dataReg := 0.U
                 sendLengthReg := 8.U
-                waitCyclesReg := 6.U
+                waitCyclesReg := 7.U
                 receiveLengthReg := io.SPIctrl.size
                 state := sActive
             }
@@ -163,16 +149,17 @@ class SpiControllerTop extends Module {
         is (sWait) {
             when (QController.io.done) {
                 state := sDone
+                startupDone := true.B
             }
         }
         is (sDone) {
             dataOutReg := dataRead
+            io.SPIctrl.dataOut := dataRead
             state := sIdle
         }
     }
 
     io.SPIctrl.done := state === sDone
     io.valid := state === sIdle || state === sDone
-
+    io.startup := !startupDone
 }
-

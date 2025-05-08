@@ -14,7 +14,7 @@ import chisel3.util.Decoupled
  * By Gustav Philip Junker
  */
 
-class MemoryControllerTopPhysical(implicit val config:TilelinkConfig) extends Module {
+class MemoryControllerTopPhysical(prescale: UInt)(implicit val config:TilelinkConfig) extends Module {
   val io = IO(new Bundle {
     // To/From caches via bus
     val dCacheReqOut = Flipped(Decoupled(new TLRequest))
@@ -28,22 +28,14 @@ class MemoryControllerTopPhysical(implicit val config:TilelinkConfig) extends Mo
     val CS1 = Output(Bool())
     val CS2 = Output(Bool())
     val spiCLK = Output(Bool())
-
-    val IO0 = Analog(1.W)
-    val IO1 = Analog(1.W)
-    val IO2 = Analog(1.W)
-    val IO3 = Analog(1.W)
+    val dir = Output(Bool())
+    val inSio = Input(UInt(4.W))
+    val outSio = Output(UInt(4.W))
+    val spiClk = Output(Bool())
 
 
   })
   val MemCtrl = Module(new MemoryController())
-  // dummy code
-  MemCtrl.io.bootloading := false.B
-  MemCtrl.io.memIO.wrData := DontCare
-  MemCtrl.io.memIO.wrEnable := DontCare
-  MemCtrl.io.memIO.rdEnable := DontCare
-  MemCtrl.io.memIO.rdAddress := DontCare
-  MemCtrl.io.memIO.wrAddress := DontCare
 
 
   MemCtrl.io.dCacheReqOut <> io.dCacheReqOut
@@ -51,15 +43,22 @@ class MemoryControllerTopPhysical(implicit val config:TilelinkConfig) extends Mo
   MemCtrl.io.iCacheReqOut <> io.iCacheReqOut
   io.iCacheRspIn <> MemCtrl.io.iCacheRspIn
 
-  val SpiCtrl = Module(new SpiControllerTop)
+  val SpiCtrl = Module(new SpiControllerTop(prescale))
   io.spiCLK := SpiCtrl.io.spiClk
-  SpiCtrl.io.memSPIctrl <> MemCtrl.io.SPIctrl
-
+  SpiCtrl.io.SPIctrl <> MemCtrl.io.SPIctrl
+  SpiCtrl.io.moduleSel := MemCtrl.io.moduleSel
+  MemCtrl.io.SpiCtrlValid := SpiCtrl.io.valid
+  when(SpiCtrl.io.startup){
+    SpiCtrl.io.moduleSel := Seq(false.B, true.B, true.B)
+  }
 
   io.CS0 := SpiCtrl.io.CS0
   io.CS1 := SpiCtrl.io.CS1
   io.CS2 := SpiCtrl.io.CS2
-
+  io.spiClk := SpiCtrl.io.spiClk
+  io.dir := SpiCtrl.io.dir
+  io.inSio := SpiCtrl.io.inSio
+  io.outSio := SpiCtrl.io.outSio
 
 
 

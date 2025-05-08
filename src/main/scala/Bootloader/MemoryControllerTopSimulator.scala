@@ -14,7 +14,7 @@ import chisel3.util.Decoupled
  * By Gustav Philip Junker
  */
 
-class MemoryControllerTopSimulator(implicit val config:TilelinkConfig) extends Module {
+class MemoryControllerTopSimulator(prescale: UInt)(implicit val config:TilelinkConfig) extends Module {
   val io = IO(new Bundle {
     // To/From caches via bus
     val dCacheReqOut = Flipped(Decoupled(new TLRequest))
@@ -31,13 +31,6 @@ class MemoryControllerTopSimulator(implicit val config:TilelinkConfig) extends M
 
   })
   val MemCtrl = Module(new MemoryController())
-  // dummy code
-  MemCtrl.io.bootloading := false.B
-  MemCtrl.io.memIO.wrData := DontCare
-  MemCtrl.io.memIO.wrEnable := DontCare
-  MemCtrl.io.memIO.rdEnable := DontCare
-  MemCtrl.io.memIO.rdAddress := DontCare
-  MemCtrl.io.memIO.wrAddress := DontCare
 
 
   MemCtrl.io.dCacheReqOut <> io.dCacheReqOut
@@ -45,28 +38,53 @@ class MemoryControllerTopSimulator(implicit val config:TilelinkConfig) extends M
   MemCtrl.io.iCacheReqOut <> io.iCacheReqOut
   io.iCacheRspIn <> MemCtrl.io.iCacheRspIn
 
-  val SpiCtrl = Module(new SpiControllerTop)
+  val SpiCtrl = Module(new SpiControllerTop(prescale))
 
-  SpiCtrl.io.memSPIctrl <> MemCtrl.io.SPIctrl
+  SpiCtrl.io.SPIctrl <> MemCtrl.io.SPIctrl
   SpiCtrl.io.moduleSel := MemCtrl.io.moduleSel
+  MemCtrl.io.SpiCtrlValid := SpiCtrl.io.valid
+  when(SpiCtrl.io.startup){
+    SpiCtrl.io.moduleSel := Seq(false.B, true.B, true.B)
+  }
 
   io.CS0 := SpiCtrl.io.CS0
   io.CS1 := SpiCtrl.io.CS1
   io.CS2 := SpiCtrl.io.CS2
 
-  // For simulation
-  val RAM0 = Module(new PSRAM_Model(2048))
-  val RAM1 = Module(new PSRAM_Model(2048))
+  val CNT_MAX = (1.U << prescale)
+  val cntClk = RegInit(0.U(33.W))
+  val spiClkReg = RegInit(false.B)
 
-  RAM0.io.CS := SpiCtrl.io.CS1
-  RAM0.io.IN := SpiCtrl.io.outSio
-  RAM1.io.IN := SpiCtrl.io.outSio
-  RAM1.io.CS := SpiCtrl.io.CS2
-  SpiCtrl.io.inSio := 0.U
-  when(!SpiCtrl.io.CS1) {
-    SpiCtrl.io.inSio := RAM0.io.OUT
-  }.elsewhen(!SpiCtrl.io.CS1) {
-    SpiCtrl.io.inSio := RAM1.io.OUT
+  when (prescale =/= 1.U) {
+    cntClk := cntClk + 1.U
+
+    when (cntClk === CNT_MAX) {
+      cntClk := 0.U
+      spiClkReg := ~spiClkReg  // toggle the SPI clock
+    }
+  } .otherwise {
+    spiClkReg := !spiClkReg  // direct pass-through (always high)
   }
+
+
+  // For simulation
+  withClock(spiClkReg.asClock){
+    val RAM0 = Module(new PSRAM_Model(2048))
+    val RAM1 = Module(new PSRAM_Model(2048))
+
+    RAM0.io.CS := SpiCtrl.io.CS1
+    RAM0.io.IN := SpiCtrl.io.outSio
+    RAM1.io.IN := SpiCtrl.io.outSio
+    RAM1.io.CS := SpiCtrl.io.CS2
+    SpiCtrl.io.inSio := 0.U
+    when(!SpiCtrl.io.CS1) {
+      SpiCtrl.io.inSio := RAM0.io.OUT
+    }.elsewhen(!SpiCtrl.io.CS2) {
+      SpiCtrl.io.inSio := RAM1.io.OUT
+    }
+  }
+
+
+
 
 }

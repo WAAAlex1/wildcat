@@ -13,8 +13,8 @@ class FinalTop extends Module {
         val CS1 = Output(Bool())
         val CS2 = Output(Bool())
         
-        val seg = Output(UInt(7.W))
-        val an = Output(UInt(4.W))
+        //val seg = Output(UInt(7.W))
+        //val an = Output(UInt(4.W))
 
         val moduleSel = Input(UInt(2.W)) //0 for flash, 1 for psram a, 2 for psram b, (flash not working)
 
@@ -24,7 +24,7 @@ class FinalTop extends Module {
         val dataLength = Input(UInt(6.W))
 
         val rw = Input(Bool()) // 0 for read, 1 for write
-        val switch = Input(Bool())
+        //val switch = Input(Bool())
         val enable = Input(Bool())
         val ready = Output(Bool())
         val valid = Output(Bool())

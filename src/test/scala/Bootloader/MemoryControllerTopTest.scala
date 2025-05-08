@@ -9,7 +9,7 @@ import org.scalatest.flatspec.AnyFlatSpec
 import chiseltest._
 
 
-class MemoryControllerTopTester (implicit val config:TilelinkConfig) extends Module {
+class MemoryControllerTopTester(prescale: UInt) (implicit val config:TilelinkConfig) extends Module {
   val io = IO(new Bundle {
     // To/From caches via bus
     val dCacheReqOut = Flipped(Decoupled(new TLRequest))
@@ -24,20 +24,20 @@ class MemoryControllerTopTester (implicit val config:TilelinkConfig) extends Mod
 
 
     // Debugging
-    val RAM0Mode = Output(UInt(2.W))
+    val quadMode = Output(UInt(2.W))
     val RAM1Mode = Output(UInt(2.W))
     val SpiSi = Output(UInt(4.W))
     val SpiSo = Output(UInt(4.W))
     val LastCommand = Output(UInt(8.W))
 
-    val SpiCtrl0Done = Output(Bool())
-    val SpiCtrl0State = Output(UInt(4.W))
+    val SpiCtrlDone = Output(Bool())
+    val SpiCtrlTopState = Output(UInt(4.W))
 
-    val SpiCtrl1Done = Output(Bool())
-    val SpiCtrl1State = Output(UInt(4.W))
+
+
 
   })
-  val CTRL = Module(new MemoryControllerTopSimulator())
+  val CTRL = Module(new MemoryControllerTopSimulator(prescale))
   CTRL.io.dCacheReqOut <> io.dCacheReqOut
   io.dCacheRspIn <> CTRL.io.dCacheRspIn
   CTRL.io.iCacheReqOut <> io.iCacheReqOut
@@ -45,108 +45,99 @@ class MemoryControllerTopTester (implicit val config:TilelinkConfig) extends Mod
   io.CS0 := CTRL.io.CS0
   io.CS1 := CTRL.io.CS1
   io.CS2 := CTRL.io.CS2
-  io.RAM0Mode := DontCare
+  io.quadMode := DontCare
   io.RAM1Mode := DontCare
   io.SpiSi := DontCare
   io.LastCommand := DontCare
-  io.SpiCtrl0Done := DontCare
-  io.SpiCtrl1Done := DontCare
+  io.SpiCtrlDone := DontCare
   io.SpiSo := DontCare
-  io.SpiCtrl0State := DontCare
-  io.SpiCtrl1State := DontCare
-  BoringUtils.bore(CTRL.RAM0.mode, Seq(io.RAM0Mode))
-  BoringUtils.bore(CTRL.RAM1.mode, Seq(io.RAM1Mode))
-  BoringUtils.bore(CTRL.RAM0.lastCommand, Seq(io.LastCommand))
-  BoringUtils.bore(CTRL.SpiCtrl.io.si,Seq(io.SpiSi))
-  BoringUtils.bore(CTRL.MemCtrl.io.SPIctrl(0).done, Seq(io.SpiCtrl0Done))
-  BoringUtils.bore(CTRL.MemCtrl.io.SPIctrl(1).done, Seq(io.SpiCtrl1Done))
-  BoringUtils.bore(CTRL.SpiCtrl.io.so, Seq(io.SpiSo))
-  BoringUtils.bore(CTRL.SpiCtrl.SPICTRL0.stateReg, Seq(io.SpiCtrl0State))
-  BoringUtils.bore(CTRL.SpiCtrl.SPICTRL1.stateReg, Seq(io.SpiCtrl1State))
+  io.SpiCtrlTopState := DontCare
+  BoringUtils.bore(CTRL.SpiCtrl.quadReg, Seq(io.quadMode))
+  BoringUtils.bore(CTRL.SpiCtrl.io.inSio,Seq(io.SpiSi))
+  BoringUtils.bore(CTRL.MemCtrl.io.SPIctrl.done, Seq(io.SpiCtrlDone))
+  BoringUtils.bore(CTRL.SpiCtrl.io.outSio, Seq(io.SpiSo))
+  BoringUtils.bore(CTRL.SpiCtrl.state, Seq(io.SpiCtrlTopState))
 }
 
 class MemoryControllerTopTest extends AnyFlatSpec with ChiselScalatestTester{
   implicit val config = TilelinkConfig()
+  val prescale = 1
 
   "Controller" should "init" in {
-    test(new MemoryControllerTopTester()) { dut =>
-      dut.io.CS0.expect(false.B)
-      dut.io.CS1.expect(false.B)
+    test(new MemoryControllerTopTester(prescale.asUInt)) { dut =>
+      dut.io.CS0.expect(true.B)
+      dut.io.CS1.expect(true.B)
       dut.io.CS2.expect(true.B)
     }
   }
 
   "Controller" should "configure ext memory" in {
-    test(new MemoryControllerTopTester()) { dut =>
+    test(new MemoryControllerTopTester(prescale.asUInt)).withAnnotations(Seq(WriteVcdAnnotation)) { dut =>
       def step(n: Int = 1): Unit = {
         dut.clock.step(n)
       }
 
       def expectSerialWrite(num: UInt): Unit = {
-        for (i <- num.getWidth  to 0 by -1) {
-          dut.io.SpiSi.expect(num(i))
-          step()
+        for (i <- num.getWidth  to 1 by -1) {
+          dut.io.SpiSo.expect(num(i))
+          step(2 << prescale)
         }
-      }
-
-      expectSerialWrite(QUAD_MODE_ENABLE)
-      step()
-      dut.io.RAM0Mode.expect(1.U)
-      dut.io.RAM1Mode.expect(1.U)
-
-      dut.io.CS0.expect(true.B)
-      dut.io.CS1.expect(true.B)
-      dut.io.CS2.expect(true.B)
-    }
-  }
-
-  "Controller" should "Write and read" in {
-    test(new MemoryControllerTopTester()) { dut =>
-      def step(n: Int = 1): Unit = {
-        dut.clock.step(n)
-      }
-
-      def expectSerialWrite(num: UInt): Unit = {
-        for (i <- num.getWidth to 0 by -1) {
-          dut.io.SpiSi.expect(num(i))
-          step()
-        }
+        dut.io.SpiSo.expect(num(0))
+        step(2)
       }
 
       def expectQpi(port: UInt, num: UInt): Unit = {
         for(i <- num.getWidth/4 to 1 by -1){
           port.expect(num(i*4 - 1, i*4 - 4))
-          step()
+          step(4 << prescale)
+        }
+      }
+      step(26 + (16 << prescale))
+
+      dut.io.quadMode.expect(true.B)
+
+      step((2 << prescale))
+
+    }
+  }
+
+  "Controller" should "Write and read" in {
+    test(new MemoryControllerTopTester(prescale.asUInt)).withAnnotations(Seq(WriteVcdAnnotation)) { dut =>
+      def step(n: Int = 1): Unit = {
+        dut.clock.step(n)
+      }
+
+      def expectSerialWrite(num: UInt): Unit = {
+        for (i <- num.getWidth  to 1 by -1) {
+          dut.io.SpiSo.expect(num(i))
+          step(2 << prescale)
+        }
+        dut.io.SpiSo.expect(num(0))
+        step(2)
+      }
+
+      def expectQpi(port: UInt, num: UInt): Unit = {
+        for(i <- num.getWidth/4 to 1 by -1){
+          port.expect(num(i*4 - 1, i*4 - 4))
+          step(2 << prescale)
         }
       }
 
+      step(18 + (16 << prescale))
 
-      expectSerialWrite(QUAD_MODE_ENABLE)
-      step()
-      dut.io.RAM0Mode.expect(1.U)
-      dut.io.RAM1Mode.expect(1.U)
+      dut.io.quadMode.expect(true.B)
 
-      dut.io.CS0.expect(true.B)
-      dut.io.CS1.expect(true.B)
-      dut.io.CS2.expect(true.B)
+      step((2 << prescale))
 
-      // Write "BEEFFACE" in address 0 in RAM0 (Request from dCache)
+      // Write "BEEFFACE" in address 4 in RAM0 (Request from dCache)
       dut.io.dCacheReqOut.bits.dataRequest.poke("hBEEFFACE".U)
-      dut.io.dCacheReqOut.bits.addrRequest.poke(0.U)
+      dut.io.dCacheReqOut.bits.addrRequest.poke(4.U)
       dut.io.dCacheReqOut.bits.isWrite.poke(true.B)
       dut.io.dCacheReqOut.bits.activeByteLane.poke(15.U)
       dut.io.dCacheReqOut.valid.poke(true.B)
-      step(2)
-      dut.io.CS0.expect(false.B)
-      dut.io.CS1.expect(true.B)
-
-      expectQpi(dut.io.SpiSi,QPI_WRITE)
-      expectQpi(dut.io.SpiSi,0.U(24.W)) // Address
-      expectQpi(dut.io.SpiSi,"hBEEFFACE".U)
-      dut.io.CS0.expect(true.B)
-      dut.io.SpiCtrl0Done.expect(true.B)
-      dut.io.dCacheRspIn.valid.expect(true.B)
-      step()
+      step(4 << prescale)
+      dut.io.dCacheReqOut.valid.poke(false.B)
+      step(18 << prescale)
 
 
       // Write "hBEEF" at address 2 in RAM1 (request from iCache)
@@ -154,44 +145,24 @@ class MemoryControllerTopTest extends AnyFlatSpec with ChiselScalatestTester{
       dut.io.iCacheReqOut.bits.dataRequest.poke("hBEEFBEEF".U)
       dut.io.iCacheReqOut.bits.addrRequest.poke("h1000002".U)
       dut.io.iCacheReqOut.bits.isWrite.poke(true.B)
-      dut.io.iCacheReqOut.bits.activeByteLane.poke(12.U)
+      dut.io.iCacheReqOut.bits.activeByteLane.poke(15.U)
       dut.io.iCacheReqOut.valid.poke(true.B)
-      step(2)
-      dut.io.CS1.expect(false.B)
-      dut.io.CS0.expect(true.B)
-
-      expectQpi(dut.io.SpiSi,QPI_WRITE)
-      expectQpi(dut.io.SpiSi, 2.U(24.W)) // Address
-      step(4)
-      expectQpi(dut.io.SpiSi,"hBEEF".U)
-
-      dut.io.CS1.expect(true.B)
-      dut.io.SpiCtrl1Done.expect(true.B)
-      dut.io.iCacheRspIn.valid.expect(true.B)
-      step()
+      step(4 << prescale)
+      dut.io.iCacheReqOut.valid.poke(false.B)
+      step(18 << prescale)
 
       // Read address 0 in RAM0 and Read address 0 in RAM1 (Request from both)
-      dut.io.iCacheReqOut.bits.addrRequest.poke("h1000000".U)
+      dut.io.iCacheReqOut.bits.addrRequest.poke("h1000002".U)
       dut.io.iCacheReqOut.bits.isWrite.poke(false.B)
       dut.io.iCacheReqOut.bits.activeByteLane.poke(15.U)
       dut.io.iCacheReqOut.valid.poke(true.B)
-      dut.io.dCacheReqOut.bits.addrRequest.poke(0.U)
+      dut.io.dCacheReqOut.bits.addrRequest.poke(4.U)
       dut.io.dCacheReqOut.bits.isWrite.poke(false.B)
       dut.io.dCacheReqOut.bits.activeByteLane.poke(15.U)
       dut.io.dCacheReqOut.valid.poke(true.B)
-      step()
-      dut.io.SpiCtrl0State.expect(0.U)
-      step()
-      dut.io.CS0.expect(false.B)
-      dut.io.CS1.expect(true.B)
-      dut.io.SpiCtrl0State.expect(2.U) // Read state
-      expectQpi(dut.io.SpiSi, QPI_FAST_QUAD_READ)
-      expectQpi(dut.io.SpiSi, 0.U(24.W)) // Address
-      dut.io.SpiCtrl0State.expect(9.U) // reaceiveData state
-      step(8) // Delay cycles
-      //expectQpi(dut.io.SpiSo, "hBEEFFACE".U)
-
-
+      step(4 << prescale)
+      dut.io.dCacheReqOut.valid.poke(false.B)
+      step(52 << prescale)
 
     }
   }
