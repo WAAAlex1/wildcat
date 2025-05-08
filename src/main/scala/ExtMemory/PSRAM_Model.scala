@@ -97,8 +97,8 @@ class PSRAM_Model (nbytes: Int) extends Module{
          lastAddress := lastAddress(19,0) ## io.IN
          currentAddress := lastAddress(19,0) ## io.IN
 
-         when(idx === 5.U) {
-           address := currentAddress
+         when(idx === 6.U) {
+           address := lastAddress
            idx := 0.U
            lastAddress := 0.U
            when(rw){
@@ -118,7 +118,7 @@ class PSRAM_Model (nbytes: Int) extends Module{
        when(!io.CS) {
          readMemVal := mem.read(address)
          when(!waitDone) {
-           when(idx === 7.U) { // Wait cycles
+           when(idx === 6.U) { // Wait cycles
              waitDone := true.B
 
              idx := 0.U
@@ -147,10 +147,10 @@ class PSRAM_Model (nbytes: Int) extends Module{
          lastRead := lastRead(3,0) ## io.IN
          val2Write := lastRead(3,0) ## io.IN
          when(idx === 1.U) {
-           mem.write(address,val2Write)
+           mem.write(address,lastRead)
            idx := 0.U
            address := address + 1.U
-           lastRead := 0.U
+           lastRead := io.IN
          }.otherwise {
            idx := idx + 1.U
          }

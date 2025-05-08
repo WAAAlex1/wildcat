@@ -21,7 +21,6 @@ import wildcat.pipeline.CLINTLink
 
 class MemoryController(implicit val config:TilelinkConfig) extends Module {
   val io = IO(new Bundle {
-    val memIO = Flipped(new TestMemIO())
 
     // To/From caches via bus
     val dCacheReqOut = Flipped(Decoupled(new TLRequest))
@@ -38,19 +37,11 @@ class MemoryController(implicit val config:TilelinkConfig) extends Module {
 
   io.moduleSel := Seq.fill(3)(false.B) // No module selected
 
-  //Address mapping
-  when(io.memIO.rdAddress(31,28) === "hF".U){
-    //Do nothing cause memory mapped IO defined in WildcatTop?
-  }.elsewhen(io.memIO.rdAddress(23) === 1.U){
-    //DataMem.read addresser (23,0)
-  }.otherwise {
-    //instrMem.read addresser (23,0)
-  }
 
   val dReqAck = io.dCacheReqOut.valid && io.dCacheReqOut.ready // Request acknowledged
   val iReqAck = io.iCacheReqOut.valid && io.iCacheReqOut.ready // Request acknowledged
   val currentReq = Reg(new TLRequest()) // TileLink request format
-  val dataSize = WireInit(8.U(6.W)) // Number of nibbles to read
+  val dataSize = WireInit(4.U(6.W)) // Number of bytes to transfer
   val rspPending = RegInit(false.B)
   val data2write = WireInit(0.U(32.W))
   val readData = WireInit(0.U(32.W))
@@ -96,17 +87,17 @@ class MemoryController(implicit val config:TilelinkConfig) extends Module {
 
 
   // Compute dataSize based on number of active bits in the lane mask (size is in nibbles)
-  dataSize := MuxLookup(currentReq.activeByteLane, 2.U, Seq(
-    15.U -> 8.U,
-    12.U -> 4.U,
-    3.U -> 4.U
+  dataSize := MuxLookup(currentReq.activeByteLane, 1.U, Seq(
+    15.U -> 4.U,
+    12.U -> 2.U,
+    3.U -> 2.U
   ))
 
   // Modify data to write
   when(currentReq.isWrite){
-    // Compute data2write based on the lowest set bit
-    val shiftAmount = PriorityEncoder(currentReq.activeByteLane)
-    data2write := (currentReq.dataRequest >> (shiftAmount * 8.U))
+    // Compute data2write based on the highest set bit
+    val shiftAmount = PriorityEncoder(Reverse(currentReq.activeByteLane))
+    data2write := (currentReq.dataRequest << (shiftAmount * 8.U))
 
   }
 
