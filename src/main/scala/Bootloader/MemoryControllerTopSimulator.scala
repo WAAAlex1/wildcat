@@ -23,7 +23,7 @@ class MemoryControllerTopSimulator(prescale: UInt)(implicit val config:TilelinkC
     val iCacheReqOut = Flipped(Decoupled(new TLRequest))
     val iCacheRspIn = Decoupled(new TLResponse)
 
-    // To/Form SPI modules
+    // To/From SPI modules
     val CS0 = Output(Bool())
     val CS1 = Output(Bool())
     val CS2 = Output(Bool())
