@@ -30,7 +30,6 @@ class BootloaderTop(frequ: Int, baudRate: Int = 115200) extends Module {
   testMem.io.rdEnable := false.B
 
   //Bootloader IO
-  //Map bootloader sleep bit to 0xf100_0000, write 0x00 to set bootloader active or 0x01 to set it to sleep
   val bootSleepReg = RegInit(0.U(8.W))
   //Pseudo memory mapping
   bootloader.io.sleep := bootSleepReg(0).asBool
@@ -38,7 +37,6 @@ class BootloaderTop(frequ: Int, baudRate: Int = 115200) extends Module {
   when((testMem.io.wrAddress(31, 28) === 0xf.U) && testMem.io.wrEnable(0)) {
     when(testMem.io.wrAddress(27, 24) === 1.U) {
       bootSleepReg := testMem.io.wrData(7, 0)
-
     }
 
   }

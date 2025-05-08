@@ -22,8 +22,6 @@ import wildcat.pipeline.CLINTLink
 class MemoryController(implicit val config:TilelinkConfig) extends Module {
   val io = IO(new Bundle {
     val memIO = Flipped(new TestMemIO())
-    val stall = Output(Bool())
-    val bootloading = Input(Bool())
 
     // To/From caches via bus
     val dCacheReqOut = Flipped(Decoupled(new TLRequest))
@@ -38,9 +36,6 @@ class MemoryController(implicit val config:TilelinkConfig) extends Module {
 
   val memory = Module(new TestMem(4096))
   io.memIO <> memory.io
-
-  //Assume stalling will also be enabled by the caches and slower mem so the OR is for that.
-  io.stall := io.bootloading || false.B
 
   //Address mapping
   when(io.memIO.rdAddress(31,28) === "hF".U){
