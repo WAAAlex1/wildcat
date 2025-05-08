@@ -21,6 +21,7 @@ import wildcat.pipeline.CLINTLink
 
 class MemoryController(implicit val config:TilelinkConfig) extends Module {
   val io = IO(new Bundle {
+    val memIO = Flipped(new TestMemIO())
 
     // To/From caches via bus
     val dCacheReqOut = Flipped(Decoupled(new TLRequest))
@@ -37,6 +38,14 @@ class MemoryController(implicit val config:TilelinkConfig) extends Module {
 
   io.moduleSel := Seq.fill(3)(false.B) // No module selected
 
+  //Address mapping
+  when(io.memIO.rdAddress(31,28) === "hF".U){
+    //Do nothing cause memory mapped IO defined in WildcatTop?
+  }.elsewhen(io.memIO.rdAddress(23) === 1.U){
+    //DataMem.read addresser (23,0)
+  }.otherwise {
+    //instrMem.read addresser (23,0)
+  }
 
   val dReqAck = io.dCacheReqOut.valid && io.dCacheReqOut.ready // Request acknowledged
   val iReqAck = io.iCacheReqOut.valid && io.iCacheReqOut.ready // Request acknowledged

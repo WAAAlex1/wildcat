@@ -32,6 +32,9 @@ class WildcatTop(file: String, dmemNrByte: Int = 4096, freqHz: Int = 100000000) 
   val cpu = Module(new ThreeCats(freqHz))
   // val cpu = Module(new WildFour())
   // val cpu = Module(new StandardFive())
+
+  // CHANGE *************************************************************
+
   val dmem = Module(new ScratchPadMem(memory, nrBytes = dmemNrByte))
   cpu.io.dmem <> dmem.io
 
@@ -40,6 +43,7 @@ class WildcatTop(file: String, dmemNrByte: Int = 4096, freqHz: Int = 100000000) 
   cpu.io.imem.data := imem.io.data
   cpu.io.imem.stall := imem.io.stall
 
+  // ********************************************************************
 
   // Cache, bus and memory controller connections
   implicit val config = new TilelinkConfig
@@ -56,7 +60,6 @@ class WildcatTop(file: String, dmemNrByte: Int = 4096, freqHz: Int = 100000000) 
   bus.io.dCacheRspIn <> MCU.io.dCacheRspIn
   MCU.io.iCacheReqOut <> bus.io.iCacheReqOut
   bus.io.iCacheRspIn <> MCU.io.iCacheRspIn
-
 
   // Here IO stuff
   // IO is mapped ot 0xf000_0000
@@ -78,10 +81,10 @@ class WildcatTop(file: String, dmemNrByte: Int = 4096, freqHz: Int = 100000000) 
   rx.io.channel.ready := false.B
 
   // Default values for memory accesses
-  val uartStatusReg = RegNext(rx.io.channel.valid ## tx.io.channel.ready)
+  val uartStatusReg = RegNext(rx.io.channel.valid ## tx.io.channel.ready) // Mapped to 0xf000_0000
+  val bootloaderStatusReg = RegInit(0.U(8.W)) // Mapped to 0xf100_0000, 0x00 = Active, 0x01 = sleep
   val memAddressReg = RegNext(cpu.io.dmem.rdAddress)
   val writeAddressReg = RegNext(cpu.io.dmem.wrAddress)
-
 
   // Instantiate CLINT module
   val clint = Module(new CLINT())
@@ -101,46 +104,54 @@ class WildcatTop(file: String, dmemNrByte: Int = 4096, freqHz: Int = 100000000) 
   clint.io.currentTimeIn := cpu.io.timerCounter_out
   cpu.io.mtimecmpVal_in := clint.io.mtimecmpValueOut
 
-  // Memory access logic with added CLINT handling
+
+  // Instantiate Bootloader
+  val BL = Module(new Bootloader.Bootloader())
+  val BL_Stall = ~bootloaderStatusReg(0).asBool
+  //Connect bootloader
+  BL.io.rx := io.rx
+  BL.io.sleep := BL_Stall
+
+
+  // Memory read with memorymapping (CLINT, UART, Bootloader)
+
   when(memAddressReg(31, 28) === 0xf.U) {
     when(isClintAccess) {
       // Access to CLINT
       cpu.io.dmem.rdData := clint.io.link.rdData
-    }.elsewhen(memAddressReg(19, 16) === 0.U) {
-      // UART access
-      when(memAddressReg(3, 0) === 0.U) {
-        cpu.io.dmem.rdData := uartStatusReg
-      }.elsewhen(memAddressReg(3, 0) === 4.U) {
-        cpu.io.dmem.rdData := rx.io.channel.bits
-        rx.io.channel.ready := cpu.io.dmem.rdEnable
-      }.otherwise {
-        cpu.io.dmem.rdData := 0.U
-      }
+    }.elsewhen(memAddressReg === "hF000_0000".U) {    // UART status reg
+      cpu.io.dmem.rdData := uartStatusReg
+    }.elsewhen(memAddressReg === "hF000_0004".U) {    // UART Send and receive reg
+      cpu.io.dmem.rdData := rx.io.channel.bits
+      rx.io.channel.ready := cpu.io.dmem.rdEnable
+    }.elsewhen(memAddressReg === "hF010_0000".U) {    // LED Data reg
+      cpu.io.dmem.rdData := ledReg
+    }.elsewhen(memAddressReg === "hF100_0000".U) {    // Bootloader status reg
+      cpu.io.dmem.rdData := bootloaderStatusReg
     }.otherwise {
       cpu.io.dmem.rdData := 0.U
     }
   }
 
+  // Memory write with memorymapping (CLINT, UART, LED)
   val ledReg = RegInit(0.U(8.W))
   when ((cpu.io.dmem.wrAddress(31, 28) === 0xf.U) && cpu.io.dmem.wrEnable(0)) {
-    when (isClintWrite) {
-      // Write to CLINT handled by CLINT module
-    } .elsewhen (cpu.io.dmem.wrAddress(19,16) === 0.U && cpu.io.dmem.wrAddress(3, 0) === 4.U) {
-      //printf(" %c %d\n", cpu.io.dmem.wrData(7, 0), cpu.io.dmem.wrData(7, 0))
+    when (isClintWrite) { // Write to CLINT handled by CLINT module
+      // do nothing
+    } .elsewhen (cpu.io.dmem.wrAddress === "hF000_0004".U) {  // UART send and receive reg
       tx.io.channel.valid := true.B
-    } .elsewhen (cpu.io.dmem.wrAddress(19,16) === 1.U) {
+    } .elsewhen (cpu.io.dmem.wrAddress === "hF010_0000".U) {  // LED Reg
       ledReg := cpu.io.dmem.wrData(7, 0)
-    } .otherwise {
+    }.elsewhen(cpu.io.dmem.wrAddress   === "hF100_0000".U) {  // Bootloader status reg
+      bootloaderStatusReg := cpu.io.dmem.wrData(7, 0)
+    }.otherwise {
       // Any other IO or memory region, do nothing for write
     }
-    dmem.io.wrEnable := VecInit(Seq.fill(4)(false.B))
+    dmem.io.wrEnable := VecInit(Seq.fill(4)(false.B)) // dont actually write to mem if memorymapped
   }
 
   io.led := 1.U ## 0.U(7.W) ## RegNext(ledReg)
 
-  when(isClintAccess) {
-    //printf(p"[WildcatTop] CLINT Access: Addr=0x${Hexadecimal(memAddressReg)}, isWrite=${isClintWrite}\n")
-  }
 }
 
 object WildcatTop extends App {
