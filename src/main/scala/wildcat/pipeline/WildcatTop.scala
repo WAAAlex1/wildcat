@@ -33,17 +33,7 @@ class WildcatTop(file: String, dmemNrByte: Int = 4096, freqHz: Int = 100000000) 
   // val cpu = Module(new WildFour())
   // val cpu = Module(new StandardFive())
 
-  // CHANGE *************************************************************
 
-  val dmem = Module(new ScratchPadMem(memory, nrBytes = dmemNrByte))
-  cpu.io.dmem <> dmem.io
-
-  val imem = Module(new InstructionROM(memory))
-  imem.io.address := cpu.io.imem.address
-  cpu.io.imem.data := imem.io.data
-  cpu.io.imem.stall := imem.io.stall
-
-  // ********************************************************************
 
   // Cache, bus and memory controller connections
   implicit val config = new TilelinkConfig
@@ -53,13 +43,39 @@ class WildcatTop(file: String, dmemNrByte: Int = 4096, freqHz: Int = 100000000) 
   bus.io.CPUdCacheMemIO := DontCare
 
   // Choose between simulated main memory or physical
-  val MCU = Module(new MemoryControllerTopSimulator(0.U))
-  //val MCU = Module(new MemoryControllerTopPhysical(2.U))
+  //val MCU = Module(new MemoryControllerTopSimulator(0.U))
+  val MCU = Module(new MemoryControllerTopPhysical(1.U))
 
   MCU.io.dCacheReqOut <> bus.io.dCacheReqOut
   bus.io.dCacheRspIn <> MCU.io.dCacheRspIn
   MCU.io.iCacheReqOut <> bus.io.iCacheReqOut
   bus.io.iCacheRspIn <> MCU.io.iCacheRspIn
+
+  // CHANGE *************************************************************
+  /*
+  val dmem = Module(new ScratchPadMem(memory, nrBytes = dmemNrByte))
+  cpu.io.dmem <> dmem.io
+
+  val imem = Module(new InstructionROM(memory))
+  imem.io.address := cpu.io.imem.address
+  cpu.io.imem.data := imem.io.data
+  cpu.io.imem.stall := imem.io.stall
+  */
+
+  cpu.io.dmem <> bus.io.CPUdCacheMemIO
+
+  cpu.io.imem.data := bus.io.CPUiCacheMemIO.rdData
+  cpu.io.imem.stall := bus.io.CPUiCacheMemIO.stall
+
+  // Default drive of instruction cache
+  bus.io.CPUiCacheMemIO.rdEnable := true.B
+  bus.io.CPUiCacheMemIO.rdAddress := cpu.io.imem.address
+  bus.io.CPUiCacheMemIO.wrData := 0.U
+  bus.io.CPUiCacheMemIO.wrEnable := Seq.fill(4)(false.B)
+  bus.io.CPUiCacheMemIO.wrAddress := 0.U
+
+  // ********************************************************************
+
 
   // Here IO stuff
   // IO is mapped ot 0xf000_0000
@@ -147,7 +163,8 @@ class WildcatTop(file: String, dmemNrByte: Int = 4096, freqHz: Int = 100000000) 
     }.otherwise {
       // Any other IO or memory region, do nothing for write
     }
-    dmem.io.wrEnable := VecInit(Seq.fill(4)(false.B)) // dont actually write to mem if memorymapped
+    //dmem.io.wrEnable := VecInit(Seq.fill(4)(false.B)) // dont actually write to mem if memorymapped
+    bus.io.CPUdCacheMemIO.wrEnable := VecInit(Seq.fill(4)(false.B)) // dont actually write to mem if memorymapped
   }
 
   io.led := 1.U ## 0.U(7.W) ## RegNext(ledReg)
