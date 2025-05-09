@@ -61,7 +61,7 @@ class ThreeCats(freqHz: Int = 100000000) extends Wildcat() {
    * ******************************************************************************************** */
 
   val instr = WireDefault(io.imem.data)
-  when (io.imem.stall ) {
+  when (io.imem.stall || io.Bootloader_Stall) {
     instr := 0x00000013.U
     pcNext := pcReg
   }

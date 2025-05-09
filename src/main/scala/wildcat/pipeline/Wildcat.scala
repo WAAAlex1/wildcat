@@ -19,5 +19,6 @@ abstract class Wildcat(freqHz: Int = 100000000) extends Module {
 
     val mtimecmpVal_in = Input(UInt(64.W))
     val timerCounter_out = Output(UInt(64.W))
+    val Bootloader_Stall = Input(Bool())
   })
 }
