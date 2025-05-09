@@ -10,7 +10,7 @@ public class ImageHandler {
     public static void main(String[] args) {
         // Validate command-line arguments
         if (args.length != 2) {
-            System.err.println("Usage: java ImageHandler <Image> <base-Address>");
+            System.err.println("Usage: java ImageHandler <Image.bin.bin> <base-Address>");
             System.err.println("Example: java ImageHandler kernel.bin 0x80000000");
             System.exit(1);
         }
@@ -41,7 +41,7 @@ public class ImageHandler {
                 }
             }
 
-            System.out.println("Image prepared successfully. Output written to preparedImage.txt");
+            System.out.println("Image.bin.bin prepared successfully. Output written to preparedImage.txt");
 
         } catch (NumberFormatException e) {
             System.err.println("Invalid base address format. Use 0x prefix for hex.");

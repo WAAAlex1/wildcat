@@ -78,11 +78,12 @@ class BootloaderTestScala extends AnyFlatSpec with
           }
         }
 
+        //Little endian
         def send32bit(n: UInt) = {
-          sendByte(n(31, 24))
-          sendByte(n(23, 16))
-          sendByte(n(15, 8))
           sendByte(n(7, 0))
+          sendByte(n(15, 8))
+          sendByte(n(23, 16))
+          sendByte(n(31, 24))
         }
 
         dut.io.sleep.poke(false.B) //Set Active
@@ -131,11 +132,12 @@ class BootloaderTopTest extends AnyFlatSpec with
           }
         }
 
+        //Little endian
         def send32bit(n: UInt) = {
-          sendByte(n(31, 24))
-          sendByte(n(23, 16))
-          sendByte(n(15, 8))
           sendByte(n(7, 0))
+          sendByte(n(15, 8))
+          sendByte(n(23, 16))
+          sendByte(n(31, 24))
         }
 
 

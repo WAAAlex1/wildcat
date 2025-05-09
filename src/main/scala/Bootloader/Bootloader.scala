@@ -81,8 +81,8 @@ class Bootloader(frequ: Int, baudRate: Int = 115200) extends Module {
 
   //IO connections
   io.wrEnabled := wrEnabled
-  io.instrData := buffer.io.dataOut(31,0)
-  io.instrAddr := buffer.io.dataOut(63,32)
+  io.instrData := buffer.io.dataOut(63,32)
+  io.instrAddr := buffer.io.dataOut(31,0)
   rx.io.rxd := io.rx
 }
 

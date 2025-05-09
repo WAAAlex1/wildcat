@@ -3,6 +3,7 @@ package wildcat
 object Opcode {
   val AluImm = 0x13
   val Alu = 0x33
+  val Atomic = 0x2f
   val Branch = 0x63
   val Load = 0x03
   val Store = 0x23
@@ -90,9 +91,6 @@ object CSR {
   val TIMEH           = 0xc81
   val MCYCLE          = 0xb00
   val MCYCLEH         = 0xb80
-  // Disassembler does not know them
-  val MTIME           = 0xb01
-  val MTIMEH          = 0xb81
 
   val INSTRET         = 0xc02
   val INSTRETH        = 0xc82
@@ -132,6 +130,16 @@ object CSR {
   val MENVCFGH        = 0x31A
 
 
+  //CLINT Definitions:
+  val CLINT_BASE = 0xF2000000 // Example base address, ensure it's unused
+  val CLINT_SIZE = 0x10000 // Standard size (64KB)
+
+  // Offsets within CLINT (Standard for SiFive CLINT)
+  val CLINT_MSIP_OFFSET = 0x0000 // Optional: Machine Software Interrupt Pending (Hart 0)
+  val CLINT_MTIMECMP_OFFSET = 0x4000 // Machine Timer Compare (Hart 0)
+  val CLINT_MTIME_OFFSET = 0xBFF8 // Machine Time (Shared)
+
+
   // Add write mask definitions extracted from the simulator
   // Defines which bits are writable for each CSR (1 = writable, 0 = read-only)
   val MSTATUS_MASK    = 0x000018aa // MPRV, MXR, SUM, SBE, UBE, TVM, TW, TSR, FS, VS, XS, SD, all WPRI = 0 (read only)
@@ -144,11 +152,13 @@ object CSR {
   val MVENDORID_MASK  = 0x00000000
   val MEDELEG_MASK    = 0x00000000
   val MIDELEG_MASK    = 0x00000000
-  val MIE_MASK        = 0x00000000
+  val MIE_MASK        = 0x00000888 // Allow writing MTIE(7), MEIE(11), MSIE(3)
   val MIP_MASK        = 0x00000000
   val MCONFIGPTR_MASK = 0x00000000
   val MENVCFG_MASK    = 0x00000000
   val MENVCFGH_MASK   = 0x00000000
+  val TIME_MASK       = 0x00000000
+  val TIMEH_MASK      = 0x00000000
 
   /**
    * Get the write mask for a CSR address.
@@ -183,6 +193,8 @@ object CSR {
       case MCONFIGPTR => MCONFIGPTR_MASK
       case MENVCFG => MENVCFG_MASK
       case MENVCFGH => MENVCFGH_MASK
+      case TIME => TIME_MASK
+      case TIMEH => TIMEH_MASK
       case _ => 0xFFFFFFFF // Default, fully writable
     }
   }
