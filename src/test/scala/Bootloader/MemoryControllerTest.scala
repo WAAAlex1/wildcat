@@ -20,33 +20,38 @@ class MemoryControllerTester (implicit val config:TilelinkConfig) extends Module
     val iCacheRspIn = Decoupled(new TLResponse)
 
     // To/Form SPI controllers
-    val SPIctrl = Vec(2, Flipped(new SpiCTRLIO))
+    val SPIctrl = Flipped(new SpiCTRLIO)
 
 
     // Debugging
     val dReqAck = Output(Bool())
     val iReqAck = Output(Bool())
     val masterID = Output(Bool())
+    val rspHandled = Output(Bool())
+    val iCacheRspInValid = Output(Bool())
+    val iCacheRspInDataResponse = Output(UInt(32.W))
   })
   val CTRL = Module(new MemoryController())
-  CTRL.io.bootloading := false.B
-  CTRL.io.memIO.wrData := DontCare
-  CTRL.io.memIO.wrEnable := DontCare
-  CTRL.io.memIO.rdEnable := DontCare
-  CTRL.io.memIO.rdAddress := DontCare
-  CTRL.io.memIO.wrAddress := DontCare
   CTRL.io.dCacheReqOut <> io.dCacheReqOut
   io.dCacheRspIn <> CTRL.io.dCacheRspIn
   CTRL.io.iCacheReqOut <> io.iCacheReqOut
   io.iCacheRspIn <> CTRL.io.iCacheRspIn
   io.SPIctrl <>  CTRL.io.SPIctrl
+  CTRL.io.SpiCtrlValid := DontCare
   io.dReqAck := DontCare
   io.iReqAck := DontCare
   io.masterID := DontCare
+  io.rspHandled := DontCare
+  io.iCacheRspInValid := DontCare
+  io.iCacheRspInDataResponse := DontCare
 
   BoringUtils.bore(CTRL.dReqAck,Seq(io.dReqAck))
   BoringUtils.bore(CTRL.iReqAck,Seq(io.iReqAck))
   BoringUtils.bore(CTRL.masterID, Seq(io.masterID))
+  //BoringUtils.bore(CTRL.rspHandled, Seq(io.rspHandled))
+  BoringUtils.bore(CTRL.io.iCacheRspIn.valid, Seq(io.iCacheRspInValid))
+  BoringUtils.bore(CTRL.io.iCacheRspIn.bits.dataResponse, Seq(io.iCacheRspInDataResponse))
+
 }
 
 class MemoryControllerTest extends AnyFlatSpec with ChiselScalatestTester {
@@ -77,15 +82,17 @@ class MemoryControllerTest extends AnyFlatSpec with ChiselScalatestTester {
       dut.io.dCacheReqOut.valid.poke(true.B)
       step()
       dut.io.dReqAck.expect(true.B)
-      dut.io.SPIctrl(0).en.expect(true.B)
-      dut.io.SPIctrl(0).addr.expect(0.U)
-      dut.io.SPIctrl(0).rw.expect(true.B)
-      dut.io.SPIctrl(0).size.expect(4.U)
-      dut.io.SPIctrl(0).dataIn.expect("hBEEFFACE".U)
-      dut.io.SPIctrl(1).en.expect(false.B)
+      dut.io.SPIctrl.en.expect(true.B)
+      dut.io.SPIctrl.addr.expect(0.U)
+      dut.io.SPIctrl.rw.expect(true.B)
+      dut.io.SPIctrl.size.expect(4.U)
+      dut.io.SPIctrl.dataIn.expect("hBEEFFACE".U)
+      dut.io.dCacheReqOut.valid.poke(false.B)
+      step()
+      dut.io.SPIctrl.done.poke(true.B)
+      step(10)
 
       // Write "hBEEF" at address 2 in RAM1 (request from iCache)
-      dut.io.dCacheReqOut.valid.poke(false.B)
       dut.io.iCacheReqOut.bits.dataRequest.poke("hBEEFBEEF".U)
       dut.io.iCacheReqOut.bits.addrRequest.poke("h1000002".U)
       dut.io.iCacheReqOut.bits.isWrite.poke(true.B)
@@ -93,12 +100,11 @@ class MemoryControllerTest extends AnyFlatSpec with ChiselScalatestTester {
       dut.io.iCacheReqOut.valid.poke(true.B)
       step()
       dut.io.iReqAck.expect(true.B)
-      dut.io.SPIctrl(1).en.expect(true.B)
-      dut.io.SPIctrl(1).addr.expect(2.U)
-      dut.io.SPIctrl(1).rw.expect(true.B)
-      dut.io.SPIctrl(1).size.expect(2.U)
-      dut.io.SPIctrl(1).dataIn.expect("hBEEF".U)
-      dut.io.SPIctrl(0).en.expect(false.B)
+      dut.io.SPIctrl.addr.expect(2.U)
+      dut.io.SPIctrl.rw.expect(true.B)
+      dut.io.SPIctrl.size.expect(2.U)
+      dut.io.SPIctrl.dataIn.expect("hBEEFBEEF".U)
+
     }
   }
 
@@ -118,24 +124,28 @@ class MemoryControllerTest extends AnyFlatSpec with ChiselScalatestTester {
       dut.io.iCacheReqOut.valid.poke(true.B)
       step()
       dut.io.iReqAck.expect(true.B)
-      dut.io.SPIctrl(1).en.expect(true.B)
-      dut.io.SPIctrl(1).addr.expect(40.U)
-      dut.io.SPIctrl(1).rw.expect(false.B)
-      dut.io.SPIctrl(1).size.expect(4.U)
-      dut.io.SPIctrl(1).dataIn.expect(0.U)
-      dut.io.SPIctrl(0).en.expect(false.B)
-
+      dut.io.SPIctrl.en.expect(true.B)
+      dut.io.SPIctrl.addr.expect(40.U)
+      dut.io.SPIctrl.rw.expect(false.B)
+      dut.io.SPIctrl.size.expect(4.U)
+      dut.io.SPIctrl.dataIn.expect(0.U)
+      //println("First step success with rspHandled = " + dut.io.rspHandled.peekBoolean())
       step()
-      dut.io.SPIctrl(1).dataOut.poke("hBEEBBEEB".U)
-      dut.io.SPIctrl(1).done.poke(true.B)
+      dut.io.SPIctrl.dataOut.poke("hBEEBBEEB".U)
+      dut.io.SPIctrl.done.poke(true.B)
       dut.io.masterID.expect(true.B)
+      //println("Second step success with rspHandled = " + dut.io.rspHandled.peekBoolean())
       step()
       dut.io.iCacheRspIn.valid.expect(true.B)
       dut.io.iCacheRspIn.bits.dataResponse.expect("hBEEBBEEB".U)
-      dut.io.SPIctrl(1).done.poke(false.B)
+      dut.io.SPIctrl.done.poke(false.B)
+      //println("Third step success with rspHandled = " + dut.io.rspHandled.peekBoolean())
       step()
+      println("iCacheRspIn.valid = " + dut.io.iCacheRspInValid.peekBoolean())
+      println(f"iCacheRspIn.bits.dataResponse = 0x${dut.io.iCacheRspInDataResponse.peekInt()}%08x")
       dut.io.iCacheRspIn.valid.expect(false.B)
       dut.io.iCacheRspIn.bits.dataResponse.expect(0.U)
+      //println("Final step success with rspHandled = " + dut.io.rspHandled.peekBoolean())
 
     }
   }

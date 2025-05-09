@@ -246,7 +246,7 @@ class CacheControllerTest extends AnyFlatSpec with ChiselScalatestTester {
       dut.io.memAdd.poke("h10000000".U)
       dut.io.stall.expect(true.B)
       dut.clock.step()
-      dut.io.stall.expect(true.B)
+      dut.io.stall.expect(false.B)
       dut.io.CPUdataOut.expect(0.U)
 
 

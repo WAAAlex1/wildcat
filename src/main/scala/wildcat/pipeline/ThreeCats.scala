@@ -18,15 +18,19 @@ import wildcat.pipeline.Functions._
  * CSR Instruction handling / Exception handling added by:
  * Alexander Aakersø and Georg Dyvad
  */
-class ThreeCats() extends Wildcat() {
-  // some forward declarations
-  val stall = WireDefault(false.B)
+class ThreeCats(freqHz: Int = 100000000) extends Wildcat() {
+  // Some forward declarations
   val wbData = Wire(UInt(32.W))
   val wbDest = Wire(UInt(5.W))
   val wrEna = WireDefault(true.B)
 
+  // Control signals
   val doBranch = WireDefault(false.B)
-  val branchTarget = WireDefault(0.U)
+  val branchTarget = WireDefault(0.U(32.W))
+  val inSleepMode = RegInit(false.B)
+  val stall = WireDefault(io.dmem.stall || inSleepMode) // Basic stall based on memory readiness (include io.imem.stall? )
+  val exceptionOccurred = WireDefault(false.B)
+  val takeInterrupt = WireDefault(false.B)
 
   // Forwarding data and register
   val exFwd = new Bundle() {
@@ -37,18 +41,14 @@ class ThreeCats() extends Wildcat() {
   val exFwdReg = RegInit(0.U.asTypeOf(exFwd))
 
   // PC generation
-  // the following should be correct, but 2 tests fail
-  // val pcReg = RegInit(-4.S(32.W).asUInt)
-  val pcReg = RegInit(0.S(32.W).asUInt)
-  val pcNext = WireDefault(Mux(doBranch, branchTarget, pcReg + 4.U))
+  val pcReg = RegInit(0.U(32.W)) // Start at address 0
+  val pcNext = WireDefault(Mux(stall && !takeInterrupt, pcReg, Mux(doBranch, branchTarget, pcReg + 4.U)))   // Update PC only if not stalled
   pcReg := pcNext
   io.imem.address := pcNext
 
-  // Control signal for if processor has been initialized -- used to prevent exceptions at startup/reset
+  // Simple initialization flag
   val processorInitialized = RegInit(false.B)
   val initCounter = RegInit(0.U(2.W))
-
-  // simple counter which toggles processorInitialized after 3 clock cycles
   when (!processorInitialized) {
     initCounter := initCounter + 1.U
     when (initCounter === 3.U) {
@@ -56,28 +56,30 @@ class ThreeCats() extends Wildcat() {
     }
   }
 
-  // Fetch
+  /** ********************************************************************************************
+   * FETCH STAGE
+   * ******************************************************************************************** */
+
   val instr = WireDefault(io.imem.data)
-  when (io.imem.stall) {
+  when (io.imem.stall || io.Bootloader_Stall) {
     instr := 0x00000013.U
     pcNext := pcReg
   }
 
-  /**********************************************************************************************
-   *                                                                                            *
-   *                                      DECODE STAGE                                          *
-   *                This section handles DECODE, REGISTER READ, MEMORY ACCESS                   *
-   *                                                                                            *
-   **********************************************************************************************/
+  /** ********************************************************************************************
+   * DECODE STAGE
+   * ******************************************************************************************** */
+  // Instruction Register
   val pcRegReg = RegNext(pcReg)
-  val instrReg = RegInit(0x00000033.U) // nop on reset
-  instrReg := Mux(doBranch, 0x00000033.U, instr)
+  val instrReg = RegInit(0x00000013.U) // nop on reset
+  instrReg := Mux(doBranch, 0x00000013.U, Mux(stall, instrReg, instr))
+
+  // Decode instruction & Register Addresses
+  val decOut = decode(instrReg)
   val rs1 = instr(19, 15)
   val rs2 = instr(24, 20)
   val rd = instr(11, 7)
   val (rs1Val, rs2Val, debugRegs) = registerFile(rs1, rs2, wbDest, wbData, wrEna, true)
-
-  val decOut = decode(instrReg)
 
   val decEx = Wire(new Bundle() {
     val decOut = new DecodedInstr()
@@ -110,79 +112,60 @@ class ThreeCats() extends Wildcat() {
   val address = Mux(wrEna && (wbDest =/= 0.U) && wbDest === decEx.rs1, wbData, rs1Val)
   val data = Mux(wrEna && (wbDest =/= 0.U) && wbDest === decEx.rs2, wbData, rs2Val)
 
+  // Data Memory Access Initiation
   val memAddress = (address.asSInt + decOut.imm).asUInt
   decEx.memLow := memAddress(1, 0)
 
   io.dmem.rdAddress := memAddress
-  io.dmem.rdEnable := false.B
   io.dmem.wrAddress := memAddress
-  io.dmem.wrData := data
-  io.dmem.wrEnable := VecInit(Seq.fill(4)(false.B))
-  when(decOut.isLoad && !doBranch) {
-    io.dmem.rdEnable := true.B
-  }
-  when(decOut.isStore && !doBranch) {
+  io.dmem.rdEnable  := decOut.isLoad && !doBranch
+  io.dmem.wrEnable  := VecInit(Seq.fill(4)(false.B))
+  io.dmem.wrData    := data
+
+  when(decOut.isStore && !doBranch && !stall) {
     val (wrd, wre) = getWriteData(data, decEx.func3, memAddress(1, 0))
     io.dmem.wrData := wrd
     io.dmem.wrEnable := wre
   }
 
-  // --------------------------- CSR IN DECODE (READ) ---------------------------------------
-  // DECODE STAGE -> HERE WE READ CSR
-  val csr = Module(new Csr())
-
-  // READ CSR IN DECODE STAGE
+  // Instantiate CSR Module and read
+  val csr = Module(new Csr(freqHz))
+  io.timerCounter_out := csr.io.timerCounter
+  csr.io.mtimecmpVal := io.mtimecmpVal_in
+  csr.io.readAddress := decEx.csrAddr
   csr.io.readEnable := (decOut.isCsrrw && decEx.rd =/= 0.U) || decOut.isCsrrs || decOut.isCsrrc ||
     (decOut.isCsrrwi && decEx.rd =/= 0.U) || decOut.isCsrrsi || decOut.isCsrrci
-
-  // The CSR address comes from the instruction field
-  csr.io.readAddress := decEx.csrAddr
   decEx.csr_data := csr.io.data
-  // ---------------------------------------------------------------------------------------
 
   /**********************************************************************************************
-   *                                                                                            *
-   *                                      EXECUTE STAGE                                         *
-   *                This section handles execution of instructions, ALU, MEMORY                 *
-   *                                                                                            *
+   * EXECUTE STAGE
    **********************************************************************************************/
-
   // Pipeline registers for EX stage
   val decExReg = RegNext(decEx)
+  when(stall){
+    decExReg := decExReg
+    decExReg.valid := false.B
+  }
 
   // Forwarding of wbData from EX stage to EX stage
   val v1 = Mux(exFwdReg.valid && exFwdReg.wbDest === decExReg.rs1, exFwdReg.wbData, decExReg.rs1Val)
   val v2 = Mux(exFwdReg.valid && exFwdReg.wbDest === decExReg.rs2, exFwdReg.wbData, decExReg.rs2Val)
 
-  // ---------------------- EXCEPTION HANDLING ----------------------------------------------
+  // Trap handling
   val exceptionCause = WireDefault(0.U(32.W))
-  // Detect illegal instruction
-  val illegalInstr = decExReg.valid && decExReg.decOut.isIllegal && processorInitialized  // Detect ECALL
-  // Detect ECALL
+  val illegalInstr = decExReg.valid && decExReg.decOut.isIllegal && processorInitialized
   val ecallM = decExReg.valid && decExReg.decOut.isECall
 
-  when(illegalInstr) {
-    exceptionCause := 2.U
-  }.elsewhen(ecallM) {
-    exceptionCause := 11.U
-  }
+  when(illegalInstr)  { exceptionCause := 2.U}
+    .elsewhen(ecallM)   { exceptionCause := 11.U}
 
-  // Combine exception signals
-  val exceptionOccurred = illegalInstr || ecallM
+  exceptionOccurred := (illegalInstr || ecallM) && decExReg.valid
+  takeInterrupt := csr.io.interruptRequest && !exceptionOccurred && (decExReg.valid || inSleepMode)
 
-  // Connect exception signals to CSR module
-  csr.io.exception := exceptionOccurred
-  csr.io.exceptionCause := exceptionCause
-  csr.io.exceptionPC := decExReg.pc
-  csr.io.instruction := decExReg.instruction
-  // ---------------------------------------------------------------------------------------
-
-  // --------------------- CSR HANDLING IN EXECUTE STAGE (WRITE) ---------------------------
-  // Signals
-  val zimm = decExReg.rs1(4,0)
-  // Extract CSR Write address in execute stage
+  // CSR Connections driven from EX stage
   csr.io.writeAddress := decExReg.instruction(31, 20)
-  // Determine when we need to write to a CSR
+  val zimm = decExReg.rs1(4,0)
+  // Compute CSR Write Enable
   csr.io.writeEnable := decExReg.valid && (
     decExReg.decOut.isCsrrw ||
       (decExReg.decOut.isCsrrs && decExReg.rs1 =/= 0.U) ||
@@ -191,119 +174,122 @@ class ThreeCats() extends Wildcat() {
       (decExReg.decOut.isCsrrsi && zimm =/= 0.U) ||
       (decExReg.decOut.isCsrrci && zimm =/= 0.U)
     )
-
-  // Compute the value to write based on CSR operation
-  when(decExReg.decOut.isCsrrw) {
-    csr.io.writeData := v1 // v1 is forwarded rs1 value
-  }.elsewhen(decExReg.decOut.isCsrrs) {
-    csr.io.writeData := decExReg.csr_data | v1
-  }.elsewhen(decExReg.decOut.isCsrrc) {
-    csr.io.writeData := decExReg.csr_data & (~v1).asUInt
-  }.elsewhen(decExReg.decOut.isCsrrwi) {
-    csr.io.writeData := zimm
-  }.elsewhen(decExReg.decOut.isCsrrsi) {
-    csr.io.writeData := decExReg.csr_data | zimm
-  }.elsewhen(decExReg.decOut.isCsrrci) {
-    csr.io.writeData := decExReg.csr_data & (~zimm).asUInt
-  }.otherwise {
-    csr.io.writeData := 0.U
-  }
+  // Compute CSR write data
+  when(decExReg.decOut.isCsrrw)         { csr.io.writeData := v1 }
+    .elsewhen(decExReg.decOut.isCsrrs)    { csr.io.writeData := decExReg.csr_data | v1 }
+    .elsewhen(decExReg.decOut.isCsrrc)    { csr.io.writeData := decExReg.csr_data & (~v1).asUInt }
+    .elsewhen(decExReg.decOut.isCsrrwi)   { csr.io.writeData := zimm }
+    .elsewhen(decExReg.decOut.isCsrrsi)   { csr.io.writeData := decExReg.csr_data | zimm }
+    .elsewhen(decExReg.decOut.isCsrrci)   { csr.io.writeData := decExReg.csr_data & (~zimm).asUInt }
+    .otherwise                            { csr.io.writeData := 0.U }
 
   // Counting for CSR
-  val instrComplete = decExReg.valid && !stall
+  val instrComplete = decExReg.valid && !stall && !decExReg.decOut.isECall // ECALL Should not increment instret CSR
   csr.io.instrComplete := instrComplete
-  // ----------------------------------------------------------------
+
+  // --- Connect Trap Information to CSR Module ---
+  csr.io.takeTrap := (exceptionOccurred || takeInterrupt) // Trap occurs if exception or interrupt taken
+  csr.io.trapIsInterrupt := takeInterrupt                 // Specify if it's an interrupt
+  csr.io.exceptionCause := exceptionCause                 // Provide synchronous cause code
+  csr.io.trapPC := decExReg.pc                            // PC of instruction causing trap/interrupt
+  csr.io.trapInstruction := decExReg.instruction          // Instruction causing exception (mtval)
+  csr.io.mret_executing   := decExReg.valid && decExReg.decOut.isMret && !stall
 
   // ALU Operations and result selection
-  val res = Wire(UInt(32.W))
   val val2 = Mux(decExReg.decOut.isImm, decExReg.decOut.imm.asUInt, v2)
-  res := alu(decExReg.decOut.aluOp, v1, val2)
-  when(decExReg.decOut.isLui) {
-    res := decExReg.decOut.imm.asUInt
-  }
-  when(decExReg.decOut.isAuiPc) {
-    res := (decExReg.pc.asSInt + decExReg.decOut.imm).asUInt
-  }
+  val aluResult = alu(decExReg.decOut.aluOp, v1, val2)
+
+  // Determine final result for write back
+  val finalResult = WireDefault(aluResult) // Default to ALU result
+  when(decExReg.decOut.isLui)   { finalResult := decExReg.decOut.imm.asUInt } // LUI
+  when(decExReg.decOut.isAuiPc) { finalResult := (decExReg.pc.asSInt + decExReg.decOut.imm).asUInt } // AUIPC
   when(decExReg.decOut.isCsrrw  ||
     decExReg.decOut.isCsrrs     ||
     decExReg.decOut.isCsrrc     ||
     decExReg.decOut.isCsrrwi    ||
     decExReg.decOut.isCsrrsi    ||
     decExReg.decOut.isCsrrci) {
-    res := decExReg.csr_data
+    finalResult := decExReg.csr_data // CSR
   }
+  when(decExReg.decOut.isLoad && !doBranch && !stall) { // LOAD
+    finalResult := selectLoadData(io.dmem.rdData, decExReg.func3, decExReg.memLow)
+  }
+
+  // Write Back Data and Destination Calculation (Result from EX stage)
   wbDest := decExReg.rd
-  wbData := res
-  when(decExReg.decOut.isJal || decExReg.decOut.isJalr) {
-    wbData := decExReg.pc + 4.U
-  }
+  wbData := finalResult
 
-  // Branching and jumping
-  // Prioritize Exceptions and MRET
-  when(exceptionOccurred) {
-    branchTarget := csr.io.trapVector
-  }.elsewhen(decExReg.decOut.isMret && decExReg.valid) {
-    branchTarget := csr.io.mretTarget
-  }.elsewhen(decExReg.decOut.isJalr) {
-    branchTarget := res
-  }.otherwise{ //Default - normal branching
-    branchTarget := (decExReg.pc.asSInt + decExReg.decOut.imm).asUInt
-  }
+  when(decExReg.decOut.isJal || decExReg.decOut.isJalr) { wbData := decExReg.pc + 4.U } // JAL / JALR
 
-  wrEna := decExReg.valid && decExReg.decOut.rfWrite
+  // --- Write Enable Logic ---
+  // Ensure write enable is only active if the instruction is valid and requests a write (and not stalling)
+  val isStalledLoad = decExReg.decOut.isLoad && io.dmem.stall
+  wrEna := decExReg.valid && decExReg.decOut.rfWrite && (wbDest =/= 0.U) && !isStalledLoad
 
-  // Branch condition - ordered by priority:
-  // 1. Branch instructions that evaluate to true (when valid)
-  // 2. JAL, JALR, MRET instructions and exceptions (when valid)
-  when(((compare(decExReg.func3, v1, v2) && decExReg.decOut.isBranch) || (
-    decExReg.decOut.isJal ||
-    decExReg.decOut.isJalr||
-    decExReg.decOut.isMret||
-    exceptionOccurred))   &&
-    decExReg.valid
-  ) {
+  // Determine if branch is taken and the target address
+  when((exceptionOccurred || takeInterrupt)) {
     doBranch := true.B
-  }
-
-  // Memory read access
-  when(decExReg.decOut.isLoad && !doBranch) {
-    when(!io.dmem.stall) {
-      res := selectLoadData(io.dmem.rdData, decExReg.func3, decExReg.memLow)
-    }.otherwise{
-      // Freeze inputs to pipeline stages
-      pcNext := pcReg
-      instrReg := instrReg
-      decExReg := decExReg
-
-      // Guard writes
-      exFwdReg.valid := false.B
-      decExReg.valid := false.B
-    }
+    branchTarget := csr.io.trapVector
+  }.elsewhen(decExReg.valid && decExReg.decOut.isMret) {
+    doBranch := true.B
+    branchTarget := csr.io.mretTarget
+  }.elsewhen(decExReg.valid && decExReg.decOut.isJalr) {
+    doBranch := true.B
+    branchTarget := (aluResult & "hFFFF_FFFE".U )
+  }.elsewhen(decExReg.valid && decExReg.decOut.isJal) {
+    doBranch := true.B
+    branchTarget := (decExReg.pc.asSInt + decExReg.decOut.imm).asUInt
+  }.elsewhen(decExReg.valid && decExReg.decOut.isBranch && compare(decExReg.func3, v1, v2)) {
+    doBranch := true.B
+    branchTarget := (decExReg.pc.asSInt + decExReg.decOut.imm).asUInt
+  }.otherwise {
+    doBranch := false.B
+    branchTarget := (decExReg.pc.asSInt + decExReg.decOut.imm).asUInt // Default target
   }
 
   // Forwarding register values to ALU
-  exFwdReg.valid := wrEna && (wbDest =/= 0.U)
+  exFwdReg.valid := !stall && wrEna
   exFwdReg.wbDest := wbDest
   exFwdReg.wbData := wbData
+
+  // WFI Handling
+  when(decExReg.valid && decExReg.decOut.isWfi && !stall && processorInitialized) {
+    // If interrupts already pending, WFI should immediately continue
+    when(csr.io.interruptRequest) {
+      inSleepMode := false.B // Ensure we're not in sleep mode
+    }.elsewhen(csr.io.globalInterruptEnabled && csr.io.timerInterruptEnabled) {
+      inSleepMode := true.B
+      doBranch := true.B // Immediately flush the pipeline by branching to current pc
+      branchTarget := decExReg.pc
+    }.otherwise {
+      //printf("[CPU] WFI with interrupts disabled - continuing as NOP\n")
+    }
+  }
+  // WFI handling - Leaving Sleep mode
+  when(inSleepMode && csr.io.interruptRequest) {
+    inSleepMode := false.B
+    //printf("[CPU] Wake up! Interrupt detected during sleep mode\n")
+  }
+
 
   // Just to exit tests -- no longer sufficient with ecall handling
   val stop = decExReg.decOut.isECall && (pcNext === 0.U)
 
 
   // ------------------------------ DEBUGGING -------------------------------------
-//  when(illegalInstr) {
-//    printf("ILLEGAL INSTRUCTION DETECTED: PC=0x%x, Instruction=0x%x\n",
-//      decExReg.pc, decExReg.instruction)
-//  }
-//
-//  when(decExReg.decOut.isMret){
-//    printf("MRET DETECTED: PC=0x%x, TARGET=0x%x\n",
-//      decExReg.pc, csr.io.mretTarget )
-//  }
-//  when(ecallM){
-//    printf("ECALL DETECTED: PC=0x%x, ExceptionPC=0x%x, ExceptionCause=0x%x\n",
-//      decExReg.pc, csr.io.exceptionPC, csr.io.exceptionCause)
-//  }
+  //  when(illegalInstr) {
+  //    printf("ILLEGAL INSTRUCTION DETECTED: PC=0x%x, Instruction=0x%x\n",
+  //      decExReg.pc, decExReg.instruction)
+  //  }
+  //
+  //  when(decExReg.decOut.isMret){
+  //    printf("MRET DETECTED: PC=0x%x, TARGET=0x%x\n",
+  //      decExReg.pc, csr.io.mretTarget )
+  //  }
+  //  when(ecallM){
+  //    printf("ECALL DETECTED: PC=0x%x, ExceptionPC=0x%x, ExceptionCause=0x%x\n",
+  //      decExReg.pc, csr.io.exceptionPC, csr.io.exceptionCause)
+  //  }
 
   // Add debug wires
   val debug_isJal = Wire(Bool())
