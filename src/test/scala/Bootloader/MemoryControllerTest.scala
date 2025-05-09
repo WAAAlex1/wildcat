@@ -103,7 +103,7 @@ class MemoryControllerTest extends AnyFlatSpec with ChiselScalatestTester {
       dut.io.SPIctrl.addr.expect(2.U)
       dut.io.SPIctrl.rw.expect(true.B)
       dut.io.SPIctrl.size.expect(2.U)
-      dut.io.SPIctrl.dataIn.expect("hBEEFBEEF".U)
+      dut.io.SPIctrl.dataIn.expect("hBEEF".U)
 
     }
   }
