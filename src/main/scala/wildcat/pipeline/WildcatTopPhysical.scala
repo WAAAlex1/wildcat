@@ -29,7 +29,6 @@ class WildcatTopPhysical(freqHz: Int = 100000000) extends Module {
     val CS0 = Output(Bool())
     val CS1 = Output(Bool())
     val CS2 = Output(Bool())
-    val spiCLK = Output(Bool())
     val dir = Output(Bool())
     val inSio = Input(UInt(4.W))
     val outSio = Output(UInt(4.W))
