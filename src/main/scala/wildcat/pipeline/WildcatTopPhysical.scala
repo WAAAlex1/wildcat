@@ -24,6 +24,15 @@ class WildcatTopPhysical(freqHz: Int = 100000000) extends Module {
     val led = Output(UInt(16.W))
     val tx = Output(UInt(1.W))
     val rx = Input(UInt(1.W))
+
+    // To/Form SPI modules
+    val CS0 = Output(Bool())
+    val CS1 = Output(Bool())
+    val CS2 = Output(Bool())
+    val dir = Output(Bool())
+    val inSio = Input(UInt(4.W))
+    val outSio = Output(UInt(4.W))
+    val spiClk = Output(Bool())
   })
 
   // ********************************************************************
@@ -42,6 +51,15 @@ class WildcatTopPhysical(freqHz: Int = 100000000) extends Module {
   bus.io.dCacheRspIn <> MCU.io.dCacheRspIn
   MCU.io.iCacheReqOut <> bus.io.iCacheReqOut
   bus.io.iCacheRspIn <> MCU.io.iCacheRspIn
+
+  // Connect output
+  io.CS0 := MCU.io.CS0
+  io.CS1 := MCU.io.CS1
+  io.CS2 := MCU.io.CS2
+  io.spiClk := MCU.io.spiClk
+  io.dir := MCU.io.dir
+  io.inSio := MCU.io.inSio
+  io.outSio := MCU.io.outSio
 
   //DMEM Connections
   cpu.io.dmem <> bus.io.CPUdCacheMemIO

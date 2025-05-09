@@ -125,7 +125,7 @@ class QuadController extends Module {
         is (read) {
             when (fallingEdge) {
                 bitCounter := bitCounter - 1.U
-                rxShiftReg := (rxShiftReg << 4) | io.inSio
+                rxShiftReg := (rxShiftReg >> 4) | (io.inSio << 28)
             }
 
             when (risingEdge) {
@@ -136,7 +136,22 @@ class QuadController extends Module {
             }
         }
         is (deassertCS) {
-            spiDataOut := rxShiftReg
+
+            val reordered = Cat(
+                rxShiftReg(31, 28), // n7
+                rxShiftReg(3, 0),    // n0
+                rxShiftReg(23, 20), // n4
+                rxShiftReg(27, 24), // n6
+                rxShiftReg(15, 12), // n2
+                rxShiftReg(19, 16), // n5
+                rxShiftReg(7, 4),   // n1
+                rxShiftReg(11, 8),  // n3
+            )
+            rxShiftReg := reordered | (io.inSio << 24)
+            spiDataOut := reordered | (io.inSio << 24)
+            io.rxData := reordered | (io.inSio << 24)
+
+
             csReg := true.B
             clockEnable := false.B
             stateReg := idle

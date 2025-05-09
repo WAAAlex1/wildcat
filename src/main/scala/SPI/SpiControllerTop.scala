@@ -47,6 +47,15 @@ class SpiControllerTop(prescale: UInt) extends Module {
     val dataOutReg = RegInit(0.U(32.W))
     io.SPIctrl.dataOut := dataOutReg
 
+    // Flipping input data
+    val dataInReg = RegInit(0.U(32.W))
+    dataInReg := io.SPIctrl.dataIn
+
+    val flippedDataIn = Wire(UInt(32.W))
+    flippedDataIn := Cat((0 until 4).map(i => dataInReg(8 * (i + 1) - 1, 8 * i)))
+
+    dataReg := Mux(io.SPIctrl.rw,flippedDataIn,0.U)
+
     when (quadReg) {
         io.outSio := QController.io.outSio
         QController.io.inSio := io.inSio
@@ -126,17 +135,15 @@ class SpiControllerTop(prescale: UInt) extends Module {
             when (io.SPIctrl.en && !io.SPIctrl.rw) {
                 cmdReg := 0xEB.U
                 addrReg := io.SPIctrl.addr
-                dataReg := 0.U
                 sendLengthReg := 8.U
                 waitCyclesReg := 7.U
-                receiveLengthReg := io.SPIctrl.size
+                receiveLengthReg := io.SPIctrl.size * 2.U
                 state := sActive
             }
             .elsewhen (io.SPIctrl.en && io.SPIctrl.rw) {
                 cmdReg := 0x38.U
                 addrReg := io.SPIctrl.addr
-                dataReg := io.SPIctrl.dataIn
-                sendLengthReg := 16.U
+                sendLengthReg := 8.U + (io.SPIctrl.size * 2.U)
                 waitCyclesReg := 0.U
                 receiveLengthReg := 0.U
                 state := sActive
