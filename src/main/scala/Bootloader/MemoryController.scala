@@ -1,28 +1,26 @@
+// OLD / ORIGINAL MEMORYCONTROLLER
+
 package Bootloader
 
 import caravan.bus.tilelink.{TLRequest, TLResponse, TilelinkConfig}
 import chisel3._
 import chisel3.util._
 import chisel3.experimental.ChiselEnum
-
+import wildcat.CSR.MemoryMap
+import wildcat.pipeline.CLINTLink
 
 /**
  * First draft of memory controller module for the Wildcat.
  *
  * Address space:
- * [0xf000_0000] is the IO space for the Wildcat
+ * [0xfxxx_xxxx] is the IO space for the Wildcat
  * [23,0] is the real address space of the memory
- * [23] is the toggling bit between instr and data mem. So far they are equal in size but it can change.
  * [27,24] are so far unused control signal bits we might need later
  * [0x1000_0000 etc.] is also unused so far.
- * By Georg Brink Dyvad, @GeorgBD
  */
 
 class MemoryController(implicit val config:TilelinkConfig) extends Module {
   val io = IO(new Bundle {
-    val memIO = Flipped(new TestMemIO())
-    val stall = Output(Bool())
-    val bootloading = Input(Bool())
 
     // To/From caches via bus
     val dCacheReqOut = Flipped(Decoupled(new TLRequest))
@@ -31,43 +29,31 @@ class MemoryController(implicit val config:TilelinkConfig) extends Module {
     val iCacheReqOut = Flipped(Decoupled(new TLRequest))
     val iCacheRspIn = Decoupled(new TLResponse)
 
-    // To/Form SPI controllers
-    val SPIctrl = Vec(2, Flipped(new SpiCTRLIO)) // SPI0 is RAM0, SPI1 is RAM1, SPI2 is Flash
+    // To/From SPI controllers
+    val SPIctrl = Flipped(new SpiCTRLIO)
+    val SpiCtrlValid = Input(Bool())
+    val moduleSel = Output(Vec(3, Bool())) // 0 for flash, 1 for psram a, 2 for psram b, (flash not working)
   })
 
-  val memory = Module(new TestMem(4096))
-  io.memIO <> memory.io
-
-  //Address mapping
-  when(io.memIO.rdAddress(31,28) === "hf".U){
-    //Do nothing cause memory mapped IO defined in Wildcattop?
-  }.elsewhen(io.memIO.rdAddress(23) === 1.U){
-    //DataMem.read addresser (23,0)
-  }.elsewhen(true.B){
-    //instrMem.read addresser (23,0)
-  }
-
-  //I assume stalling will also be enabled by the caches and slower mem so the OR is for that.
-  io.stall := io.bootloading || false.B
-
-
+  io.moduleSel := Seq.fill(3)(false.B) // No module selected
 
 
   val dReqAck = io.dCacheReqOut.valid && io.dCacheReqOut.ready // Request acknowledged
-  val iReqAck = io.iCacheReqOut.valid && io.iCacheReqOut.ready
+  val iReqAck = io.iCacheReqOut.valid && io.iCacheReqOut.ready // Request acknowledged
   val currentReq = Reg(new TLRequest()) // TileLink request format
-  val dataSize = WireInit(4.U(3.W)) // Number of bytes to transfer
+  val dataSize = WireInit(4.U(6.W)) // Number of bytes to transfer
   val rspPending = RegInit(false.B)
   val data2write = WireInit(0.U(32.W))
   val readData = WireInit(0.U(32.W))
   val masterID = RegInit(false.B) // Master (cache) identifier
   val rspValid = WireInit(false.B)
 
-
+  // signal for correct handshaking and usage of SPI
+  val rspHandled = RegInit(true.B) // true = handled (no pending response)
 
   // Arbitration on ready for requests. Data cache has priority
-  io.dCacheReqOut.ready := Mux(io.dCacheReqOut.valid, true.B, false.B)
-  io.iCacheReqOut.ready := Mux(!io.dCacheReqOut.valid && io.iCacheReqOut.valid, true.B, false.B)
+  io.dCacheReqOut.ready := io.dCacheReqOut.valid
+  io.iCacheReqOut.ready := !io.dCacheReqOut.valid && io.iCacheReqOut.valid
 
   // Default Responses
   io.dCacheRspIn.bits.dataResponse := readData
@@ -77,75 +63,75 @@ class MemoryController(implicit val config:TilelinkConfig) extends Module {
   io.dCacheRspIn.valid := false.B
   io.iCacheRspIn.valid := false.B
 
-
   // Default settings for SPI controllers
-  for (i <- 0 until 2) {
-    io.SPIctrl(i).en := false.B
-    io.SPIctrl(i).rw := currentReq.isWrite
-    io.SPIctrl(i).rst := false.B
-    io.SPIctrl(i).addr := currentReq.addrRequest(23, 0)
-    io.SPIctrl(i).dataIn := data2write
-    io.SPIctrl(i).size := dataSize
-  }
-
+  io.SPIctrl.en := rspPending
+  io.SPIctrl.rw := currentReq.isWrite
+  io.SPIctrl.addr := currentReq.addrRequest(23, 0)
+  io.SPIctrl.dataIn := data2write
+  io.SPIctrl.size := dataSize
 
 
   // Process requests
-  when(dReqAck){
+  when(dReqAck && !rspPending){
     currentReq := io.dCacheReqOut.bits
     rspPending := true.B
-    masterID := 0.U
-  }.elsewhen(iReqAck){
+    masterID := false.B  // dCache
+    rspHandled := false.B  // response currently being handled
+  }.elsewhen(iReqAck && !rspPending){
     currentReq := io.iCacheReqOut.bits
     rspPending := true.B
-    masterID := 1.U
+    masterID := true.B   // iCache
+    rspHandled := false.B  // response currently being handled
   }
+
+
+
+  // Compute dataSize based on number of active bits in the lane mask (size is in nibbles)
+  dataSize := MuxLookup(currentReq.activeByteLane, 1.U, Seq(
+    15.U -> 4.U,
+    12.U -> 2.U,
+    3.U -> 2.U
+  ))
 
   // Modify data to write
   when(currentReq.isWrite){
-    // Compute dataSize based on number of active bits in the lane mask
-    dataSize := MuxLookup(currentReq.activeByteLane, 1.U, Seq(
-      15.U -> 4.U,
-      12.U -> 2.U,
-      3.U -> 2.U
-    ))
+    // Compute data2write based on the highest set bit
+    val shiftAmount = PriorityEncoder(Reverse(currentReq.activeByteLane))
+    data2write := (currentReq.dataRequest << (shiftAmount * 8.U))
 
-    // Compute data2write based on the lowest set bit
-    val shiftAmount = PriorityEncoder(currentReq.activeByteLane)
-    data2write := (currentReq.dataRequest >> (shiftAmount * 8.U))
-
-  }.otherwise{
-    dataSize := 4.U // Standard for read
   }
 
   // Address decoding on response
   when(rspPending){
-    when(currentReq.addrRequest(31, 28) === "hf".U) {
+    when(currentReq.addrRequest(31, 28) === 0xF.U) {
       //Do nothing cause memory mapped IO defined in Wildcattop?
+      readData := 0.U
+      rspValid := true.B
+      rspPending := false.B
+
     }.elsewhen(currentReq.addrRequest(24)) {
       // RAM 1 read/write
-      io.SPIctrl(1).en := true.B
+      io.moduleSel := Seq(false.B, false.B, true.B)
 
     }.elsewhen(!currentReq.addrRequest(24)) {
       // RAM 0 read/ write
-      io.SPIctrl(0).en := true.B
+      io.moduleSel := Seq(false.B, true.B, false.B)
 
     }.otherwise{
-      // Flash read=?
+      // Flash read/write
+      io.moduleSel := Seq(true.B, false.B, false.B)
     }
   }
 
   // Process responses
-  for(i <- 0 until 2) {
-    when(io.SPIctrl(i).done) {
-      rspPending := false.B
-      when(!currentReq.isWrite) {
-        readData := io.SPIctrl(i).dataOut
-      }
-      rspValid := true.B
+  when(io.SPIctrl.done) {
+    rspPending := false.B
+    when(!currentReq.isWrite) {
+      readData := io.SPIctrl.dataOut
     }
+    rspValid := true.B
+    rspHandled := true.B // Mark response as handled
   }
-
 
   when(rspValid){
     when(masterID){ // iCache requested
@@ -155,4 +141,12 @@ class MemoryController(implicit val config:TilelinkConfig) extends Module {
     }
   }
 
+  // NEW ----------------------------------------------------------------------------
+  // Deassert SPI enable signals when done with transaction
+  when(rspHandled && !rspPending) {
+    // Safe to deassert all device enables when response is handled and no pending request
+    io.moduleSel := Seq.fill(3)(false.B)
+  }
+
 }
+

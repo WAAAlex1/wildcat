@@ -14,7 +14,7 @@ import chisel3.experimental.ChiselEnum
  * New design : Use a memory-mapped IO signal to deactivate/activate the bootloader
  *
  */
-class Bootloader(frequ: Int, baudRate: Int = 115200) extends Module {
+class Bootloader(frequ: Int = 100000000, baudRate: Int = 115200) extends Module {
   val io = IO(new Bundle {
     val instrData = Output(UInt(32.W))
     val instrAddr = Output(UInt(32.W))
@@ -25,7 +25,6 @@ class Bootloader(frequ: Int, baudRate: Int = 115200) extends Module {
 
   val rx = Module(new Rx(frequ, baudRate))
   val buffer = Module(new BootBuffer())
-
 
   object State extends ChiselEnum {
     val Active, Sleep = Value

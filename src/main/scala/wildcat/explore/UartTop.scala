@@ -12,7 +12,7 @@ import chisel3._
  * Author: Martin Schoeberl (martin@jopdesign.com)
  *
  */
-class UartTop() extends Module {
+class UartTop(freqHz: Int = 100000000) extends Module {
 
   val io = IO(new Bundle {
     val led = Output(UInt(16.W))
@@ -21,8 +21,8 @@ class UartTop() extends Module {
   })
 
 
-  val tx = Module(new BufferedTx(100000000, 115200))
-  val rx = Module(new Rx(100000000, 115200))
+  val tx = Module(new BufferedTx(freqHz, 115200))
+  val rx = Module(new Rx(freqHz, 115200))
   io.tx := tx.io.txd
   rx.io.rxd := io.rx
   tx.io.channel <> rx.io.channel

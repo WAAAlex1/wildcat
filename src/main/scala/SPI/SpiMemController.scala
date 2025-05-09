@@ -189,7 +189,3 @@ class SpiMemController extends Module {
         }
     }
 }
-
-object SpiMemController extends App {
-  (new chisel3.stage.ChiselStage).emitVerilog(new SpiMemController())
-}

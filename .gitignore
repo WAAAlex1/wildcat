@@ -1,0 +1,15 @@
+/.idea
+/generated
+/project
+risc-v-lab/
+/target
+
+
+*.fir
+*.vcd
+*.elf
+*.o
+*.out
+*.bin
+*.hex
+*.properties

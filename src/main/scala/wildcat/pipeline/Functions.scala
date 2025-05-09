@@ -40,6 +40,7 @@ object Functions {
     //Added for CSR / SYS Instructions
     decOut.isECall := false.B
     decOut.isMret := false.B
+    decOut.isWfi := false.B
     decOut.isCsrrw := false.B
     decOut.isCsrrs := false.B
     decOut.isCsrrc := false.B
@@ -135,6 +136,11 @@ object Functions {
           }.elsewhen(instruction(31, 20) === 0x302.U && rs1 === 0.U && rd === 0.U) {
             decOut.isMret := true.B
             isRecognizedOpcode := true.B
+          }.elsewhen(instruction(31, 20) === 0x105.U && rs1 === 0.U && rd === 0.U) {
+            // Add WFI detection here
+            decOut.isWfi := true.B
+            isRecognizedOpcode := true.B
+            printf("WFI instruction decoded")  // Debug output
           }
         } .otherwise {
           switch(func3) {

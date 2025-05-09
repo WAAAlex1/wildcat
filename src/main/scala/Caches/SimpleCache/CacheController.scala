@@ -154,7 +154,6 @@ class CacheController(blockSize: Int) extends Module {
     }
     is(allocate) {
       io.memReq := 1.U
-      io.stall := true.B
 
       // Fetch memory
       cacheAdd := cacheWriteAdd
