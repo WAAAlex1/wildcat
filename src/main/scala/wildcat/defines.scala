@@ -3,6 +3,7 @@ package wildcat
 object Opcode {
   val AluImm = 0x13
   val Alu = 0x33
+  val Atomic = 0x2f
   val Branch = 0x63
   val Load = 0x03
   val Store = 0x23
@@ -129,7 +130,14 @@ object CSR {
   val MENVCFG         = 0x30A     // Environment Configuration Register
   val MENVCFGH        = 0x31A
 
+  //CLINT Definitions:
+  val CLINT_BASE = 0xF2000000 // Example base address, ensure it's unused
+  val CLINT_SIZE = 0x10000 // Standard size (64KB)
 
+  // Offsets within CLINT (Standard for SiFive CLINT)
+  val CLINT_MSIP_OFFSET = 0x0000 // Optional: Machine Software Interrupt Pending (Hart 0)
+  val CLINT_MTIMECMP_OFFSET = 0x4000 // Machine Timer Compare (Hart 0)
+  val CLINT_MTIME_OFFSET = 0xBFF8 // Machine Time (Shared)
   // ---------Bit Definitions -------------
   // For mstatus (simplified)
   val MSTATUS_MIE_BIT = 3  // Machine Interrupt Enable bit
@@ -156,6 +164,8 @@ object CSR {
   val MCONFIGPTR_MASK = 0x00000000
   val MENVCFG_MASK    = 0x00000000
   val MENVCFGH_MASK   = 0x00000000
+  val TIME_MASK       = 0x00000000
+  val TIMEH_MASK      = 0x00000000
 
 
   // --- UPDATED Memory Map Definitions ---
@@ -218,6 +228,8 @@ object CSR {
       case MCONFIGPTR => MCONFIGPTR_MASK
       case MENVCFG => MENVCFG_MASK
       case MENVCFGH => MENVCFGH_MASK
+      case TIME => TIME_MASK
+      case TIMEH => TIMEH_MASK
       case _ => 0xFFFFFFFF // Default, fully writable
     }
   }

@@ -86,7 +86,7 @@ class MemoryController(implicit val config:TilelinkConfig) extends Module {
 
 
 
-  // Compute dataSize based on number of active bits in the lane mask (size is in nibbles)
+  // Compute dataSize based on number of active bits in the lane mask (size is in bytes)
   dataSize := MuxLookup(currentReq.activeByteLane, 1.U, Seq(
     15.U -> 4.U,
     12.U -> 2.U,
@@ -96,8 +96,8 @@ class MemoryController(implicit val config:TilelinkConfig) extends Module {
   // Modify data to write
   when(currentReq.isWrite){
     // Compute data2write based on the highest set bit
-    val shiftAmount = PriorityEncoder(Reverse(currentReq.activeByteLane))
-    data2write := (currentReq.dataRequest << (shiftAmount * 8.U))
+    val shiftAmount = PriorityEncoder(currentReq.activeByteLane)
+    data2write := (currentReq.dataRequest >> (shiftAmount * 8.U))
 
   }
 

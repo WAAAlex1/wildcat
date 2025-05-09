@@ -20,7 +20,7 @@ public class RiscVOpcodeScanner {
     }
 
     public static void main(String[] args) {
-        File file = new File("Image");
+        File file = new File("Image.bin.bin");
         File outputFile = new File("csr_instructions.txt");
 
         try (FileInputStream fis = new FileInputStream(file);

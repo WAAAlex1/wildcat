@@ -142,17 +142,17 @@ class MemoryControllerTopTest extends AnyFlatSpec with ChiselScalatestTester{
 
       // Write "hBEEF" at address 2 in RAM1 (request from iCache)
       dut.io.dCacheReqOut.valid.poke(false.B)
-      dut.io.iCacheReqOut.bits.dataRequest.poke("hBEEFBEEF".U)
-      dut.io.iCacheReqOut.bits.addrRequest.poke("h1000002".U)
+      dut.io.iCacheReqOut.bits.dataRequest.poke("hABABABAB".U)
+      dut.io.iCacheReqOut.bits.addrRequest.poke("h1000003".U)
       dut.io.iCacheReqOut.bits.isWrite.poke(true.B)
-      dut.io.iCacheReqOut.bits.activeByteLane.poke(15.U)
+      dut.io.iCacheReqOut.bits.activeByteLane.poke(8.U)
       dut.io.iCacheReqOut.valid.poke(true.B)
       step(4 << prescale)
       dut.io.iCacheReqOut.valid.poke(false.B)
       step(18 << prescale)
 
       // Read address 0 in RAM0 and Read address 0 in RAM1 (Request from both)
-      dut.io.iCacheReqOut.bits.addrRequest.poke("h1000002".U)
+      dut.io.iCacheReqOut.bits.addrRequest.poke("h1000000".U)
       dut.io.iCacheReqOut.bits.isWrite.poke(false.B)
       dut.io.iCacheReqOut.bits.activeByteLane.poke(15.U)
       dut.io.iCacheReqOut.valid.poke(true.B)
@@ -162,8 +162,10 @@ class MemoryControllerTopTest extends AnyFlatSpec with ChiselScalatestTester{
       dut.io.dCacheReqOut.valid.poke(true.B)
       step(4 << prescale)
       dut.io.dCacheReqOut.valid.poke(false.B)
-      step(52 << prescale)
-
+      step(32 << prescale)
+      dut.io.dCacheReqOut.valid.poke(true.B)
+      dut.io.dCacheReqOut.bits.addrRequest.poke(0.U)
+      step(42 << prescale)
     }
   }
 }

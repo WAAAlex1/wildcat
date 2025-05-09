@@ -27,7 +27,6 @@ class MemoryControllerTopPhysical(prescale: UInt)(implicit val config:TilelinkCo
     val CS0 = Output(Bool())
     val CS1 = Output(Bool())
     val CS2 = Output(Bool())
-    val spiCLK = Output(Bool())
     val dir = Output(Bool())
     val inSio = Input(UInt(4.W))
     val outSio = Output(UInt(4.W))
@@ -44,7 +43,6 @@ class MemoryControllerTopPhysical(prescale: UInt)(implicit val config:TilelinkCo
   io.iCacheRspIn <> MemCtrl.io.iCacheRspIn
 
   val SpiCtrl = Module(new SpiControllerTop(prescale))
-  io.spiCLK := SpiCtrl.io.spiClk
   SpiCtrl.io.SPIctrl <> MemCtrl.io.SPIctrl
   SpiCtrl.io.moduleSel := MemCtrl.io.moduleSel
   MemCtrl.io.SpiCtrlValid := SpiCtrl.io.valid

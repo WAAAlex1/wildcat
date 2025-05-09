@@ -1,15 +1,18 @@
 package Bootloader
 
 /*
-    First draft : Being able to send bytes through UART
-        Needs to be able to send many bytes over UART
-        Needs to determine structure of address and data. Maybe 32bit address followed by 32bit data for every word?
+ * New SendUART will take any binary file and send it with correct addresses.
+ *
+ * By @GeorgBD
  */
 
 import com.fazecast.jSerialComm._
+import os.FileType.File
 
+import java.io.File
 import java.nio.ByteBuffer
 import scala.io.Source
+import java.nio.file.{Files, Paths}
 /*
 import java.util.HexFormat
 import scala.math.BigInt
@@ -18,11 +21,17 @@ import scala.util.Try
 
 object SendUART {
   def main(args: Array[String]): Unit = {
+    //Make sure we got a file:
+    if (args.length != 1) {
+      println("Usage: ReadFileBytes <file-path>")
+      System.exit(1)
+    }
+
     // Identify available serial ports
     val ports = SerialPort.getCommPorts
     if (ports.isEmpty) System.out.println("No COM ports found ;(")
 
-    var foundPortName = "COM6" //Standard COM port found on Alexander PC
+    var foundPortName = "COM4" //Standard COM port found on Georg's PC
     for (port <- ports) {
       foundPortName = port.getSystemPortName //If other port found dynamically allocate
       System.out.println("Found Port: " + foundPortName)
@@ -44,7 +53,6 @@ object SendUART {
     }
 
     /*
-    // Send data - Test program using hardcoded data
     // This byte array should contain the addresses and instructions for turning on the LED on the FPGA board
     val data = Array[Byte](0xF0.toByte,0x01.toByte,0x00.toByte,0x00.toByte,0x00.toByte,0x00.toByte,0x00.toByte,0xFF.toByte,0xF1.toByte,0x00.toByte,0x00.toByte,0x00.toByte,0x00.toByte,0x00.toByte,0x00.toByte,0x01.toByte)
 
@@ -54,49 +62,56 @@ object SendUART {
     }
     */
 
-    // Send data - actual program fetching data from file
-    val filePath = "ElfTranslated.txt" // Get data from the translated elf file
+    //Get the bytes of the file to send:
+    val programPath = Paths.get(args(0))
+    val programBytes = Files.readAllBytes(programPath)
+    val zsblPath = Paths.get("ZSBL_demo.bin")
+    val zsblBytes = Files.readAllBytes(zsblPath)
 
-    try {
-      val source = Source.fromFile(filePath)
+    //Send ZSBL:
+    sendFile(zsblBytes,serialPort,0x0)
+    //Send the program
+    sendFile(programBytes, serialPort,0x100)
 
-      for (line <- source.getLines()) { // Reading file line by line
-        val parts = line.trim.split("\\s+") // Splitting on one or more spaces
-
-        // Get the address - make into byte array - pad byte array to always be 4 bytes (32bit)
-        val address = parts(0).toInt
-        //val addressBytes = BigInt(address).toByteArray
-        val addressBytesPadded = ByteBuffer.allocate(4).putInt(address).array()
-        //val addressBytesPadded = addressBytes.reverse.padTo(4,0).reverse //Pad to always 4 bytes (might be needed for small values)
-
-        // Get the data - make into byte array - pad byte array to always be 4 bytes (32bit)
-        val data = parts(1).toInt
-        val dataBytesPadded = ByteBuffer.allocate(4).putInt(data).array()
-        //val dataBytes = BigInt(data).toByteArray
-        //val dataBytesPadded = dataBytes.reverse.padTo(4, 0).reverse //Pad to always 4 bytes (might be needed for small values)
-
-        // Write address (4 bytes)
-        serialPort.writeBytes(addressBytesPadded, 4)
-        System.out.println(addressBytesPadded.mkString("Address: (", ", ", ")")) //Check what we are sending
-
-        // Write data (4 bytes)
-        serialPort.writeBytes(dataBytesPadded, 4)
-        System.out.println(dataBytesPadded.mkString("Data: (", ", ", ")")) //Check what we are sending
-        serialPort.writeBytes(addressBytesPadded.slice(0,4), 4)
-        System.out.println(addressBytesPadded.mkString("Array(", ", ", ")")) //Check what we are sending
-
-        // Write data (4 bytes)
-        serialPort.writeBytes(dataBytesPadded.slice(0,4), 4)
-        System.out.println(dataBytesPadded.mkString("Array(", ", ", ")")) //Check what we are sending
-      }
-      source.close() // Make sure to close the file we read from
-
-    } catch {
-      case ex: Exception => println(s"Error reading file: ${ex.getMessage}")
-    }
+    //Set the bootloader to sleep and stop stalling the wildcat:
+    bootloaderSleep(serialPort)
 
     System.out.println("Data sent.")
     serialPort.closePort  // Make sure to close the SerialPort
     System.out.println("Port closed.")
   }
+
+  def sendFile(bytes: Array[Byte], serialPort: SerialPort, startAddr: Int): Unit = {
+    var address = startAddr
+
+    for(i <- 0 until (Math.ceil(bytes.length / 4.0)).toInt){  // Reading 4 bytes at a time
+      val start = i * 4
+      val end = Math.min(start + 4, bytes.length)
+      val chunk = bytes.slice(start, end)
+      val paddedChunk = if (chunk.length < 4) chunk ++ Array.fill[Byte](4 - chunk.length)(0.toByte) else chunk
+
+      if(!(paddedChunk(0) == 0x00 && paddedChunk(1) == 0x00 && paddedChunk(2) == 0x00 && paddedChunk(3) == 0x00)) {
+        val addressBytesPadded = ByteBuffer.allocate(4).putInt(address).array()
+
+        // Write address (4 bytes)
+        serialPort.writeBytes(addressBytesPadded, 4)
+        println(addressBytesPadded.map(b => f"0x$b%02X").mkString("Address: (", " ", ")"))
+
+        // Write data (4 bytes)
+        serialPort.writeBytes(paddedChunk, 4)
+        println(paddedChunk.map(b => f"0x$b%02X").mkString("Data: (", " ", ")"))
+      }
+      address += 4
+    }
+  }
+
+  def bootloaderSleep(serialPort: SerialPort): Unit = {
+    System.out.println("Putting Bootloader to sleep and unstalling pipeline")
+    // This byte array should turn on the LED on the FPGA board and sleep the bootloader
+    val blSleepProtocol = Array[Byte](0xF0.toByte, 0x01.toByte, 0x00.toByte, 0x00.toByte, 0x00.toByte, 0x00.toByte, 0x00.toByte, 0xFF.toByte, 0xF1.toByte, 0x00.toByte, 0x00.toByte, 0x00.toByte, 0x00.toByte, 0x00.toByte, 0x00.toByte, 0x01.toByte)
+    serialPort.writeBytes(blSleepProtocol, 8)
+    println(blSleepProtocol.map(b => f"0x$b%02X").mkString("BootSleep: (", " ", ")"))
+  }
+
+
 }

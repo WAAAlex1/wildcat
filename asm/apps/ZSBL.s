@@ -13,7 +13,7 @@
 #       - Addr of kernel: 0x0040_0000
 #       - HARTID: 0
 
-
+_start_zsbl:
 # Set up stack (address of stack top = 0x00FF_FFFF)
 li sp, 0x00FF_0000
 
