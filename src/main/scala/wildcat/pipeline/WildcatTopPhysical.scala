@@ -58,7 +58,7 @@ class WildcatTopPhysical(freqHz: Int = 100000000) extends Module {
   io.CS2 := MCU.io.CS2
   io.spiClk := MCU.io.spiClk
   io.dir := MCU.io.dir
-  MCU.io.inSio := io. inSio
+  MCU.io.inSio := io.inSio
   io.outSio := MCU.io.outSio
 
   //DMEM Connections
