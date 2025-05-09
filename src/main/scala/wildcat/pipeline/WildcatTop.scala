@@ -122,7 +122,7 @@ class WildcatTop(file: String, dmemNrByte: Int = 4096, freqHz: Int = 100000000) 
 
 
   // Instantiate Bootloader
-  val BL = Module(new Bootloader.Bootloader())
+  val BL = Module(new Bootloader())
   val BL_Stall = ~bootloaderStatusReg(0).asBool
   //Connect bootloader
   BL.io.rx := io.rx
