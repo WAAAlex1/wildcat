@@ -48,7 +48,7 @@ class CacheController(blockSize: Int) extends Module {
 
   val blockOffset = io.memAdd(1 + m, 2)
   val index = io.memAdd(1 + m + n, 2 + m)
-  val targetTag = io.memAdd(31, 32 - tagSize)
+  val targetTag = RegNext(io.memAdd(31, 32 - tagSize))
   val actualTag = tagStore.io.DO(tagSize, 1)
   val cacheInvalid = !tagStore.io.DO(0)
   val rwIndex = RegInit(0.U(3.W)) // Tracks the index during write-through and allocation
@@ -60,7 +60,7 @@ class CacheController(blockSize: Int) extends Module {
   val cacheAdd = WireInit(0.U(log2Down(cacheSize).W))
   val memWordAdd = io.memAdd(31, 2)
   val modifiedData = WireInit(0.U(32.W))
-
+  val memReq = RegInit(0.U(2.W))
 
 
 
@@ -73,7 +73,7 @@ class CacheController(blockSize: Int) extends Module {
   cache.io.rw := true.B
   cache.io.EN := false.B
   cache.io.DI := io.CPUdataIn
-  io.memReq := 0.U
+  io.memReq := memReq
 
   cacheReadAdd := index ## blockOffset
   cacheWriteAdd := index ## rwIndex
@@ -85,7 +85,7 @@ class CacheController(blockSize: Int) extends Module {
 
 
   object State extends ChiselEnum {
-    val idle, compareTag, allocate, writethrough = Value
+    val idle, compareTag1, compareTag2, allocate, writethrough = Value
   }
 
   import State._
@@ -100,24 +100,24 @@ class CacheController(blockSize: Int) extends Module {
       when(io.validReq) {
         // Start to read tag
         startRead(tagStore)
-        stateReg := compareTag
+        stateReg := compareTag1
 
         // Start to read cache
         cacheAdd := cacheReadAdd
         startRead(cache)
-
+        lastRead := cache.io.DO
 
       }.otherwise {
         setIdle(tagStore)
         setIdle(cache)
       }
     }
-    is(compareTag) {
+    is(compareTag1) {
       tagStore.io.EN := true.B // Keep enable high for read
       when(cacheInvalid) {
         cacheAdd := cacheWriteAdd
         io.stall := true.B
-
+        memReq := 1.U
         stateReg := allocate
       }.elsewhen(actualTag === targetTag) { // cache hit
         cacheAdd := cacheReadAdd
@@ -126,34 +126,80 @@ class CacheController(blockSize: Int) extends Module {
 
         when(io.rw) {
           // Read stuff
-
+          memReq := 0.U
           lastRead := cache.io.DO
 
-          stateReg := idle
+          when(io.validReq){
+            stateReg := compareTag2
+          }.otherwise{
+            stateReg := idle
+          }
+
         }.otherwise {
           // write stuff
+          memReq := 2.U
+          modifiedData := maskedWriteData(lastRead,io.CPUdataIn,io.wrEnable)
           writeRAM(cache)
-          modifiedData := maskedWriteData(cache.io.DO,io.CPUdataIn,io.wrEnable)
           cache.io.DI := modifiedData
           stateReg := writethrough
         }
       }.otherwise { // cache miss
         cacheAdd := cacheWriteAdd
         io.stall := true.B
+        memReq := 1.U
+        stateReg := allocate
+
+      }
+    }
+    is(compareTag2) {
+      tagStore.io.EN := true.B // Keep enable high for read
+      when(cacheInvalid) {
+        cacheAdd := cacheWriteAdd
+        io.stall := true.B
+        memReq := 1.U
+        stateReg := allocate
+      }.elsewhen(actualTag === targetTag) { // cache hit
+        cacheAdd := cacheReadAdd
+        cache.io.EN := true.B // keep enable high for read
+
+
+        when(io.rw) {
+          // Read stuff
+          memReq := 0.U
+          lastRead := cache.io.DO
+
+          when(io.validReq){
+            stateReg := compareTag1
+          }.otherwise{
+            stateReg := idle
+          }
+        }.otherwise {
+          // write stuff
+          memReq := 2.U
+          modifiedData := maskedWriteData(lastRead,io.CPUdataIn,io.wrEnable)
+          writeRAM(cache)
+          cache.io.DI := modifiedData
+          stateReg := writethrough
+        }
+      }.otherwise { // cache miss
+        cacheAdd := cacheWriteAdd
+        io.stall := true.B
+        memReq := 1.U
         stateReg := allocate
 
       }
     }
     is(writethrough) {
-      io.memReq := 2.U
+
       cacheAdd := cacheReadAdd
 
       when(io.memReady) {
+        memReq := 0.U
         stateReg := idle
       }
     }
     is(allocate) {
-      io.memReq := 1.U
+
 
       // Fetch memory
       cacheAdd := cacheWriteAdd
@@ -165,8 +211,17 @@ class CacheController(blockSize: Int) extends Module {
         when(rwIndex === (blockSize - 1).asUInt) {
           //Update tag store
           writeRAM(tagStore)
-          stateReg := compareTag
+          stateReg := compareTag1
+
           rwIndex := 0.U
+
+          when(!io.rw){
+            memReq := 2.U
+          }.otherwise{
+            memReq := 0.U
+
+          }
+
         }.otherwise {
           rwIndex := rwIndex + 1.U
         }
@@ -178,8 +233,8 @@ class CacheController(blockSize: Int) extends Module {
   // Output
 
   io.ready := stateReg === idle
-  //io.CPUdataOut := Mux(io.ready,lastRead,cache.io.DO)
-  io.CPUdataOut := cache.io.DO
+  io.CPUdataOut := Mux(io.ready,lastRead,cache.io.DO)
+  //io.CPUdataOut := cache.io.DO
   //io.alloAddr := (memWordAdd ## 0.U(2.W)) + rwIndex*4.U
   io.alloAddr := (memWordAdd << 2).asUInt + rwIndex*4.U
 }
