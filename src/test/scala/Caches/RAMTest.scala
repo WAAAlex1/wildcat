@@ -6,7 +6,7 @@ import org.scalatest.flatspec.AnyFlatSpec
 
 class RAMTest extends AnyFlatSpec with ChiselScalatestTester {
   "Ram" should "pass" in {
-    test(new SRAM(64,32)) { dut =>
+    test(new SRAM(64,32)).withAnnotations(Seq(WriteVcdAnnotation)) { dut =>
       dut.io.EN.poke(true.B)
       dut.io.ad.poke(0.U)
       dut.io.rw.poke(true.B)
@@ -21,16 +21,18 @@ class RAMTest extends AnyFlatSpec with ChiselScalatestTester {
       dut.io.DI.poke(4.U)
       dut.clock.step()
       dut.io.EN.poke(false.B)
-      dut.io.rw.poke(true.B)
+
       dut.io.ad.poke(0.U)
       dut.clock.step ()
       dut.io.DO.expect(0.U) // enable disabled = lastRead
+      dut.io.rw.poke(true.B)
       dut.io.EN.poke(true.B)
-      dut.clock.step()
-      dut.io.DO.expect(2.U)
       dut.io.ad.poke(1.U)
       dut.clock.step()
       dut.io.DO.expect(4.U)
+      dut.io.ad.poke(0.U)
+      dut.clock.step()
+      dut.io.DO.expect(2.U)
     }
   }
 
