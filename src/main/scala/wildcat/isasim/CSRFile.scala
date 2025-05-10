@@ -1,5 +1,7 @@
 package wildcat
 
+import scala.math.BigInt
+
 // Define a CSR Register File class
 class CSRFile {
   // Use a Map to store CSR values with their addresses as keys
@@ -12,20 +14,20 @@ class CSRFile {
 
 
   // Counter for instruction retirement
-  private var instRetCounter: Long = 0
+  private var instRetCounter: BigInt = BigInt(0)
 
-  // Update instruction retirement counter
-  def incrementInstRet(): Unit = {
+  //Updates counters assuming one instruction has passed in the threecats pipeline
+  def updateCounters(): Unit = {
+    //1 cycle per instruction kinda
     instRetCounter += 1
   }
 
   // Read a CSR register
   def read(csr: Int): Int = {
-    // Handle special cases for counters that need real-time values. All of these cases are the same
-    // as we are only using a single counter. Real implementation might be different (We do not support timers/counters).
+    // Handle special cases for counters that need real-time values.
     csr match {
-      case CSR.CYCLE | CSR.TIME => instRetCounter.toInt
-      case CSR.CYCLEH | CSR.TIMEH => (instRetCounter >> 32).toInt
+      case CSR.CYCLE => instRetCounter.toInt
+      case CSR.CYCLEH => (instRetCounter >> 32).toInt
       case CSR.INSTRET => instRetCounter.toInt
       case CSR.INSTRETH => (instRetCounter >> 32).toInt
       case CSR.MCYCLE => instRetCounter.toInt
@@ -97,5 +99,13 @@ class CSRFile {
 
     // Return the old value (or 0 if rd was x0)
     oldValue
+  }
+
+  // --- Add method to update pending interrupts (callable from SimRV) ---
+  def setInterruptPendingBit(bit: Int, pending: Boolean): Unit = {
+    val currentMip = csrMap.getOrElse(CSR.MIP, 0)
+    val mask = 1 << bit
+    val newMip = if (pending) currentMip | mask else currentMip & ~mask
+    csrMap(CSR.MIP) = newMip
   }
 }

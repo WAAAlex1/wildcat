@@ -186,6 +186,19 @@ class CSRSimEdgeCasesTest extends CSRSimBaseTest {
   }
 }
 
+class ClintSimTest extends CSRSimBaseTest {
+  // Define the expected register values
+  val ClintTestExpected = Map(
+    REGS.x10  -> 0x00000001, // a0 = 1 is a test success
+    REGS.x11  -> 0x00000001, // a1 = 1 is a test success
+    REGS.x12  -> 0x00000001, // a2 = 1 is a test success
+  )
+
+  "Clint Sim Test" should "pass in the simulator" in {
+    runSimulatorTest("CLINT_test", ClintTestExpected)
+  }
+}
+
 /**
  * Main combined test class that runs all CSR simulator tests
  */
@@ -194,6 +207,7 @@ class CSRSimAllTests extends CSRSimBaseTest {
   val instructionsTest = new CSRSimInstructionsTest()
   val exceptionTest = new CSRSimExceptionHandlingTest()
   val edgeCasesTest = new CSRSimEdgeCasesTest()
+  val ClintTest = new ClintSimTest()
 
   "CSR Instructions" should "pass all simulator tests" in {
     runSimulatorTest("CSR_full_test", instructionsTest.csrTestExpected)
@@ -205,5 +219,9 @@ class CSRSimAllTests extends CSRSimBaseTest {
 
   "CSR Edge Cases" should "pass all simulator tests" in {
     runSimulatorTest("CSR_edgecases_test", edgeCasesTest.csrEdgeCaseTestExpected)
+  }
+
+  "Clint Sim test" should "pass all simulator tests" in {
+    runSimulatorTest("CLINT_test", ClintTest.ClintTestExpected)
   }
 }

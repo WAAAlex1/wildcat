@@ -29,7 +29,12 @@ class SimRV(mem: Array[Int], start: Int, stop: Int) {
   var reg = new Array[Int](32)
   reg(0) = 0
 
+  //CSR
   val csrFile = new CSRFile()
+
+  //CLINT Registers:
+  var clint_mtime: BigInt = BigInt(0)
+  var clint_mtimecmp: BigInt = BigInt(0xFFFFFFFF) //Initialize to max value to avoid accidental interrupts
 
   // Reservation state for LR/SC
   var reservationValid = false
@@ -43,6 +48,7 @@ class SimRV(mem: Array[Int], start: Int, stop: Int) {
 
   def execute(instr: Int): Boolean = {
     //println("EXECUTING INSTRUCTION: " + f"${instr}%08x" )
+    println("Instr: " + instr.toHexString + " at pc=" + pc.toHexString)
     // Do some decoding: extraction of decoded fields
     val opcode = instr & 0x7f
     val rd = (instr >> 7) & 0x01f
@@ -52,6 +58,8 @@ class SimRV(mem: Array[Int], start: Int, stop: Int) {
     val funct7 = (instr >> 25) & 0x07f  // Extended to 7 bits for AMO
     val aq = (instr >> 26) & 0x01       // Acquire bit
     val rl = (instr >> 25) & 0x01       // Release bit
+
+
 
     /**
      * Immediate generation is a little bit elaborated,
@@ -142,50 +150,130 @@ class SimRV(mem: Array[Int], start: Int, stop: Int) {
       }
     }
 
+    def handleClintIO(addr: Int, write: Boolean, value: Int = 0, sizeBytes: Int = 4): (Boolean, Int) = {
+      // Only handle word (4-byte) accesses for simplicity now
+      // TODO: Add proper byte/halfword handling if needed
+      if (sizeBytes != 4) {
+        println(s"Warning: Non-word CLINT access (size $sizeBytes) not fully implemented.")
+        // Generate exception? Return error?
+      }
+
+      if (addr >= CSR.CLINT_BASE && addr < CSR.CLINT_BASE + CSR.CLINT_SIZE) {
+        val offset = addr - CSR.CLINT_BASE
+        offset match {
+          // MTIMECMP (Hart 0, 64-bit) - Word access assumed
+          case CSR.CLINT_MTIMECMP_OFFSET => // Low word
+            if (write) clint_mtimecmp = (clint_mtimecmp & ~0xFFFFFFFFL) | (value & 0xFFFFFFFFL)
+            (true, (clint_mtimecmp & 0xFFFFFFFFL).toInt)
+          case offCmp if offCmp == (CSR.CLINT_MTIMECMP_OFFSET + 4) => // High word
+            if (write) clint_mtimecmp = (clint_mtimecmp & 0xFFFFFFFFL) | (value.toLong << 32)
+            (true, (clint_mtimecmp >> 32).toInt)
+
+          // MTIME (Read Only, 64-bit) - Word access assumed
+          case CSR.CLINT_MTIME_OFFSET => // Low word
+            if (write) {
+              /* Write ignored */
+            }
+            (true, (clint_mtime & 0xFFFFFFFFL).toInt)
+          case offTime if offTime == (CSR.CLINT_MTIME_OFFSET + 4) => // High word
+            if (write) {
+              /* Write ignored */
+            }
+            (true, (clint_mtime >> 32).toInt)
+
+          // MSIP (Optional, Hart 0, 32-bit) - Word access assumed
+          case CSR.CLINT_MSIP_OFFSET =>
+            if (write) {
+              val msip_pending = (value & 1) != 0
+              csrFile.setInterruptPendingBit(3, msip_pending) // Update MSIP (bit 3) in MIP CSR
+            }
+            // Reading MSIP register reflects MIP.MSIP bit
+            val mip = csrFile.read(CSR.MIP)
+            (true, (mip >> 3) & 1)
+
+          case _ =>
+            println(s"Warning: Access to unhandled CLINT offset 0x${offset.toHexString}")
+            (true, 0) // Handled (within CLINT range), but offset not implemented, return 0
+        }
+      } else {
+        (false, 0) // Not in CLINT range
+      }
+    }
+
     def load(funct3: Int, base: Int, displ: Int): Int = {
-      val addr = ((base + displ) & 0xfffff) // 1 MB wrap around
-      val data = mem(addr >>> 2)
-      funct3 match {
-        case LB => (((data >> (8 * (addr & 0x03))) & 0xff) << 24) >> 24
-        case LH => (((data >> (8 * (addr & 0x03))) & 0xffff) << 16) >> 16
-        case LW => data
-        case LBU => (data >> (8 * (addr & 0x03))) & 0xff
-        case LHU => (data >> (8 * (addr & 0x03))) & 0xffff
+      val addr = ((base + displ) & 0xffffffff) // Full wrap around to include IO space
+
+      if(addr == 0xf0000000){
+        return 0x00000001
+      }
+      // Determine access size from funct3 (LB=1, LH=2, LW=4 etc.) - Crucial for real IO
+      val sizeBytes = funct3 match {
+        case LW | LHU | LBU => 4 // Assume word access for simplicity now
+        case LH | LHU => 2
+        case LB | LBU => 1
+        case _ => 4 // Default word? Needs verification
+      }
+      val (handled, io_val) = handleClintIO(addr, write = false, sizeBytes = sizeBytes)
+
+      if (handled) {
+        // TODO: Implement proper masking/shifting for LB/LH/LBU/LHU reads from io_val
+        io_val // Returning full word for now
+      } else {
+        val data = mem(addr >>> 2)
+        funct3 match {
+          case LB => (((data >> (8 * (addr & 0x03))) & 0xff) << 24) >> 24
+          case LH => (((data >> (8 * (addr & 0x03))) & 0xffff) << 16) >> 16
+          case LW => data
+          case LBU => (data >> (8 * (addr & 0x03))) & 0xff
+          case LHU => (data >> (8 * (addr & 0x03))) & 0xffff
+        }
       }
     }
 
     def store(funct3: Int, base: Int, displ: Int, value: Int): Unit = {
       val addr = base + displ
-      val wordAddr = addr >>> 2
-      
-      // Any store should invalidate reservations to the same address
-      if (reservationValid && (addr >>> 2) == (reservationAddr >>> 2)) {
-        reservationValid = false
+
+      // Determine access size from funct3 (SB=1, SH=2, SW=4)
+      val sizeBytes = funct3 match {
+        case SW => 4
+        case SH => 2
+        case SB => 1
+        case _ => 4 // Should not happen for valid store
       }
-      
-      funct3 match {
-        case SB => {
-          val mask = (addr & 0x03) match {
-            case 0 => 0xffffff00
-            case 1 => 0xffff00ff
-            case 2 => 0xff00ffff
-            case 3 => 0x00ffffff
-          }
-          mem(wordAddr) = (mem(wordAddr) & mask) | ((value & 0xff) << (8 * (addr & 0x03)))
+      val (handled, _) = handleClintIO(addr, write = true, value = value, sizeBytes = sizeBytes)
+
+      if (!handled) {
+        val wordAddr = addr >>> 2
+
+        // Any store should invalidate reservations to the same address
+        if (reservationValid && (addr >>> 2) == (reservationAddr >>> 2)) {
+          reservationValid = false
         }
-        case SH => {
-          val mask = (addr & 0x03) match {
-            case 0 => 0xffff0000
-            case 2 => 0x0000ffff
+
+        funct3 match {
+          case SB => {
+            val mask = (addr & 0x03) match {
+              case 0 => 0xffffff00
+              case 1 => 0xffff00ff
+              case 2 => 0xff00ffff
+              case 3 => 0x00ffffff
+            }
+            mem(wordAddr) = (mem(wordAddr) & mask) | ((value & 0xff) << (8 * (addr & 0x03)))
           }
-          mem(wordAddr) = (mem(wordAddr) & mask) | ((value & 0xffff) << (8 * (addr & 0x03)))
-        }
-        case SW => {
-          // very primitive IO simulation
-          if (addr == 0xf0000004) {
-            //println("out: " + value.toChar)
-          } else {
-            mem(wordAddr) = value
+          case SH => {
+            val mask = (addr & 0x03) match {
+              case 0 => 0xffff0000
+              case 2 => 0x0000ffff
+            }
+            mem(wordAddr) = (mem(wordAddr) & mask) | ((value & 0xffff) << (8 * (addr & 0x03)))
+          }
+          case SW => {
+            // very primitive IO simulation
+            if (addr == 0xf0000004) {
+              println("out: " + value.toChar)
+            } else {
+              mem(wordAddr) = value
+            }
           }
         }
       }
@@ -319,7 +407,7 @@ class SimRV(mem: Array[Int], start: Int, stop: Int) {
 
     // Check for illegal instruction
     val illegalInstr = opcode match {
-      case AluImm | Alu | Branch | Load | Store | Lui | AuiPc | Jal | JalR | Fence | System => false
+      case AluImm | Alu | Atomic | Branch | Load | Store | Lui | AuiPc | Jal | JalR | Fence | System => false
       case _ => true
     }
     if (illegalInstr) {
@@ -331,7 +419,7 @@ class SimRV(mem: Array[Int], start: Int, stop: Int) {
     // Execute the instruction and return a tuple for the result:
     //   (ALU result, writeBack, next PC)
     val result = opcode match {
-      case 0x2f => { // AMO - Atomic Memory Operations
+      case Atomic => { // AMO - Atomic Memory Operations
         val addr = rs1Val
         if (funct3 != 0x2) {
           throw new Exception(f"Invalid funct3 for atomic operation: 0x${funct3}%x")
@@ -366,7 +454,7 @@ class SimRV(mem: Array[Int], start: Int, stop: Int) {
     val oldPc = pc
     pc = result._3
 
-    instrCnt += 1
+    //instrCnt += 1 //Moved to updateTime()
 
     (pc != oldPc && run && pc < stop) && !(pc == 0 && opcode == System) // detect endless loop or go beyond code to stop simulation
     // Added that code will stop running if new pc is 0 (we jump back to start)
@@ -385,7 +473,7 @@ class SimRV(mem: Array[Int], start: Int, stop: Int) {
 
     // Save cause to MCAUSE
     csrFile.write(CSR.MCAUSE, cause)
-    //println("Handling Exception #: " + csrFile.read(CSR.MCAUSE))
+    println("Handling Exception #: " + csrFile.read(CSR.MCAUSE))
 
     // Save instr to MTVAL
     csrFile.write(CSR.MTVAL, instr)
@@ -393,13 +481,12 @@ class SimRV(mem: Array[Int], start: Int, stop: Int) {
     // Update MSTATUS: save current interrupt enable bit
     val currentStatus = csrFile.read(CSR.MSTATUS)
     val mie = (currentStatus >> 3) & 0x1
-    val newStatus = (currentStatus & ~0x1888) |
-      (mie << 7) // MPIE = MIE
+    val newStatus = (currentStatus & ~0x1888) | (mie << 7) // MPIE = MIE
     csrFile.write(CSR.MSTATUS, newStatus)
 
     // Jump to trap handler
     newPC = csrFile.read(CSR.MTVEC)
-    //println("Jumping to: " + f"${newPC}%08x")
+    println("Jumping to: " + f"${newPC}%08x")
 
     if(newPC == 0){
      return (false, newPC) // end execution
@@ -407,9 +494,55 @@ class SimRV(mem: Array[Int], start: Int, stop: Int) {
     (true, newPC) // Continue execution
   }
 
+  def updateTime(): Unit = {
+    csrFile.updateCounters()
+    instrCnt += 1
+    if(instrCnt % 100 == 0){ //Test value of
+      clint_mtime += 1
+      //println("mtime incremented to: " + clint_mtime)
+    }
+  }
+
+
   var cont = true
   while (cont) {
-    cont = execute(mem(pc >>> 2))
+    updateTime() // Update mtime
+
+    // Check for timer interrupt BEFORE execution
+    val mstatus = csrFile.read(CSR.MSTATUS)
+    val mie = csrFile.read(CSR.MIE)
+
+    // Check CLINT comparison and update MIP.MTIP in CSRFile
+    //Dirty fix for mtimecmp = -1
+    val mtip_pending = (clint_mtime >= clint_mtimecmp) && (!(clint_mtimecmp == -1))
+    csrFile.setInterruptPendingBit(7, mtip_pending) // Update MTIP (bit 7)
+
+    // Read potentially updated MIP
+    val mip = csrFile.read(CSR.MIP)
+
+    val globalIntEnabled = (mstatus & (1 << 3)) != 0 // Check mstatus.MIE (bit 3)
+    val timerIntEnabled = (mie & (1 << 7)) != 0 // Check mie.MTIE (bit 7)
+    val timerIntPending = (mip & (1 << 7)) != 0 // Check mip.MTIP (bit 7)
+
+    // --- Add checks for other potential interrupts (e.g., MSIP bit 3) here if needed ---
+
+    if (globalIntEnabled && timerIntEnabled && timerIntPending) {
+      // If interrupts enabled and MTI is pending, take the trap
+      val ex = handleException(7, pc) // Machine Timer Interrupt = Cause 7
+      pc = ex._2 // Jump to handler defined in mtvec
+      cont = ex._1 // Allows exception handler to potentially stop simulation
+    } else {
+      // No interrupt taken or interrupts disabled, execute normally
+      // Fetch instruction AFTER checking interrupts
+      if ((pc >>> 2) >= mem.length) { // Bounds check PC
+        println(s"PC out of bounds: 0x${pc.toHexString}")
+        cont = false
+      } else {
+        val instr = mem(pc >>> 2)
+        cont = execute(instr)
+      }
+    }
+
     // print("regs: ")
     // reg.foreach(printf("%08x ", _))
     // println()
