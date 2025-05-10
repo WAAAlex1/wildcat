@@ -206,7 +206,7 @@ class CSRHardwareInstructionsTest extends CSRHardwareBaseTest {
 
   // This is the main test method that will be run directly when testing this class
   "CSR Instructions Test" should "pass on the ThreeCats processor" in {
-    runCSRTest("CSR_full_test", csrTestExpected, 50, 100000000, 1)
+    runCSRTest("CSR_full_test", csrTestExpected, 50, 100000000, 0)
   }
 }
 
@@ -230,7 +230,7 @@ class CSRHardwareEdgeCasesTest extends CSRHardwareBaseTest {
   )
 
   "CSR Edge Cases Test" should "pass on the ThreeCats processor" in {
-    runCSRTest("CSR_edgecases_test", csrEdgeCaseTestExpected, 100,100000000, 1)
+    runCSRTest("CSR_edgecases_test", csrEdgeCaseTestExpected, 100,100000000, 0)
   }
 }
 
@@ -249,7 +249,7 @@ class CSRHardwareExceptionHandlingTest extends CSRHardwareBaseTest {
   )
 
   "Exception Handling Test" should "pass on the ThreeCats processor" in {
-    runCSRTest("Exception_test", exceptionTestExpected, 100, 100000000, 1)
+    runCSRTest("Exception_test", exceptionTestExpected, 100, 100000000, 0)
   }
 }
 
@@ -270,7 +270,7 @@ class CSRHardwareTimerTest extends CSRHardwareBaseTest {
   val numCycles = 1100 // Should take about 1000 cycles - added a little headroom.
 
   "Exception Handling Test" should "pass on the ThreeCats processor" in {
-    runCSRTest("CSR_timer_core_test", timerTestExpected, numCycles, testFreqHz, 1)
+    runCSRTest("CSR_timer_core_test", timerTestExpected, numCycles, testFreqHz, 0)
   }
 }
 
@@ -290,7 +290,7 @@ class CSRHardwareTimeEventTest extends CSRHardwareBaseTest {
   val numCycles = 2000  // With 1kHz test frequency (safe)
 
     "Exception Handling Test" should "pass on the ThreeCats processor" in {
-      runCSRTest("CSR_time_event_test", timeEventTestExpected, numCycles, testFreqHz, 1)
+      runCSRTest("CSR_time_event_test", timeEventTestExpected, numCycles, testFreqHz, 0)
     }
 }
 
@@ -315,7 +315,7 @@ class CSRHardwareTimerEdgecasesTest extends CSRHardwareBaseTest {
   val numCycles = 4000  // With 10kHz test frequency
 
     "Exception Handling Test" should "pass on the ThreeCats processor" in {
-      runCSRTest("CSR_timer_edgecases_test", timerEdgeCasesTestExpected, numCycles, testFreqHz, 1)
+      runCSRTest("CSR_timer_edgecases_test", timerEdgeCasesTestExpected, numCycles, testFreqHz, 0)
     }
 }
 
@@ -334,7 +334,7 @@ class CSRHardwareWfiTest extends CSRHardwareBaseTest {
   val numCycles = 550        // Should be enough for interrupt to trigger
 
   "WFI and Timer Interrupt Test" should "pass on the ThreeCats processor" in {
-    runCSRTest("WFI_test", wfiTestExpected, numCycles, testFreqHz, 1)
+    runCSRTest("WFI_test", wfiTestExpected, numCycles, testFreqHz, 0)
   }
 }
 
@@ -381,27 +381,27 @@ class CSRHardwareWfiEdgeCasesTest extends CSRHardwareBaseTest {
 
   // Test 1: WFI with already pending interrupt
   "WFI Short Nap Test" should "quickly exit sleep upon interrupt" in {
-    runCSRTest("WFI_Short_Nap_test", pendingInterruptExpected, numCycles, testFreqHz, 1)
+    runCSRTest("WFI_Short_Nap_test", pendingInterruptExpected, numCycles, testFreqHz, 0)
   }
 
   // Test 2: WFI with disabled interrupts
   "WFI Disabled Interrupts Test" should "act as NOP when interrupts are globally disabled" in {
-    runCSRTest("WFI_Disabled_Interrupt_test", disabledInterruptsExpected, numCycles, testFreqHz, 1)
+    runCSRTest("WFI_Disabled_Interrupt_test", disabledInterruptsExpected, numCycles, testFreqHz, 0)
   }
 
   // Test 3: WFI wake-up timing
   "WFI Wake-up Timing Test" should "wake up at the correct time when interrupt triggers" in {
-    runCSRTest("WFI_WakeUp_timing_test", wakeupTimingExpected, numCycles, testFreqHz, 1)
+    runCSRTest("WFI_WakeUp_timing_test", wakeupTimingExpected, numCycles, testFreqHz, 0)
   }
 
   // Test 4: WFI with interrupt masking
   "WFI Interrupt Masking Test" should "only respond to enabled interrupt sources" in {
-    runCSRTest("WFI_Interrupt_mask_test", interruptMaskingExpected, numCycles, testFreqHz, 1)
+    runCSRTest("WFI_Interrupt_mask_test", interruptMaskingExpected, numCycles, testFreqHz, 0)
   }
 
   // Test 5: WFI re-execution
   "WFI Re-execution Test" should "handle consecutive WFI instructions correctly" in {
-    runCSRTest("WFI_reExecution_test", reexecutionExpected, numCycles, testFreqHz, 1)
+    runCSRTest("WFI_reExecution_test", reexecutionExpected, numCycles, testFreqHz, 0)
   }
 }
 
@@ -453,23 +453,23 @@ class CSRHardwareAllTests(Ignore: String) extends CSRHardwareBaseTest {
   }
 
   "WFI Short Nap Test" should "quickly exit sleep upon interrupt" in {
-    runCSRTest("WFI_Short_Nap_test", WFIEdgeCasesTest.pendingInterruptExpected, WFIEdgeCasesTest.numCycles, WFIEdgeCasesTest.testFreqHz, 1)
+    runCSRTest("WFI_Short_Nap_test", WFIEdgeCasesTest.pendingInterruptExpected, WFIEdgeCasesTest.numCycles, WFIEdgeCasesTest.testFreqHz, 0)
   }
 
   "WFI Disabled Interrupts Test" should "act as NOP when interrupts are globally disabled" in {
-    runCSRTest("WFI_Disabled_Interrupt_test", WFIEdgeCasesTest.disabledInterruptsExpected, WFIEdgeCasesTest.numCycles, WFIEdgeCasesTest.testFreqHz, 1)
+    runCSRTest("WFI_Disabled_Interrupt_test", WFIEdgeCasesTest.disabledInterruptsExpected, WFIEdgeCasesTest.numCycles, WFIEdgeCasesTest.testFreqHz, 0)
   }
 
   "WFI Wake-up Timing Test" should "wake up at the correct time when interrupt triggers" in {
-    runCSRTest("WFI_WakeUp_timing_test", WFIEdgeCasesTest.wakeupTimingExpected, WFIEdgeCasesTest.numCycles, WFIEdgeCasesTest.testFreqHz, 1)
+    runCSRTest("WFI_WakeUp_timing_test", WFIEdgeCasesTest.wakeupTimingExpected, WFIEdgeCasesTest.numCycles, WFIEdgeCasesTest.testFreqHz, 0)
   }
 
   "WFI Interrupt Masking Test" should "only respond to enabled interrupt sources" in {
-    runCSRTest("WFI_Interrupt_mask_test", WFIEdgeCasesTest.interruptMaskingExpected, WFIEdgeCasesTest.numCycles, WFIEdgeCasesTest.testFreqHz, 1)
+    runCSRTest("WFI_Interrupt_mask_test", WFIEdgeCasesTest.interruptMaskingExpected, WFIEdgeCasesTest.numCycles, WFIEdgeCasesTest.testFreqHz, 0)
   }
 
   "WFI Re-execution Test" should "handle consecutive WFI instructions correctly" in {
-    runCSRTest("WFI_reExecution_test", WFIEdgeCasesTest.reexecutionExpected, WFIEdgeCasesTest.numCycles, WFIEdgeCasesTest.testFreqHz, 1)
+    runCSRTest("WFI_reExecution_test", WFIEdgeCasesTest.reexecutionExpected, WFIEdgeCasesTest.numCycles, WFIEdgeCasesTest.testFreqHz, 0)
   }
 
 }

@@ -58,7 +58,7 @@ class WildcatTopPhysical(freqHz: Int = 100000000) extends Module {
   io.CS2 := MCU.io.CS2
   io.spiClk := MCU.io.spiClk
   io.dir := MCU.io.dir
-  io.inSio := MCU.io.inSio
+  MCU.io.inSio := io.inSio
   io.outSio := MCU.io.outSio
 
   //DMEM Connections
@@ -80,11 +80,8 @@ class WildcatTopPhysical(freqHz: Int = 100000000) extends Module {
   // Here IO stuff
   // IO is mapped in the space 0xf000_0000 - 0xffff_ffff
 
-  // Default values for memory accesses
-  val uartStatusReg = RegNext(rx.io.channel.valid ## tx.io.channel.ready) // Mapped to 0xf000_0000, bit 0 TX ready (TDE), bit 1 RX data available (RDF)
-  val bootloaderStatusReg = RegInit(0.U(8.W)) // Mapped to 0xf100_0000, 0x00 = Active, 0x01 = sleep
-  val memAddressReg = RegNext(cpu.io.dmem.rdAddress)
-  val writeAddressReg = RegNext(cpu.io.dmem.wrAddress)
+
+  val ledReg = RegInit(0.U(8.W))
 
   // ********************************************************************
 
@@ -99,6 +96,12 @@ class WildcatTopPhysical(freqHz: Int = 100000000) extends Module {
   rx.io.channel.ready := false.B
 
   // ********************************************************************
+
+  // Default values for memory accesses
+  val uartStatusReg = RegNext(rx.io.channel.valid ## tx.io.channel.ready) // Mapped to 0xf000_0000, bit 0 TX ready (TDE), bit 1 RX data available (RDF)
+  val bootloaderStatusReg = RegInit(0.U(8.W)) // Mapped to 0xf100_0000, 0x00 = Active, 0x01 = sleep
+  val memAddressReg = RegNext(cpu.io.dmem.rdAddress)
+  val writeAddressReg = RegNext(cpu.io.dmem.wrAddress)
 
   // Instantiate CLINT module
   val clint = Module(new CLINT())
@@ -152,8 +155,7 @@ class WildcatTopPhysical(freqHz: Int = 100000000) extends Module {
   }
 
   // Memory write with memorymapping (CLINT, UART, LED)
-  val ledReg = RegInit(0.U(8.W))
-  when ((cpu.io.dmem.wrAddress(31, 28) === 0xf.U) && cpu.io.dmem.wrEnable(0)) {
+  when ((cpu.io.dmem.wrAddress(31, 28) === 0xf.U) && (cpu.io.dmem.wrEnable.asUInt > 0.U) {
     when (isClintWrite) { // Write to CLINT handled by CLINT module
       // do nothing
     } .elsewhen (cpu.io.dmem.wrAddress === "hF000_0004".U) {  // UART send and receive reg
@@ -165,7 +167,6 @@ class WildcatTopPhysical(freqHz: Int = 100000000) extends Module {
     }.otherwise {
       // Any other IO or memory region, do nothing for write
     }
-    //dmem.io.wrEnable := VecInit(Seq.fill(4)(false.B)) // dont actually write to mem if memorymapped
     bus.io.CPUdCacheMemIO.wrEnable := VecInit(Seq.fill(4)(false.B)) // dont actually write to mem if memorymapped
   }
 
@@ -181,10 +182,10 @@ class WildcatTopPhysical(freqHz: Int = 100000000) extends Module {
     // Will go through the DMEM cache to shared RAM.
     // imem cache will be turned off in the meantime to avoid interference.
 
-    cpu.io.dmem.wrAddress := BL.io.instrAddr
-    cpu.io.dmem.wrData    := BL.io.instrData
-    cpu.io.dmem.wrEnable  := BL.io.wrEnabled
-    cpu.io.dmem.rdEnable  := false.B
+    bus.io.CPUdCacheMemIO.wrAddress := BL.io.instrAddr
+    bus.io.CPUdCacheMemIO.wrData    := BL.io.instrData
+    bus.io.CPUdCacheMemIO.wrEnable  := VecInit(Seq.fill(4)(BL.io.wrEnabled.asBool))
+    bus.io.CPUdCacheMemIO.rdEnable  := false.B
 
     bus.io.CPUiCacheMemIO.rdEnable := false.B
   }

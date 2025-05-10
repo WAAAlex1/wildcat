@@ -55,7 +55,7 @@ class MemoryControllerTopPhysical(prescale: UInt)(implicit val config:TilelinkCo
   io.CS2 := SpiCtrl.io.CS2
   io.spiClk := SpiCtrl.io.spiClk
   io.dir := SpiCtrl.io.dir
-  io.inSio := SpiCtrl.io.inSio
+  SpiCtrl.io.inSio := io.inSio
   io.outSio := SpiCtrl.io.outSio
 
 

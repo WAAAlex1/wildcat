@@ -122,7 +122,7 @@ class ThreeCats(freqHz: Int = 100000000) extends Wildcat() {
   io.dmem.wrEnable  := VecInit(Seq.fill(4)(false.B))
   io.dmem.wrData    := data
 
-  when(decOut.isStore && !doBranch && !stall) {
+  when(decOut.isStore && !doBranch) { // && !stall
     val (wrd, wre) = getWriteData(data, decEx.func3, memAddress(1, 0))
     io.dmem.wrData := wrd
     io.dmem.wrEnable := wre
@@ -211,7 +211,7 @@ class ThreeCats(freqHz: Int = 100000000) extends Wildcat() {
     decExReg.decOut.isCsrrci) {
     finalResult := decExReg.csr_data // CSR
   }
-  when(decExReg.decOut.isLoad && !doBranch && !stall) { // LOAD
+  when(decExReg.decOut.isLoad && !doBranch) { // LOAD
     finalResult := selectLoadData(io.dmem.rdData, decExReg.func3, decExReg.memLow)
   }
 
@@ -222,9 +222,8 @@ class ThreeCats(freqHz: Int = 100000000) extends Wildcat() {
   when(decExReg.decOut.isJal || decExReg.decOut.isJalr) { wbData := decExReg.pc + 4.U } // JAL / JALR
 
   // --- Write Enable Logic ---
-  // Ensure write enable is only active if the instruction is valid and requests a write (and not stalling)
-  val isStalledLoad = decExReg.decOut.isLoad && io.dmem.stall
-  wrEna := decExReg.valid && decExReg.decOut.rfWrite && (wbDest =/= 0.U) && !isStalledLoad
+  // Ensure write enable is only active if the instruction is valid and requests a write
+  wrEna := decExReg.valid && decExReg.decOut.rfWrite && (wbDest =/= 0.U)
 
   // Determine if branch is taken and the target address
   when((exceptionOccurred || takeInterrupt)) {
@@ -253,7 +252,7 @@ class ThreeCats(freqHz: Int = 100000000) extends Wildcat() {
   exFwdReg.wbData := wbData
 
   // WFI Handling
-  when(decExReg.valid && decExReg.decOut.isWfi && !stall && processorInitialized) {
+  when(decExReg.valid && decExReg.decOut.isWfi && processorInitialized) {
     // If interrupts already pending, WFI should immediately continue
     when(csr.io.interruptRequest) {
       inSleepMode := false.B // Ensure we're not in sleep mode
