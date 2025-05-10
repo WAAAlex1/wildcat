@@ -24,18 +24,17 @@ class SRAM(words: Int, BW: Int) extends Module {
   })
 
   val mem = SyncReadMem(words, UInt(BW.W), SyncReadMem.WriteFirst)
-  val address = WireDefault(0.U)
+  val readValue = mem.read(io.ad)
 
-  when(io.rw && io.EN){
-    address := io.ad
-    io.DO := mem.read(address)
-  }.elsewhen(!io.rw && io.EN){
-    mem.write(io.ad,io.DI)
-    io.DO := 0.U
-  }.otherwise{
-    io.DO := 0.U
+  // Default
+  //io.DO := 0.U
+  io.DO := readValue
+
+  when(io.EN){
+    when(!io.rw){
+      mem.write(io.ad,io.DI)
+    }
   }
-
 
 }
 

@@ -43,7 +43,6 @@ class CacheTop(blockSize: Int)(implicit val config:TilelinkConfig) extends Modul
   Controller.io.memDataIn := io.CacheRspIn.bits.dataResponse
   io.CPUmemIO.rdData := Controller.io.CPUdataOut
 
-
   //Default TL Req/Rsp
   io.CacheReqOut.valid := false.B
   io.CacheReqOut.bits.dataRequest := 0.U
