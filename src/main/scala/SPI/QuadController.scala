@@ -47,7 +47,7 @@ class QuadController extends Module {
 
     val clockEnable = RegInit(false.B)
     //val CNT_MAX = io.prescale
-    val cntMax = (1.U << io.prescale) - 1.U
+    val cntMax = (1.U << io.prescale).asUInt - 1.U
     val cntClk = RegInit(0.U(33.W))
     val spiClkReg = RegInit(false.B)
 
@@ -125,7 +125,7 @@ class QuadController extends Module {
         is (read) {
             when (fallingEdge) {
                 bitCounter := bitCounter - 1.U
-                rxShiftReg := (rxShiftReg >> 4) | (io.inSio << 28)
+                rxShiftReg := (rxShiftReg >> 4).asUInt | (io.inSio << 28).asUInt
             }
 
             when (risingEdge) {
@@ -147,9 +147,9 @@ class QuadController extends Module {
                 rxShiftReg(7, 4),   // n1
                 rxShiftReg(11, 8),  // n3
             )
-            rxShiftReg := reordered | (io.inSio << 24)
-            spiDataOut := reordered | (io.inSio << 24)
-            io.rxData := reordered | (io.inSio << 24)
+            rxShiftReg := reordered | (io.inSio << 24).asUInt
+            spiDataOut := reordered | (io.inSio << 24).asUInt
+            io.rxData := reordered | (io.inSio << 24).asUInt
 
 
             csReg := true.B

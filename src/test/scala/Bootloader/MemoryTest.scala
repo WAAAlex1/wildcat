@@ -19,6 +19,9 @@ class MemoryTester(implicit val config:TilelinkConfig) extends Module {
 
 
     // Debugging
+
+    val dready = Output(Bool())
+
   })
   val bus = Module(new BusInterconnect())
   val CTRL = Module(new MemoryControllerTopSimulator(1.U))
@@ -30,6 +33,10 @@ class MemoryTester(implicit val config:TilelinkConfig) extends Module {
   bus.io.dCacheRspIn <> CTRL.io.dCacheRspIn
   bus.io.iCacheRspIn <> CTRL.io.iCacheRspIn
   CTRL.io.iCacheReqOut <> bus.io.iCacheReqOut
+
+
+  io.dready := DontCare
+  BoringUtils.bore(bus.dCacheAdapter.Cache.Controller.io.ready, Seq(io.dready))
 
 }
 
@@ -59,7 +66,12 @@ class MemoryTest extends AnyFlatSpec with ChiselScalatestTester {
       dut.io.CPUdCacheMemIO.wrData.poke("hBABEBABE".U)
 
       step()
-      while(dut.io.CPUdCacheMemIO.stall.peekBoolean){
+
+      dut.io.CPUdCacheMemIO.wrAddress.poke(0.U)
+      pokeVecBool(dut.io.CPUdCacheMemIO.wrEnable, 0)
+
+      while(!dut.io.dready.peekBoolean()){
+
         step()
       }
       dut.io.CPUdCacheMemIO.wrAddress.poke(0.U)
@@ -71,6 +83,12 @@ class MemoryTest extends AnyFlatSpec with ChiselScalatestTester {
       }
       pokeVecBool(dut.io.CPUdCacheMemIO.wrEnable, 0)
       step(2)
+
+      pokeVecBool(dut.io.CPUiCacheMemIO.wrEnable, 15)
+      dut.io.CPUiCacheMemIO.wrAddress.poke(8.U)
+      dut.io.CPUiCacheMemIO.wrData.poke("h12345678".U)
+
+
       dut.io.CPUdCacheMemIO.rdAddress.poke(0.U)
       dut.io.CPUdCacheMemIO.rdEnable.poke(true.B)
       step()
@@ -78,6 +96,16 @@ class MemoryTest extends AnyFlatSpec with ChiselScalatestTester {
       step()
       dut.io.CPUdCacheMemIO.rdAddress.poke(8.U)
       step()
+
+      dut.io.CPUdCacheMemIO.rdEnable.poke(false.B)
+
+      while(dut.io.CPUiCacheMemIO.stall.peekBoolean){
+        step()
+      }
+      pokeVecBool(dut.io.CPUiCacheMemIO.wrEnable, 0)
+      dut.io.CPUiCacheMemIO.rdEnable.poke(true.B)
+      dut.io.CPUiCacheMemIO.rdAddress.poke(8.U)
+      step(4)
 
 
 
