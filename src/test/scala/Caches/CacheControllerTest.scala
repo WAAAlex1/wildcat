@@ -234,9 +234,10 @@ class CacheControllerTest extends AnyFlatSpec with ChiselScalatestTester {
       dut.io.rw.poke(true.B)
       dut.io.memAdd.poke("b0000".U)
       dut.clock.step()
+      dut.io.cacheDO.expect(42.U)
       dut.io.stall.expect(false.B)
-      dut.io.memAdd.poke("b1000".U)
       dut.io.CPUdataOut.expect(42.U)
+      dut.io.memAdd.poke("b1000".U)
       dut.clock.step()
       dut.io.state.expect(2.U)
       dut.io.CPUdataOut.expect(2.U)
@@ -327,9 +328,12 @@ class CacheControllerTest extends AnyFlatSpec with ChiselScalatestTester {
       dut.clock.step(blockSize + 3)
       dut.io.ready.expect(true.B)
       dut.io.rw.poke(true.B)
-      dut.clock.step(2)
-      dut.io.ready.expect(true.B)
-      dut.io.CPUdataOut.expect(21.U)
+      dut.io.validReq.poke(true.B)
+      dut.io.memAdd.poke("h1000".U)
+      dut.clock.step()
+      dut.io.state.expect(1.U)
+      dut.io.cacheDO.expect(2.U)
+      dut.io.CPUdataOut.expect(2.U)
 
       // Read original address again => overwrite block
       dut.io.memDataIn.poke(42.U) // simulate allocation

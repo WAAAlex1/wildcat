@@ -46,7 +46,7 @@ class SerialController extends Module {
     io.spiMosi := txShiftReg(63)
 
     val clockEnable = RegInit(false.B)
-    val cntMax = (1.U << io.prescale) - 1.U
+    val cntMax = (1.U << io.prescale).asUInt - 1.U
     val cntClk = RegInit(0.U(33.W))
     val spiClkReg = RegInit(false.B)
 
@@ -124,7 +124,7 @@ class SerialController extends Module {
         }
         is (read) {
             when (fallingEdge) {
-                rxShiftReg := (rxShiftReg << 1) | io.spiMiso
+                rxShiftReg := (rxShiftReg << 1).asUInt | io.spiMiso
                 bitCounter := bitCounter - 1.U
             }
 
