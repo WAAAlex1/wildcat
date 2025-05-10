@@ -155,7 +155,7 @@ class WildcatTopPhysical(freqHz: Int = 100000000) extends Module {
   }
 
   // Memory write with memorymapping (CLINT, UART, LED)
-  when ((cpu.io.dmem.wrAddress(31, 28) === 0xf.U) && (cpu.io.dmem.wrEnable.asUInt > 0.U) {
+  when ((cpu.io.dmem.wrAddress(31, 28) === 0xf.U) && (cpu.io.dmem.wrEnable.asUInt > 0.U)) {
     when (isClintWrite) { // Write to CLINT handled by CLINT module
       // do nothing
     } .elsewhen (cpu.io.dmem.wrAddress === "hF000_0004".U) {  // UART send and receive reg
@@ -167,7 +167,6 @@ class WildcatTopPhysical(freqHz: Int = 100000000) extends Module {
     }.otherwise {
       // Any other IO or memory region, do nothing for write
     }
-    bus.io.CPUdCacheMemIO.wrEnable := VecInit(Seq.fill(4)(false.B)) // dont actually write to mem if memorymapped
   }
 
   io.led := 1.U ## 0.U(7.W) ## RegNext(ledReg)
@@ -177,7 +176,7 @@ class WildcatTopPhysical(freqHz: Int = 100000000) extends Module {
   // BOOTLOADER TAKES CONTROL WHEN ACTIVE
   when(BL_Stall === true.B){
 
-    // when bootloader is in control
+    // When bootloader is in control
     // Data from bootloader is sent to the DMEM
     // Will go through the DMEM cache to shared RAM.
     // imem cache will be turned off in the meantime to avoid interference.

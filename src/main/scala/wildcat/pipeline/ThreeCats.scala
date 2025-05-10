@@ -211,9 +211,6 @@ class ThreeCats(freqHz: Int = 100000000) extends Wildcat() {
     decExReg.decOut.isCsrrci) {
     finalResult := decExReg.csr_data // CSR
   }
-  when(decExReg.decOut.isLoad && !doBranch) { // LOAD
-    finalResult := selectLoadData(io.dmem.rdData, decExReg.func3, decExReg.memLow)
-  }
 
   // Write Back Data and Destination Calculation (Result from EX stage)
   wbDest := decExReg.rd
@@ -226,6 +223,7 @@ class ThreeCats(freqHz: Int = 100000000) extends Wildcat() {
   wrEna := decExReg.valid && decExReg.decOut.rfWrite && (wbDest =/= 0.U)
 
   // Determine if branch is taken and the target address
+  // order -> exception/interrupt , MRET , JALR , JAL , Branch
   when((exceptionOccurred || takeInterrupt)) {
     doBranch := true.B
     branchTarget := csr.io.trapVector
@@ -244,6 +242,11 @@ class ThreeCats(freqHz: Int = 100000000) extends Wildcat() {
   }.otherwise {
     doBranch := false.B
     branchTarget := (decExReg.pc.asSInt + decExReg.decOut.imm).asUInt // Default target
+  }
+
+  // Memory Read Access
+  when(decExReg.decOut.isLoad && !doBranch) { // LOAD
+    finalResult := selectLoadData(io.dmem.rdData, decExReg.func3, decExReg.memLow)
   }
 
   // Forwarding register values to ALU
