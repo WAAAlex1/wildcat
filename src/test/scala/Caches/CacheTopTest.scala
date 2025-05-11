@@ -92,7 +92,7 @@ class CacheTopTest extends AnyFlatSpec with ChiselScalatestTester {
       dut.io.CacheReqOut.bits.addrRequest.expect(0.U)
       dut.io.CacheReqOut.bits.dataRequest.expect("hCAFEBABE".U)
       dut.io.CacheReqOut.bits.activeByteLane.expect(15.U)
-      step()
+      step(2)
       dut.io.CPUmemIO.stall.expect(false.B)
 
       // Try to read written word
@@ -141,7 +141,7 @@ class CacheTopTest extends AnyFlatSpec with ChiselScalatestTester {
       dut.io.CacheReqOut.bits.addrRequest.expect(2.U)
       dut.io.CacheReqOut.bits.dataRequest.expect("hBABEBABE".U)
       dut.io.CacheReqOut.bits.activeByteLane.expect(12.U)
-      step() // cachetop should be idle after writing
+      step(2) // cachetop should be idle after writing
       dut.io.CPUmemIO.stall.expect(false.B)
 
       // Try to read written word
@@ -187,7 +187,7 @@ class CacheTopTest extends AnyFlatSpec with ChiselScalatestTester {
       dut.io.CacheReqOut.bits.addrRequest.expect(2.U)
       dut.io.CacheReqOut.bits.dataRequest.expect("hAAAAAAAA".U)
       dut.io.CacheReqOut.bits.activeByteLane.expect(4.U)
-      step() // cachetop should be idle after writing
+      step(2) // cachetop should be idle after writing
       dut.io.CPUmemIO.stall.expect(false.B)
 
       // Try to read written word

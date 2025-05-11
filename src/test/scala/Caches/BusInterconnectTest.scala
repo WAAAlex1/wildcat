@@ -164,7 +164,7 @@ class BusInterconnectTest extends AnyFlatSpec with ChiselScalatestTester {
       dut.io.dReqOut.bits.activeByteLane.expect(15.U)
       dut.io.dReqOut.bits.addrRequest.expect(0.U)
       dut.io.dReqOut.bits.dataRequest.expect("hCAFEBABE".U)
-      step()
+      step(2)
       dut.io.CPUdCacheMemIO.stall.expect(false.B)
 
       // Try to read written word from cache
@@ -229,7 +229,7 @@ class BusInterconnectTest extends AnyFlatSpec with ChiselScalatestTester {
       dut.io.iReqOut.bits.activeByteLane.expect(8.U)
       dut.io.iReqOut.bits.addrRequest.expect(3.U)
       dut.io.iReqOut.bits.dataRequest.expect("hABABABAB".U)
-      step()
+      step(2)
       dut.io.CPUiCacheMemIO.stall.expect(false.B)
 
     }
