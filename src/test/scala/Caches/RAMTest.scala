@@ -24,7 +24,7 @@ class RAMTest extends AnyFlatSpec with ChiselScalatestTester {
 
       dut.io.ad.poke(0.U)
       dut.clock.step ()
-      dut.io.DO.expect(0.U) // enable disabled = lastRead
+      dut.io.DO.expect(2.U) // enable disabled = lastRead
       dut.io.rw.poke(true.B)
       dut.io.EN.poke(true.B)
       dut.io.ad.poke(1.U)

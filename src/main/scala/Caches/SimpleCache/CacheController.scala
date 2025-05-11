@@ -240,20 +240,22 @@ class CacheController(blockSize: Int) extends Module {
         when(rwIndex === (blockSize - 1).asUInt) {
           //Update tag store
           writeRAM(tagStore)
-          stateReg := compareTag1
-
-          rwIndex := 0.U
-
+          rwIndex := rwIndex + 1.U
           when(!rwReg){
             memReq := 2.U
           }.otherwise{
             memReq := 0.U
-
           }
 
         }.otherwise {
           rwIndex := rwIndex + 1.U
         }
+      }
+      when(rwIndex === (blockSize).asUInt){
+        rwIndex := 0.U
+        startRead(cache)
+        cacheAdd := cacheReadAdd
+        stateReg := compareTag1
       }
     }
   }

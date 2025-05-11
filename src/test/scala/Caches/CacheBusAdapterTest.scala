@@ -67,7 +67,7 @@ class CacheBusAdapterTest extends AnyFlatSpec with ChiselScalatestTester {
       dut.io.reqOut.bits.dataRequest.expect("hCAFEBABE".U)
       dut.io.reqOut.bits.isWrite.expect(true.B)
       dut.io.reqOut.bits.activeByteLane.expect(15.U)
-      step()
+      step(2)
       dut.io.CPUMemIO.stall.expect(false.B)
 
 
@@ -123,7 +123,7 @@ class CacheBusAdapterTest extends AnyFlatSpec with ChiselScalatestTester {
       dut.io.reqOut.bits.dataRequest.expect("hAAAAAAAA".U)
       dut.io.reqOut.bits.isWrite.expect(true.B)
       dut.io.reqOut.bits.activeByteLane.expect(4.U)
-      step()
+      step(2)
       dut.io.CPUMemIO.stall.expect(false.B)
 
 
