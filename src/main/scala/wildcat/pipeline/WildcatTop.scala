@@ -158,8 +158,8 @@ class WildcatTop(file: String, dmemNrByte: Int = 4096, freqHz: Int = 100000000) 
     } .otherwise {
       // Any other IO or memory region, do nothing for write
     }
-    //dmem.io.wrEnable := VecInit(Seq.fill(4)(false.B))
-    bus.io.CPUdCacheMemIO.wrEnable := VecInit(Seq.fill(4)(false.B))
+    dmem.io.wrEnable := VecInit(Seq.fill(4)(false.B))
+    //bus.io.CPUdCacheMemIO.wrEnable := VecInit(Seq.fill(4)(false.B))
   }
 
   io.led := 1.U ## 0.U(7.W) ## RegNext(ledReg)
