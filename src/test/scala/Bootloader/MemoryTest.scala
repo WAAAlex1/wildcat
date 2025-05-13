@@ -8,6 +8,7 @@ import chisel3.util._
 import chisel3.util.experimental.BoringUtils
 import org.scalatest.flatspec.AnyFlatSpec
 import chiseltest._
+import wildcat.Util
 import wildcat.pipeline.MemIO
 
 class MemoryTester(implicit val config:TilelinkConfig) extends Module {
@@ -23,8 +24,11 @@ class MemoryTester(implicit val config:TilelinkConfig) extends Module {
     val dready = Output(Bool())
 
   })
+  val file = "risc-v-lab/tests/simple/addpos.bin"
+  val (memory, start) = Util.getCode(file)
+
   val bus = Module(new BusInterconnect())
-  val CTRL = Module(new MemoryControllerTopSimulator(1.U))
+  val CTRL = Module(new MemoryControllerTopSimulator(1.U, memory))
 
   bus.io.CPUdCacheMemIO <> io.CPUdCacheMemIO
   bus.io.CPUiCacheMemIO <> io.CPUiCacheMemIO
@@ -58,6 +62,19 @@ class MemoryTest extends AnyFlatSpec with ChiselScalatestTester {
 
       dut.io.CPUiCacheMemIO.stall.expect(false.B)
       dut.io.CPUdCacheMemIO.stall.expect(false.B)
+
+
+      dut.io.CPUiCacheMemIO.rdEnable.poke(true.B)
+      dut.io.CPUiCacheMemIO.rdAddress.poke(0.U)
+      step()
+      while(dut.io.CPUiCacheMemIO.stall.peekBoolean()){
+        step()
+      }
+      dut.io.CPUiCacheMemIO.rdAddress.poke(4.U)
+
+      while(dut.io.CPUiCacheMemIO.stall.peekBoolean()){
+        step()
+      }
 
       dut.io.CPUdCacheMemIO.stall.expect(false.B)
       dut.io.CPUdCacheMemIO.rdEnable.poke(false.B)

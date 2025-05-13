@@ -1,8 +1,9 @@
 package ExtMemory
 
-import SPICommands._
+import ExtMemory.SPICommands._
 import chisel3._
 import chisel3.util._
+import chisel3.util.experimental.loadMemoryFromFileInline
 
 /**
  * Hardware model to mimic PSRAM: APS6404L-3SQR
@@ -15,16 +16,29 @@ import chisel3.util._
  */
 
 
-class PSRAM_Model (nbytes: Int) extends Module{
+class PSRAM_InstrModel(nbytes: Int, code: Array[Int]) extends Module{
   val io = IO(new Bundle {
     val CS = Input(Bool())
     val IN = Input(UInt(4.W))
     val OUT = Output(UInt(4.W))
   })
 
-
+  // code: Seq[Int] or Seq[BigInt] where each element is a 32-bit instruction
+  val hexLines = code.flatMap { instr =>
+    // Split the 32-bit instruction into 4 bytes, little-endian order
+    val b0 = (instr & 0xff).toByte
+    val b1 = ((instr >> 8) & 0xff).toByte
+    val b2 = ((instr >> 16) & 0xff).toByte
+    val b3 = ((instr >> 24) & 0xff).toByte
+    Seq(b0, b1, b2, b3)
+  }.map(b => f"${b & 0xff}%02x") // toUnsigned and format as two-digit hex
+  val file = new java.io. PrintWriter ("code.hex")
+  hexLines.foreach(line => file.println(line))
+  file.close ()
 
    val mem = SyncReadMem(nbytes, UInt(8.W))
+   loadMemoryFromFileInline(mem , "code.hex",firrtl. annotations . MemoryLoadFileType .Hex)
+
    val command = WireInit(0.U(8.W))
    val address = RegInit(0.U(24.W))
    val mode = RegInit(0.U(2.W)) // mode(0): 0 = SPI, 1 = QPI, mode(1): 0 = LINEAR BURST, 1 = WRAP

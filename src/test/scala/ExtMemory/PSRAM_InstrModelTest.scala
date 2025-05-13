@@ -1,12 +1,13 @@
 package ExtMemory
 
+import ExtMemory.SPICommands._
 import chisel3._
+import chisel3.util.experimental.BoringUtils
 import chiseltest._
 import org.scalatest.flatspec.AnyFlatSpec
-import chisel3.util.experimental.BoringUtils
-import SPICommands._
+import wildcat.Util
 
-class PSRAM_ModelTestTop(prescale: UInt) extends Module {
+class PSRAM_InstrModelTestTop(prescale: UInt) extends Module {
   val io = IO(new Bundle {
     val CS = Input(Bool())
     val IN = Input(UInt(4.W))
@@ -35,8 +36,10 @@ class PSRAM_ModelTestTop(prescale: UInt) extends Module {
     clkReg := !clkReg
   }
 
+  val (memory, start) = Util.getCode("risc-v-lab/tests/simple/addpos.bin")
+
   withClock(clkReg.asClock) {
-    val model = Module(new PSRAM_Model(1024))
+    val model = Module(new PSRAM_InstrModel(1024,memory))
 
 
     io.OUT := model.io.OUT
@@ -59,11 +62,11 @@ class PSRAM_ModelTestTop(prescale: UInt) extends Module {
   }
 }
 
-class PSRAM_ModelTest extends AnyFlatSpec with ChiselScalatestTester {
+class PSRAM_InstrModelTest extends AnyFlatSpec with ChiselScalatestTester {
   val prescale = 1
   "PSRAM" should "change modes" in {
 
-    test(new PSRAM_ModelTestTop(prescale.asUInt)).withAnnotations(Seq( WriteVcdAnnotation )) { dut =>
+    test(new PSRAM_InstrModelTestTop(prescale.asUInt)).withAnnotations(Seq( WriteVcdAnnotation )) { dut =>
       def step(n: Int = 1) = {
         dut.clock.step(n << prescale)
       }
@@ -125,7 +128,7 @@ class PSRAM_ModelTest extends AnyFlatSpec with ChiselScalatestTester {
   }
 
   "PSRAM" should "write and read" in {
-    test(new PSRAM_ModelTestTop(prescale.asUInt)).withAnnotations(Seq( WriteVcdAnnotation ))  { dut =>
+    test(new PSRAM_InstrModelTestTop(prescale.asUInt)).withAnnotations(Seq( WriteVcdAnnotation ))  { dut =>
       def step(n: Int = 1) = {
         dut.clock.step(n << prescale)
       }
@@ -156,7 +159,7 @@ class PSRAM_ModelTest extends AnyFlatSpec with ChiselScalatestTester {
           step()
         }
         val nibble = value(3, 0)
-        //println(f"Nibble: ${nibble}")
+        println(f"Nibble: ${nibble}")
         dut.io.IN.poke(nibble)
       }
       // Enter quad mode
@@ -172,6 +175,42 @@ class PSRAM_ModelTest extends AnyFlatSpec with ChiselScalatestTester {
       step()
       dut.io.mode.expect(1.U) // QPI mode
       dut.io.state.expect(0.U) // idle
+
+
+      // Test read
+      step(3)
+      enable()
+      pokeInputQuad(QPI_FAST_QUAD_READ, 2)
+      dut.io.command.expect(QPI_FAST_QUAD_READ)
+      step()
+      dut.io.state.expect(1.U) // get address state
+      pokeInputQuad(0.U, 6)
+      step(2)
+      dut.io.state.expect(2.U) // read state
+      step(7)
+      dut.io.readMemVal.expect("h13".U)
+      dut.io.OUT.expect(0x1.U)
+      step()
+      dut.io.readMemVal.expect("h13".U)
+      dut.io.OUT.expect(0x3.U)
+      dut.io.address.expect(1.U)
+      step()
+      dut.io.readMemVal.expect("h05".U)
+      dut.io.OUT.expect(0x0.U)
+      step()
+      dut.io.readMemVal.expect("h05".U)
+      dut.io.OUT.expect(0x5.U)
+      dut.io.address.expect(2.U)
+      step()
+      dut.io.readMemVal.expect("h50".U)
+      dut.io.OUT.expect(0x5.U)
+      step()
+      dut.io.readMemVal.expect("h50".U)
+      dut.io.OUT.expect(0x0.U)
+      disable()
+      step()
+      dut.io.state.expect(0.U)
+
 
       // Test write
       step(3)
@@ -229,4 +268,6 @@ class PSRAM_ModelTest extends AnyFlatSpec with ChiselScalatestTester {
 
     }
   }
+
+
 }

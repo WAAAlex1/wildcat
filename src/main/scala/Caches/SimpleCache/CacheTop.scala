@@ -37,7 +37,7 @@ class CacheTop(blockSize: Int)(implicit val config:TilelinkConfig) extends Modul
 
   Controller.io.validReq := false.B
   Controller.io.rw := true.B
-  Controller.io.memAdd := io.CPUmemIO.rdAddress
+  Controller.io.memAddr := io.CPUmemIO.rdAddress
   Controller.io.wrEnable := io.CPUmemIO.wrEnable
   Controller.io.CPUdataIn := io.CPUmemIO.wrData
   Controller.io.memDataIn := io.CacheRspIn.bits.dataResponse
@@ -61,7 +61,7 @@ class CacheTop(blockSize: Int)(implicit val config:TilelinkConfig) extends Modul
   when(io.CPUmemIO.rdEnable){ // lb, lh or lw
     Controller.io.validReq := true.B
     Controller.io.rw := true.B
-    Controller.io.memAdd := io.CPUmemIO.rdAddress
+    Controller.io.memAddr := io.CPUmemIO.rdAddress
 
     when(Controller.io.memReq =/= 0.U){ // When busy allocating or write through
       io.CPUmemIO.stall := true.B
@@ -73,7 +73,7 @@ class CacheTop(blockSize: Int)(implicit val config:TilelinkConfig) extends Modul
   when(io.CPUmemIO.wrEnable.asUInt > 0.U){ // sb, sh or sw
     Controller.io.validReq := true.B
     Controller.io.rw := false.B
-    Controller.io.memAdd := io.CPUmemIO.wrAddress
+    Controller.io.memAddr := io.CPUmemIO.wrAddress
 
     when(!Controller.io.ready){ // Ensure stalling when busy allocating or writing
       io.CPUmemIO.stall := true.B
@@ -91,10 +91,10 @@ class CacheTop(blockSize: Int)(implicit val config:TilelinkConfig) extends Modul
   }.elsewhen(Controller.io.memReq === 2.U){ // write through
 
     io.CacheReqOut.valid := true.B
-    io.CacheReqOut.bits.dataRequest := io.CPUmemIO.wrData
-    io.CacheReqOut.bits.addrRequest := io.CPUmemIO.wrAddress
+    io.CacheReqOut.bits.dataRequest := Controller.io.WTData
+    io.CacheReqOut.bits.addrRequest := Controller.io.WTaddr
     io.CacheReqOut.bits.isWrite := true.B
-    io.CacheReqOut.bits.activeByteLane := io.CPUmemIO.wrEnable.asUInt
+    io.CacheReqOut.bits.activeByteLane := Controller.io.WTwre.asUInt
 
   }
 

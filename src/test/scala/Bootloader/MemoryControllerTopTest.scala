@@ -7,6 +7,7 @@ import chisel3.util._
 import chisel3.util.experimental.BoringUtils
 import org.scalatest.flatspec.AnyFlatSpec
 import chiseltest._
+import wildcat.Util
 
 
 class MemoryControllerTopTester(prescale: UInt) (implicit val config:TilelinkConfig) extends Module {
@@ -37,7 +38,10 @@ class MemoryControllerTopTester(prescale: UInt) (implicit val config:TilelinkCon
 
 
   })
-  val CTRL = Module(new MemoryControllerTopSimulator(prescale))
+  val file = "risc-v-lab/tests/simple/addpos.bin"
+  val (memory, start) = Util.getCode(file)
+
+  val CTRL = Module(new MemoryControllerTopSimulator(prescale,memory))
   CTRL.io.dCacheReqOut <> io.dCacheReqOut
   io.dCacheRspIn <> CTRL.io.dCacheRspIn
   CTRL.io.iCacheReqOut <> io.iCacheReqOut
