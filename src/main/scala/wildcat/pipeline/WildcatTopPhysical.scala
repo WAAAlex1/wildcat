@@ -85,9 +85,9 @@ class WildcatTopPhysical(freqHz: Int = 100000000) extends Module {
 
   // ********************************************************************
 
-  // Instantiate UART
-  val tx = Module(new BufferedTx(100000000, 115200))
-  val rx = Module(new Rx(100000000, 115200))
+  // Instantiate UART - do not use freq > baudrate (will crash)
+  val tx = Module(new BufferedTx(freqHz, 115200))
+  val rx = Module(new Rx(freqHz, 115200))
   io.tx := tx.io.txd
   rx.io.rxd := io.rx
 
@@ -124,7 +124,7 @@ class WildcatTopPhysical(freqHz: Int = 100000000) extends Module {
   // ********************************************************************
 
   // Instantiate Bootloader
-  val BL = Module(new Bootloader())
+  val BL = Module(new Bootloader(freqHz, 115200))
   val BL_Stall = ~bootloaderStatusReg(0).asBool // 0 = bootloader is active -> BL_stall = true
   //Connect bootloader
   BL.io.rx := io.rx
@@ -194,5 +194,5 @@ class WildcatTopPhysical(freqHz: Int = 100000000) extends Module {
 }
 
 object WildcatTopPhysical extends App {
-  emitVerilog(new WildcatTopPhysical(), Array("--target-dir", "generated"))
+  emitVerilog(new WildcatTopPhysical(60000000), Array("--target-dir", "generated"))
 }

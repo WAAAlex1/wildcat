@@ -38,7 +38,7 @@ class TimerCounter(freqHz: Int = 100000000) extends Module {
   val timeReg    = RegInit(0.U(64.W)) // MTIME source
   val instretReg = RegInit(0.U(64.W))
 
-  // Clock division logic (Existing)
+  // Clock division logic
   val cyclesPerTimeIncrement = freqHz / 100 // Assuming 100MHz clock for 100Hz timer
   val timeCounter = RegInit(0.U(log2Ceil(cyclesPerTimeIncrement).W))
 
