@@ -33,13 +33,18 @@ class WildcatTop(file: String, dmemNrByte: Int = 4096, freqHz: Int = 100000000) 
   cpu.io.Bootloader_Stall := false.B
   // val cpu = Module(new WildFour())
   // val cpu = Module(new StandardFive())
-  val dmem = Module(new ScratchPadMem(memory, nrBytes = dmemNrByte))
-  cpu.io.dmem <> dmem.io
 
+  //val dmem = Module(new ScratchPadMem(memory, nrBytes = dmemNrByte))
+  //cpu.io.dmem <> dmem.io
+
+
+
+/*
   val imem = Module(new InstructionROM(memory))
   imem.io.address := cpu.io.imem.address
   cpu.io.imem.data := imem.io.data
   cpu.io.imem.stall := imem.io.stall
+ */
 
 
   // Cache, bus and memory controller connections
@@ -50,12 +55,28 @@ class WildcatTop(file: String, dmemNrByte: Int = 4096, freqHz: Int = 100000000) 
   bus.io.CPUdCacheMemIO := DontCare
 
   // Choose between simulated main memory or physical
-  val MCU = Module(new MemoryControllerTopSimulator(1.U))
+  val MCU = Module(new MemoryControllerTopSimulator(1.U,memory))
 
   MCU.io.dCacheReqOut <> bus.io.dCacheReqOut
   bus.io.dCacheRspIn <> MCU.io.dCacheRspIn
   MCU.io.iCacheReqOut <> bus.io.iCacheReqOut
   bus.io.iCacheRspIn <> MCU.io.iCacheRspIn
+
+  //DMEM Connections
+  cpu.io.dmem <> bus.io.CPUdCacheMemIO
+
+  //IMEM Connections
+  cpu.io.imem.data := bus.io.CPUiCacheMemIO.rdData
+  cpu.io.imem.stall := bus.io.CPUiCacheMemIO.stall
+
+  // Default drive of instruction cache
+  bus.io.CPUiCacheMemIO.rdEnable := true.B
+  bus.io.CPUiCacheMemIO.rdAddress := cpu.io.imem.address - 4.U
+  bus.io.CPUiCacheMemIO.wrData := 0.U
+  bus.io.CPUiCacheMemIO.wrEnable := Seq.fill(4)(false.B)
+  bus.io.CPUiCacheMemIO.wrAddress := 0.U
+
+
 
 
   // Here IO stuff
@@ -133,7 +154,8 @@ class WildcatTop(file: String, dmemNrByte: Int = 4096, freqHz: Int = 100000000) 
     } .otherwise {
       // Any other IO or memory region, do nothing for write
     }
-    dmem.io.wrEnable := VecInit(Seq.fill(4)(false.B))
+    //dmem.io.wrEnable := VecInit(Seq.fill(4)(false.B))
+    bus.io.CPUdCacheMemIO.wrEnable := VecInit(Seq.fill(4)(false.B))
   }
 
   io.led := 1.U ## 0.U(7.W) ## RegNext(ledReg)

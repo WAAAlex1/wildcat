@@ -76,9 +76,18 @@ class ThreeCats(freqHz: Int = 100000000) extends Wildcat() {
 
   // Decode instruction & Register Addresses
   val decOut = decode(instrReg)
-  val rs1 = instr(19, 15)
-  val rs2 = instr(24, 20)
-  val rd = instr(11, 7)
+  val rs1 = Wire(UInt(5.W))
+  val rs2 = Wire(UInt(5.W))
+  val rd = Wire(UInt(5.W))
+  when(!stall){
+    rs1 := instr(19, 15)
+    rs2 := instr(24, 20)
+    rd := instr(11, 7)
+  }.otherwise {
+    rs1 := instrReg(19, 15)
+    rs2 := instrReg(24, 20)
+    rd := instrReg(11, 7)
+  }
   val (rs1Val, rs2Val, debugRegs) = registerFile(rs1, rs2, wbDest, wbData, wrEna, true)
 
   val decEx = Wire(new Bundle() {
