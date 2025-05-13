@@ -34,17 +34,17 @@ class WildcatTop(file: String, dmemNrByte: Int = 4096, freqHz: Int = 100000000) 
   // val cpu = Module(new WildFour())
   // val cpu = Module(new StandardFive())
 
-  //val dmem = Module(new ScratchPadMem(memory, nrBytes = dmemNrByte))
-  //cpu.io.dmem <> dmem.io
+  val dmem = Module(new ScratchPadMem(memory, nrBytes = dmemNrByte))
+  cpu.io.dmem <> dmem.io
 
 
 
-/*
+
   val imem = Module(new InstructionROM(memory))
   imem.io.address := cpu.io.imem.address
   cpu.io.imem.data := imem.io.data
   cpu.io.imem.stall := imem.io.stall
- */
+
 
 
   // Cache, bus and memory controller connections
@@ -62,6 +62,8 @@ class WildcatTop(file: String, dmemNrByte: Int = 4096, freqHz: Int = 100000000) 
   MCU.io.iCacheReqOut <> bus.io.iCacheReqOut
   bus.io.iCacheRspIn <> MCU.io.iCacheRspIn
 
+
+  /*
   //DMEM Connections
   cpu.io.dmem <> bus.io.CPUdCacheMemIO
 
@@ -75,6 +77,8 @@ class WildcatTop(file: String, dmemNrByte: Int = 4096, freqHz: Int = 100000000) 
   bus.io.CPUiCacheMemIO.wrData := 0.U
   bus.io.CPUiCacheMemIO.wrEnable := Seq.fill(4)(false.B)
   bus.io.CPUiCacheMemIO.wrAddress := 0.U
+
+   */
 
 
 
