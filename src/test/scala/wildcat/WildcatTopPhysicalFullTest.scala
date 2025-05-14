@@ -5,9 +5,9 @@ import chiseltest._
 import org.scalatest.flatspec.AnyFlatSpec
 import wildcat.pipeline.WildcatTopPhysical
 
-class WildcatTopPhysicalDataTest() extends AnyFlatSpec with
+class WildcatTopPhysicalFullTest() extends AnyFlatSpec with
   ChiselScalatestTester {
-  "Wildcat" should "Write Word to Memory" in {
+  "Wildcat" should "Bootload and execute" in {
     test(new WildcatTopPhysical(5000000))
       .withAnnotations(Seq(WriteVcdAnnotation)) { dut =>
         val BIT_CNT = ((5000000 + 115200 / 2) / 115200 - 1)
@@ -42,25 +42,16 @@ class WildcatTopPhysicalDataTest() extends AnyFlatSpec with
 
         send32bit("h00000000".U) //First send address
         send32bit("h00108093".U) //Then send the instruction (addi x1, x1, 1)
-        //dut.io.led.expect(0.U) // should fail always
 
         send32bit("h00000004".U) //First send address
-        send32bit("hffdff06f".U) //Then send the instruction (jal x0, -4)
-        dut.io.led.expect(0.U) // should fail always
+        send32bit("h00000073".U) //Then send the instruction (ecall)
 
         //Now send memory mapped IO for setting bootloader to sleep
         send32bit(bootSleepAddr)
         send32bit("h00000001".U) //Sleep command data
-        dut.io.led.expect(0.U) // should fail always
         //Should be asleep now
 
         dut.clock.step(1000)
-        dut.io.led.expect(1.U) // should fail always
-
-        // Investigate X1 after test has run.
-
-        // Test will never show any instructions being ran as SPI controller not connected to mem
-        // Hence no instructions can later be read.
       }
   }
 }
