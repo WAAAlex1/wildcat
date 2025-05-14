@@ -1,6 +1,6 @@
 package Bootloader
 
-import ExtMemory.{IOBUFFER, PSRAM_Model}
+import ExtMemory._
 import SPI.SpiControllerTop
 import caravan.bus.tilelink.{TLRequest, TLResponse, TilelinkConfig}
 import chisel3.experimental._
@@ -14,7 +14,7 @@ import chisel3.util.Decoupled
  * By Gustav Philip Junker
  */
 
-class MemoryControllerTopSimulator(prescale: UInt)(implicit val config:TilelinkConfig) extends Module {
+class MemoryControllerTopSimulator(prescale: UInt, code: Array[Int])(implicit val config:TilelinkConfig) extends Module {
   val io = IO(new Bundle {
     // To/From caches via bus
     val dCacheReqOut = Flipped(Decoupled(new TLRequest))
@@ -43,9 +43,8 @@ class MemoryControllerTopSimulator(prescale: UInt)(implicit val config:TilelinkC
   SpiCtrl.io.SPIctrl <> MemCtrl.io.SPIctrl
   SpiCtrl.io.moduleSel := MemCtrl.io.moduleSel
   MemCtrl.io.SpiCtrlValid := SpiCtrl.io.valid
-  when(SpiCtrl.io.startup){
-    SpiCtrl.io.moduleSel := Seq(false.B, true.B, true.B)
-  }
+  MemCtrl.io.startup := SpiCtrl.io.startup
+
 
   io.CS0 := SpiCtrl.io.CS0
   io.CS1 := SpiCtrl.io.CS1
@@ -69,8 +68,8 @@ class MemoryControllerTopSimulator(prescale: UInt)(implicit val config:TilelinkC
 
   // For simulation
   withClock(spiClkReg.asClock){
-    val RAM0 = Module(new PSRAM_Model(2048))
-    val RAM1 = Module(new PSRAM_Model(2048))
+    val RAM0 = Module(new PSRAM_InstrModel(4096, code))
+    val RAM1 = Module(new PSRAM_Model(4096))
 
     RAM0.io.CS := SpiCtrl.io.CS1
     RAM0.io.IN := SpiCtrl.io.outSio

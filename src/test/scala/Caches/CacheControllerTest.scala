@@ -33,7 +33,7 @@ class CacheControllerTester(blockSize: Int) extends Module {
   val controller = Module(new CacheController(blockSize))
   controller.io.validReq := io.validReq
   controller.io.rw := io.rw
-  controller.io.memAdd := io.memAdd
+  controller.io.memAddr := io.memAdd
   controller.io.CPUdataIn := io.CPUdataIn
   io.CPUdataOut := controller.io.CPUdataOut
   io.stall := controller.io.stall

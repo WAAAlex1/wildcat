@@ -70,7 +70,7 @@ class WildcatTopPhysical(freqHz: Int = 100000000) extends Module {
 
   // Default drive of instruction cache
   bus.io.CPUiCacheMemIO.rdEnable := true.B
-  bus.io.CPUiCacheMemIO.rdAddress := cpu.io.imem.address
+  bus.io.CPUiCacheMemIO.rdAddress := cpu.io.imem.address - 4.U
   bus.io.CPUiCacheMemIO.wrData := 0.U
   bus.io.CPUiCacheMemIO.wrEnable := Seq.fill(4)(false.B)
   bus.io.CPUiCacheMemIO.wrAddress := 0.U

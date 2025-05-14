@@ -46,9 +46,7 @@ class MemoryControllerTopPhysical(prescale: UInt)(implicit val config:TilelinkCo
   SpiCtrl.io.SPIctrl <> MemCtrl.io.SPIctrl
   SpiCtrl.io.moduleSel := MemCtrl.io.moduleSel
   MemCtrl.io.SpiCtrlValid := SpiCtrl.io.valid
-  when(SpiCtrl.io.startup){
-    SpiCtrl.io.moduleSel := Seq(false.B, true.B, true.B)
-  }
+  MemCtrl.io.startup := SpiCtrl.io.startup
 
   io.CS0 := SpiCtrl.io.CS0
   io.CS1 := SpiCtrl.io.CS1

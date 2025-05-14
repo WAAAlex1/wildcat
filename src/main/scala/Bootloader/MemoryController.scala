@@ -31,11 +31,13 @@ class MemoryController(implicit val config:TilelinkConfig) extends Module {
 
     // To/From SPI controllers
     val SPIctrl = Flipped(new SpiCTRLIO)
+    val startup = Input(Bool())
     val SpiCtrlValid = Input(Bool())
     val moduleSel = Output(Vec(3, Bool())) // 0 for flash, 1 for psram a, 2 for psram b, (flash not working)
   })
 
   io.moduleSel := Seq.fill(3)(false.B) // No module selected
+
 
 
   val dReqAck = io.dCacheReqOut.valid && io.dCacheReqOut.ready // Request acknowledged
@@ -52,8 +54,8 @@ class MemoryController(implicit val config:TilelinkConfig) extends Module {
   val rspHandled = RegInit(true.B) // true = handled (no pending response)
 
   // Arbitration on ready for requests. Data cache has priority
-  io.dCacheReqOut.ready := io.dCacheReqOut.valid
-  io.iCacheReqOut.ready := !io.dCacheReqOut.valid && io.iCacheReqOut.valid
+  io.dCacheReqOut.ready := io.dCacheReqOut.valid  && !io.startup
+  io.iCacheReqOut.ready := !io.dCacheReqOut.valid && io.iCacheReqOut.valid  && !io.startup
 
   // Default Responses
   io.dCacheRspIn.bits.dataResponse := readData
@@ -146,6 +148,10 @@ class MemoryController(implicit val config:TilelinkConfig) extends Module {
   when(rspHandled && !rspPending) {
     // Safe to deassert all device enables when response is handled and no pending request
     io.moduleSel := Seq.fill(3)(false.B)
+  }
+
+  when(io.startup){
+    io.moduleSel := Seq(false.B, true.B, true.B)
   }
 
 }
