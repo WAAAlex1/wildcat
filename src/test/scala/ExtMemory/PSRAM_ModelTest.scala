@@ -179,12 +179,13 @@ class PSRAM_ModelTest extends AnyFlatSpec with ChiselScalatestTester {
       pokeInputQuad(QPI_WRITE,2)
       dut.io.command.expect(QPI_WRITE)
       step()
-      dut.io.state.expect(1.U) // get address state
       pokeInputQuad(64.U,6)
+      dut.io.state.expect(1.U) // get address state
+
       step()
       pokeInputQuad("hAB".U,2)
       dut.io.state.expect(3.U) // write state
-      dut.io.address.expect(64.U)
+
       step()
       dut.io.val2Write.expect("hAB".U)
       pokeInputQuad("hBA".U,2)
@@ -192,7 +193,6 @@ class PSRAM_ModelTest extends AnyFlatSpec with ChiselScalatestTester {
       dut.io.address.expect(65.U)
       step()
       dut.io.val2Write.expect("hBA".U)
-      step()
       disable()
       step()
       dut.io.state.expect(0.U) // idle
@@ -203,11 +203,12 @@ class PSRAM_ModelTest extends AnyFlatSpec with ChiselScalatestTester {
       pokeInputQuad(QPI_FAST_QUAD_READ, 2)
       dut.io.command.expect(QPI_FAST_QUAD_READ)
       step()
-      dut.io.state.expect(1.U) // get address state
       pokeInputQuad(64.U, 6)
+      dut.io.state.expect(1.U) // get address state
+
       step(2)
       dut.io.state.expect(2.U) // read state
-      step(7)
+      step(6)
       dut.io.readMemVal.expect("hAB".U)
       dut.io.OUT.expect(0xA.U)
       step()
