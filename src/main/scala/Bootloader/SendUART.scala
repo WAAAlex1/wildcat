@@ -71,7 +71,7 @@ object SendUART {
     //Send ZSBL:
     sendFile(zsblBytes,serialPort,0x0)
     //Send the program
-    sendFile(programBytes, serialPort,0x100)
+    //sendFile(programBytes, serialPort,0x100)
 
     //Set the bootloader to sleep and stop stalling the wildcat:
     bootloaderSleep(serialPort)
