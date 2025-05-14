@@ -65,9 +65,10 @@ class MemoryControllerTopSimulator(prescale: UInt, code: Array[Int])(implicit va
     spiClkReg := !spiClkReg  // direct pass-through (always high)
   }
 
+  val SimClk = Mux(SpiCtrl.io.startup, spiClkReg, !spiClkReg)
 
   // For simulation
-  withClock(spiClkReg.asClock){
+  withClock(SimClk.asClock){
     val RAM0 = Module(new PSRAM_InstrModel(4096, code))
     val RAM1 = Module(new PSRAM_Model(4096))
 

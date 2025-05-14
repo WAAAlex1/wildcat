@@ -46,6 +46,7 @@ class WildcatTopPhysical(freqHz: Int = 100000000) extends Module {
   implicit val config = new TilelinkConfig
   val bus = Module(new BusInterconnect()) // Includes caches
   val MCU = Module(new MemoryControllerTopPhysical(1.U))
+  //val MCU = Module(new MemoryControllerTopSimulator(1.U,Array(0)))
 
   MCU.io.dCacheReqOut <> bus.io.dCacheReqOut
   bus.io.dCacheRspIn <> MCU.io.dCacheRspIn
@@ -53,6 +54,7 @@ class WildcatTopPhysical(freqHz: Int = 100000000) extends Module {
   bus.io.iCacheRspIn <> MCU.io.iCacheRspIn
 
   // Connect output
+
   io.CS0 := MCU.io.CS0
   io.CS1 := MCU.io.CS1
   io.CS2 := MCU.io.CS2
@@ -60,6 +62,15 @@ class WildcatTopPhysical(freqHz: Int = 100000000) extends Module {
   io.dir := MCU.io.dir
   MCU.io.inSio := io.inSio
   io.outSio := MCU.io.outSio
+
+   /*
+  io.CS0 := DontCare
+  io.CS1 := DontCare
+  io.CS2 := DontCare
+  io.spiClk := DontCare
+  io.dir := DontCare
+  io.outSio := DontCare
+  */
 
   //DMEM Connections
   cpu.io.dmem <> bus.io.CPUdCacheMemIO
@@ -69,8 +80,9 @@ class WildcatTopPhysical(freqHz: Int = 100000000) extends Module {
   cpu.io.imem.stall := bus.io.CPUiCacheMemIO.stall
 
   // Default drive of instruction cache
+
   bus.io.CPUiCacheMemIO.rdEnable := true.B
-  bus.io.CPUiCacheMemIO.rdAddress := cpu.io.imem.address - 4.U
+  bus.io.CPUiCacheMemIO.rdAddress := cpu.io.imem.address
   bus.io.CPUiCacheMemIO.wrData := 0.U
   bus.io.CPUiCacheMemIO.wrEnable := Seq.fill(4)(false.B)
   bus.io.CPUiCacheMemIO.wrAddress := 0.U
@@ -151,6 +163,7 @@ class WildcatTopPhysical(freqHz: Int = 100000000) extends Module {
     }.otherwise {
       cpu.io.dmem.rdData := 0.U
     }
+    bus.io.CPUdCacheMemIO.rdEnable := false.B
   }
 
   // Memory write with memorymapping (CLINT, UART, LED)
@@ -166,6 +179,7 @@ class WildcatTopPhysical(freqHz: Int = 100000000) extends Module {
     }.otherwise {
       // Any other IO or memory region, do nothing for write
     }
+    bus.io.CPUdCacheMemIO.wrEnable := Seq.fill(4)(false.B)
   }
 
   io.led := 1.U ## 0.U(7.W) ## RegNext(ledReg)
