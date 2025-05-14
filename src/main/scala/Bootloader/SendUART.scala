@@ -71,7 +71,7 @@ object SendUART {
     //Send ZSBL:
     sendFile(zsblBytes,serialPort,0x0)
     //Send the program
-    sendFile(programBytes, serialPort,0x100)
+    //sendFile(programBytes, serialPort,0x100)
 
     //Set the bootloader to sleep and stop stalling the wildcat:
     bootloaderSleep(serialPort)
@@ -93,13 +93,13 @@ object SendUART {
       if(!(paddedChunk(0) == 0x00 && paddedChunk(1) == 0x00 && paddedChunk(2) == 0x00 && paddedChunk(3) == 0x00)) {
         val addressBytesPadded = ByteBuffer.allocate(4).putInt(address).array()
 
-        // Write address (4 bytes)
+        // Write address (4 bytes) little endian (reverse)
         serialPort.writeBytes(addressBytesPadded, 4)
-        println(addressBytesPadded.map(b => f"0x$b%02X").mkString("Address: (", " ", ")"))
+        println(addressBytesPadded.reverse.map(b => f"0x$b%02X").mkString("Address: (", " ", ")"))
 
-        // Write data (4 bytes)
+        // Write data (4 bytes) little endian (reverse)
         serialPort.writeBytes(paddedChunk, 4)
-        println(paddedChunk.map(b => f"0x$b%02X").mkString("Data: (", " ", ")"))
+        println(paddedChunk.reverse.map(b => f"0x$b%02X").mkString("Data: (", " ", ")"))
       }
       address += 4
     }
@@ -108,8 +108,9 @@ object SendUART {
   def bootloaderSleep(serialPort: SerialPort): Unit = {
     System.out.println("Putting Bootloader to sleep and unstalling pipeline")
     // This byte array should turn on the LED on the FPGA board and sleep the bootloader
-    val blSleepProtocol = Array[Byte](0xF0.toByte, 0x01.toByte, 0x00.toByte, 0x00.toByte, 0x00.toByte, 0x00.toByte, 0x00.toByte, 0xFF.toByte, 0xF1.toByte, 0x00.toByte, 0x00.toByte, 0x00.toByte, 0x00.toByte, 0x00.toByte, 0x00.toByte, 0x01.toByte)
-    serialPort.writeBytes(blSleepProtocol, 8)
+    //Changed to little endian
+    val blSleepProtocol = Array[Byte](0x00.toByte, 0x00.toByte, 0x01.toByte, 0xF0.toByte, 0xFF.toByte, 0x00.toByte, 0x00.toByte, 0x00.toByte, 0x00.toByte, 0x00.toByte, 0x00.toByte, 0xF1.toByte, 0x01.toByte, 0x00.toByte, 0x00.toByte, 0x00.toByte)
+    serialPort.writeBytes(blSleepProtocol, 16)
     println(blSleepProtocol.map(b => f"0x$b%02X").mkString("BootSleep: (", " ", ")"))
   }
 
