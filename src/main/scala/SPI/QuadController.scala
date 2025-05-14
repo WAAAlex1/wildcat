@@ -136,7 +136,7 @@ class QuadController extends Module {
             }
         }
         is (deassertCS) {
-
+            /*
             val reordered = Cat(
                 rxShiftReg(31, 28), // n7
                 rxShiftReg(3, 0),    // n0
@@ -147,10 +147,21 @@ class QuadController extends Module {
                 rxShiftReg(7, 4),   // n1
                 rxShiftReg(11, 8),  // n3
             )
-            rxShiftReg := reordered | (io.inSio << 24).asUInt
+            //rxShiftReg := reordered | (io.inSio << 24).asUInt
             spiDataOut := reordered | (io.inSio << 24).asUInt
             io.rxData := reordered | (io.inSio << 24).asUInt
-
+             */
+            val reordered = Cat(
+                rxShiftReg(27, 24), // n7
+                rxShiftReg(31, 28), // n6
+                rxShiftReg(19, 16), // n5
+                rxShiftReg(23, 20), // n4
+                rxShiftReg(11, 8),  // n3
+                rxShiftReg(15, 12), // n2
+                rxShiftReg(3, 0),   // n1
+                rxShiftReg(7, 4)    // n0
+            )
+            spiDataOut := (reordered >> (32.U - io.receiveLength*4.U))
 
             csReg := true.B
             clockEnable := false.B

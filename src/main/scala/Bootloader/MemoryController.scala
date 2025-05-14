@@ -111,11 +111,11 @@ class MemoryController(implicit val config:TilelinkConfig) extends Module {
       rspValid := true.B
       rspPending := false.B
 
-    }.elsewhen(currentReq.addrRequest(24)) {
+    }.elsewhen(currentReq.addrRequest(23)) {
       // RAM 1 read/write
       io.moduleSel := Seq(false.B, false.B, true.B)
 
-    }.elsewhen(!currentReq.addrRequest(24)) {
+    }.elsewhen(!currentReq.addrRequest(23)) {
       // RAM 0 read/ write
       io.moduleSel := Seq(false.B, true.B, false.B)
 

@@ -62,16 +62,18 @@ class PSRAM_Model (nbytes: Int) extends Module{
            lastRead := lastRead(3, 0) ## io.IN
            command := lastRead(3, 0) ## io.IN
 
-           switch(command) {
+           switch(lastCommand) {
              is(QPI_WRITE) {
                rw := false.B
                address := 0.U
                stateReg := getAddress
+               idx := 0.U
              }
              is(QPI_FAST_QUAD_READ) {
                rw := true.B
                address := 0.U
                stateReg := getAddress
+               idx := 0.U
              }
            }
          }
@@ -97,7 +99,7 @@ class PSRAM_Model (nbytes: Int) extends Module{
          lastAddress := lastAddress(19,0) ## io.IN
          currentAddress := lastAddress(19,0) ## io.IN
 
-         when(idx === 6.U) {
+         when(idx === 5.U) {
            address := lastAddress
            idx := 0.U
            lastAddress := 0.U
@@ -118,7 +120,7 @@ class PSRAM_Model (nbytes: Int) extends Module{
        when(!io.CS) {
          readMemVal := mem.read(address)
          when(!waitDone) {
-           when(idx === 6.U) { // Wait cycles
+           when(idx === 5.U) { // Wait cycles
              waitDone := true.B
 
              idx := 0.U

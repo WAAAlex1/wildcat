@@ -22,7 +22,7 @@ class MemoryTester(implicit val config:TilelinkConfig) extends Module {
     // Debugging
 
     val dready = Output(Bool())
-
+    val iready = Output(Bool())
   })
   val file = "risc-v-lab/tests/simple/addpos.bin"
   val (memory, start) = Util.getCode(file)
@@ -40,8 +40,9 @@ class MemoryTester(implicit val config:TilelinkConfig) extends Module {
 
 
   io.dready := DontCare
+  io.iready := DontCare
   BoringUtils.bore(bus.dCacheAdapter.Cache.Controller.io.ready, Seq(io.dready))
-
+  BoringUtils.bore(bus.iCacheAdapter.Cache.Controller.io.ready, Seq(io.iready))
 }
 
 class MemoryTest extends AnyFlatSpec with ChiselScalatestTester {
@@ -67,14 +68,11 @@ class MemoryTest extends AnyFlatSpec with ChiselScalatestTester {
       dut.io.CPUiCacheMemIO.rdEnable.poke(true.B)
       dut.io.CPUiCacheMemIO.rdAddress.poke(0.U)
       step()
+      dut.io.CPUiCacheMemIO.rdEnable.poke(false.B)
       while(dut.io.CPUiCacheMemIO.stall.peekBoolean()){
         step()
       }
-      dut.io.CPUiCacheMemIO.rdAddress.poke(4.U)
 
-      while(dut.io.CPUiCacheMemIO.stall.peekBoolean()){
-        step()
-      }
 
       dut.io.CPUdCacheMemIO.stall.expect(false.B)
       dut.io.CPUdCacheMemIO.rdEnable.poke(false.B)
@@ -88,41 +86,39 @@ class MemoryTest extends AnyFlatSpec with ChiselScalatestTester {
       pokeVecBool(dut.io.CPUdCacheMemIO.wrEnable, 0)
 
       while(!dut.io.dready.peekBoolean()){
-
         step()
       }
-      dut.io.CPUdCacheMemIO.wrAddress.poke(0.U)
-      pokeVecBool(dut.io.CPUdCacheMemIO.wrEnable, 3)
-      dut.io.CPUdCacheMemIO.wrData.poke("hFACEFACE".U)
-      step()
-      while(dut.io.CPUdCacheMemIO.stall.peekBoolean){
-        step()
-      }
-      pokeVecBool(dut.io.CPUdCacheMemIO.wrEnable, 0)
-      step(2)
-
-      pokeVecBool(dut.io.CPUiCacheMemIO.wrEnable, 15)
-      dut.io.CPUiCacheMemIO.wrAddress.poke(8.U)
-      dut.io.CPUiCacheMemIO.wrData.poke("h12345678".U)
-
-
       dut.io.CPUdCacheMemIO.rdAddress.poke(0.U)
       dut.io.CPUdCacheMemIO.rdEnable.poke(true.B)
       step()
-      dut.io.CPUdCacheMemIO.rdAddress.poke(4.U)
-      step()
-      dut.io.CPUdCacheMemIO.rdAddress.poke(8.U)
-      step()
-
       dut.io.CPUdCacheMemIO.rdEnable.poke(false.B)
-
-      while(dut.io.CPUiCacheMemIO.stall.peekBoolean){
+      while(dut.io.CPUdCacheMemIO.stall.peekBoolean){
         step()
       }
+      dut.io.CPUdCacheMemIO.rdEnable.poke(false.B)
+      dut.io.CPUiCacheMemIO.rdEnable.poke(false.B)
+
+      step(2)
+
+      pokeVecBool(dut.io.CPUiCacheMemIO.wrEnable, 15)
+      dut.io.CPUiCacheMemIO.wrAddress.poke(16.U)
+      dut.io.CPUiCacheMemIO.wrData.poke("h12345678".U)
+
+
+      step()
       pokeVecBool(dut.io.CPUiCacheMemIO.wrEnable, 0)
-      dut.io.CPUiCacheMemIO.rdEnable.poke(true.B)
-      dut.io.CPUiCacheMemIO.rdAddress.poke(8.U)
-      step(4)
+      while(!dut.io.iready.peekBoolean()){
+        step()
+      }
+
+      dut.io.CPUdCacheMemIO.rdEnable.poke(true.B)
+      dut.io.CPUdCacheMemIO.rdAddress.poke(16.U)
+      step()
+
+      while(dut.io.CPUdCacheMemIO.stall.peekBoolean){
+        step()
+      }
+
 
 
 

@@ -255,6 +255,8 @@ class CacheController(blockSize: Int) extends Module {
           rwIndex := rwIndex + 1.U
           when(!rwReg){
             memReq := 2.U
+          }.otherwise{
+            memReq := 0.U
           }
 
 
@@ -265,9 +267,7 @@ class CacheController(blockSize: Int) extends Module {
         }
       }
       when(rwIndex === (blockSize).asUInt){
-        when(rwReg){
-          memReq := 0.U
-        }
+
 
         rwIndex := 0.U
         startRead(cache)

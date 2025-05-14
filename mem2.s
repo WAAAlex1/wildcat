@@ -2,7 +2,7 @@
 # Memory tests
 #
     li gp, 1
-    li x1, 0x0100100
+    li x1, 0x00800100
     li x2, 0x12345678
     sw x2, 4(x1)
     lw x3, 4(x1)
@@ -10,7 +10,7 @@
 
     li gp, 2
     li x2, 0xdeadbeef
-    li x1, 0x0100110
+    li x1, 0x00800110
     sw x2, 8(x1)
     lw t0, 8(x1)
     bne x2, t0, fail
