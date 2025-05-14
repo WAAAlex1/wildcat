@@ -80,12 +80,11 @@ class WildcatTopPhysical(freqHz: Int = 100000000) extends Module {
   // Here IO stuff
   // IO is mapped in the space 0xf000_0000 - 0xffff_ffff
 
-
   val ledReg = RegInit(0.U(8.W))
 
   // ********************************************************************
 
-  // Instantiate UART - do not use freq > baudrate (will crash)
+  // Instantiate UART - do not use freq < baudrate (will crash)
   val tx = Module(new BufferedTx(freqHz, 115200))
   val rx = Module(new Rx(freqHz, 115200))
   io.tx := tx.io.txd
@@ -128,7 +127,7 @@ class WildcatTopPhysical(freqHz: Int = 100000000) extends Module {
   val BL_Stall = ~bootloaderStatusReg(0).asBool // 0 = bootloader is active -> BL_stall = true
   //Connect bootloader
   BL.io.rx := io.rx
-  BL.io.sleep := BL_Stall
+  BL.io.sleep := bootloaderStatusReg(0).asBool
   cpu.io.Bootloader_Stall := BL_Stall
 
   // ********************************************************************
@@ -160,7 +159,7 @@ class WildcatTopPhysical(freqHz: Int = 100000000) extends Module {
       // do nothing
     } .elsewhen (cpu.io.dmem.wrAddress === "hF000_0004".U) {  // UART send and receive reg
       tx.io.channel.valid := true.B
-    } .elsewhen (cpu.io.dmem.wrAddress === "hF010_0000".U) {  // LED Reg
+    } .elsewhen (cpu.io.dmem.wrAddress === "hF001_0000".U) {  // LED Reg
       ledReg := cpu.io.dmem.wrData(7, 0)
     }.elsewhen(cpu.io.dmem.wrAddress   === "hF100_0000".U) {  // Bootloader status reg
       bootloaderStatusReg := cpu.io.dmem.wrData(7, 0)
@@ -176,17 +175,43 @@ class WildcatTopPhysical(freqHz: Int = 100000000) extends Module {
   // BOOTLOADER TAKES CONTROL WHEN ACTIVE
   when(BL_Stall === true.B){
 
+    isClintWrite := RegNext(BL.io.wrEnabled.asBool &&
+      (BL.io.instrAddr >= MemoryMap.CLINT_BASE.U) &&
+      (BL.io.instrAddr < (MemoryMap.CLINT_BASE + 0xC000).U))
+
     // When bootloader is in control
     // Data from bootloader is sent to the DMEM
     // Will go through the DMEM cache to shared RAM.
     // imem cache will be turned off in the meantime to avoid interference.
 
-    bus.io.CPUdCacheMemIO.wrAddress := BL.io.instrAddr
-    bus.io.CPUdCacheMemIO.wrData    := BL.io.instrData
-    bus.io.CPUdCacheMemIO.wrEnable  := VecInit(Seq.fill(4)(BL.io.wrEnabled.asBool))
-    bus.io.CPUdCacheMemIO.rdEnable  := false.B
+    // Memory write with memorymapping (CLINT, UART, LED)
+    when ((BL.io.instrAddr(31, 28) === 0xf.U) && BL.io.wrEnabled.asBool) {
+      when (isClintWrite) { // Write to CLINT needs bootloader data/addr
 
-    bus.io.CPUiCacheMemIO.rdEnable := false.B
+        clint.io.link.address := BL.io.instrAddr
+        clint.io.link.wrData := BL.io.instrData
+
+      } .elsewhen (BL.io.instrAddr === "hF000_0004".U) {  // UART send and receive reg
+        tx.io.channel.valid := true.B
+      } .elsewhen (BL.io.instrAddr === "hF001_0000".U) {  // LED Reg
+        ledReg := BL.io.instrData(7, 0)
+      }.elsewhen(BL.io.instrAddr   === "hF100_0000".U) {  // Bootloader status reg
+        bootloaderStatusReg := BL.io.instrData(7, 0)
+      }.otherwise {
+        // Any other IO or memory region, do nothing for write
+      }
+
+    }.otherwise{
+
+      bus.io.CPUdCacheMemIO.wrAddress := BL.io.instrAddr
+      bus.io.CPUdCacheMemIO.wrData    := BL.io.instrData
+      bus.io.CPUdCacheMemIO.wrEnable  := VecInit(Seq.fill(4)(BL.io.wrEnabled.asBool))
+      bus.io.CPUdCacheMemIO.rdEnable  := false.B
+
+      bus.io.CPUiCacheMemIO.rdEnable := false.B
+
+    }
+
   }
 
   // ********************************************************************
@@ -194,5 +219,5 @@ class WildcatTopPhysical(freqHz: Int = 100000000) extends Module {
 }
 
 object WildcatTopPhysical extends App {
-  emitVerilog(new WildcatTopPhysical(60000000), Array("--target-dir", "generated"))
+  emitVerilog(new WildcatTopPhysical(53000000), Array("--target-dir", "generated"))
 }

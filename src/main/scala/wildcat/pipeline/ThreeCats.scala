@@ -184,7 +184,7 @@ class ThreeCats(freqHz: Int = 100000000) extends Wildcat() {
     .otherwise                            { csr.io.writeData := 0.U }
 
   // Counting for CSR
-  val instrComplete = decExReg.valid && !stall && !decExReg.decOut.isECall // ECALL Should not increment instret CSR
+  val instrComplete = decExReg.valid && !stall && !decExReg.decOut.isECall && !(exceptionOccurred || takeInterrupt)// ECALL Should not increment instret CSR
   csr.io.instrComplete := instrComplete
 
   // --- Connect Trap Information to CSR Module ---
@@ -192,7 +192,7 @@ class ThreeCats(freqHz: Int = 100000000) extends Wildcat() {
   csr.io.trapIsInterrupt := takeInterrupt                 // Specify if it's an interrupt
   csr.io.exceptionCause := exceptionCause                 // Provide synchronous cause code
   csr.io.trapPC := decExReg.pc                            // PC of instruction causing trap/interrupt
-  csr.io.trapInstruction := decExReg.instruction          // Instruction causing exception (mtval)
+  csr.io.trapInstruction := Mux(ecallM, 0.U, decExReg.instruction)          // Instruction causing exception (mtval)
   csr.io.mret_executing   := decExReg.valid && decExReg.decOut.isMret && !stall
 
   // ALU Operations and result selection
@@ -220,7 +220,7 @@ class ThreeCats(freqHz: Int = 100000000) extends Wildcat() {
 
   // --- Write Enable Logic ---
   // Ensure write enable is only active if the instruction is valid and requests a write
-  wrEna := decExReg.valid && decExReg.decOut.rfWrite && (wbDest =/= 0.U)
+  wrEna := decExReg.valid && decExReg.decOut.rfWrite && (wbDest =/= 0.U) && !(exceptionOccurred || takeInterrupt)
 
   // Determine if branch is taken and the target address
   // order -> exception/interrupt , MRET , JALR , JAL , Branch
@@ -273,7 +273,6 @@ class ThreeCats(freqHz: Int = 100000000) extends Wildcat() {
     //printf("[CPU] Wake up! Interrupt detected during sleep mode\n")
   }
 
-
   // Just to exit tests -- no longer sufficient with ecall handling
   val stop = decExReg.decOut.isECall && (pcNext === 0.U)
 
@@ -315,6 +314,7 @@ class ThreeCats(freqHz: Int = 100000000) extends Wildcat() {
   dontTouch(debug_isJalr)
   dontTouch(debug_branchInstr)
   dontTouch(debug_compareResult)
+  //dontTouch(debugRegs)
 
   // ------------------------------------------------------------------------------
 

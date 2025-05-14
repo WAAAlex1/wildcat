@@ -56,7 +56,6 @@ class CacheTop(blockSize: Int)(implicit val config:TilelinkConfig) extends Modul
   io.CPUmemIO.stall := Controller.io.stall
 
 
-
   // Drive controller on read
   when(io.CPUmemIO.rdEnable){ // lb, lh or lw
     Controller.io.validReq := true.B
