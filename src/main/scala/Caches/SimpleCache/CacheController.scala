@@ -288,7 +288,7 @@ class CacheController(blockSize: Int) extends Module {
   //io.CPUdataOut := lastRead
 
   //io.alloAddr := (memWordAdd ## 0.U(2.W)) + rwIndex*4.U
-  io.alloAddr := (memAddReg(31,2) << 2).asUInt + rwIndex*4.U
+  io.alloAddr := memAddReg(31,2 + m) ## rwIndex(m - 1, 0)*4.U
 }
 
 
