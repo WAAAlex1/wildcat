@@ -63,7 +63,8 @@ class WildcatTop(file: String, dmemNrByte: Int = 4096, freqHz: Int = 100000000) 
   MCU.io.iCacheReqOut <> bus.io.iCacheReqOut
   bus.io.iCacheRspIn <> MCU.io.iCacheRspIn
 
-
+  val firstCycle = RegInit(true.B)
+  firstCycle := false.B
 
   //DMEM Connections
   cpu.io.dmem <> bus.io.CPUdCacheMemIO
@@ -73,8 +74,9 @@ class WildcatTop(file: String, dmemNrByte: Int = 4096, freqHz: Int = 100000000) 
   cpu.io.imem.stall := bus.io.CPUiCacheMemIO.stall
 
   // Default drive of instruction cache
+
   bus.io.CPUiCacheMemIO.rdEnable := true.B
-  bus.io.CPUiCacheMemIO.rdAddress := cpu.io.imem.address - 4.U
+  bus.io.CPUiCacheMemIO.rdAddress := Mux(firstCycle, 0.U , cpu.io.imem.address)
   bus.io.CPUiCacheMemIO.wrData := 0.U
   bus.io.CPUiCacheMemIO.wrEnable := Seq.fill(4)(false.B)
   bus.io.CPUiCacheMemIO.wrAddress := 0.U
