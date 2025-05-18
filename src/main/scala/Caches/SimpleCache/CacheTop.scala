@@ -74,7 +74,7 @@ class CacheTop(blockSize: Int)(implicit val config:TilelinkConfig) extends Modul
     Controller.io.rw := false.B
     Controller.io.memAddr := io.CPUmemIO.wrAddress
 
-    when(!Controller.io.ready){ // Ensure stalling when busy allocating or writing
+    when(!Controller.io.ready){ // Ensure stalling when not ready
       io.CPUmemIO.stall := true.B
     }
   }
