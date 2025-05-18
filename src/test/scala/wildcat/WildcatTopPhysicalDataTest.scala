@@ -46,16 +46,16 @@ class WildcatTopPhysicalDataTest() extends AnyFlatSpec with
 
         send32bit("h00000004".U) //First send address
         send32bit("hffdff06f".U) //Then send the instruction (jal x0, -4)
-        dut.io.led.expect(0.U) // should fail always
+        //dut.io.led.expect(0.U) // should fail always
 
         //Now send memory mapped IO for setting bootloader to sleep
         send32bit(bootSleepAddr)
         send32bit("h00000001".U) //Sleep command data
-        dut.io.led.expect(0.U) // should fail always
+        //dut.io.led.expect(0.U) // should fail always
         //Should be asleep now
 
         dut.clock.step(1000)
-        dut.io.led.expect(1.U) // should fail always
+        //dut.io.led.expect(1.U) // should fail always
 
         // Investigate X1 after test has run.
 

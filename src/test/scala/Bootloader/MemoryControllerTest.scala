@@ -75,7 +75,7 @@ class MemoryControllerTest extends AnyFlatSpec with ChiselScalatestTester {
       dut.io.dReqAck.expect(false.B)
       dut.io.iReqAck.expect(false.B)
 
-      // Write "BEEFFACE" in address 0 in RAM0 (Request from dCache)
+      // Write "BEEFFACE" in address 0 in RAMa (Request from dCache)
       dut.io.dCacheReqOut.bits.dataRequest.poke("hBEEFFACE".U)
       dut.io.dCacheReqOut.bits.addrRequest.poke(0.U)
       dut.io.dCacheReqOut.bits.isWrite.poke(true.B)
@@ -93,9 +93,9 @@ class MemoryControllerTest extends AnyFlatSpec with ChiselScalatestTester {
       dut.io.SPIctrl.done.poke(true.B)
       step(10)
 
-      // Write "hBEEF" at address 2 in RAM1 (request from iCache)
+      // Write "hBEEF" at address 2 in RAMb (request from iCache)
       dut.io.iCacheReqOut.bits.dataRequest.poke("hBEEFBEEF".U)
-      dut.io.iCacheReqOut.bits.addrRequest.poke("h1000002".U)
+      dut.io.iCacheReqOut.bits.addrRequest.poke("h800002".U)
       dut.io.iCacheReqOut.bits.isWrite.poke(true.B)
       dut.io.iCacheReqOut.bits.activeByteLane.poke(12.U)
       dut.io.iCacheReqOut.valid.poke(true.B)
@@ -118,8 +118,8 @@ class MemoryControllerTest extends AnyFlatSpec with ChiselScalatestTester {
       dut.io.dReqAck.expect(false.B)
       dut.io.iReqAck.expect(false.B)
 
-      // Read address 40 from RAM1 (b 1...00101000, h 1000028)  (Request from iCache)
-      dut.io.iCacheReqOut.bits.addrRequest.poke("h1000028".U)
+      // Read address 40 from RAMb (b 1...00101000, h 1000028)  (Request from iCache)
+      dut.io.iCacheReqOut.bits.addrRequest.poke("h800028".U)
       dut.io.iCacheReqOut.bits.isWrite.poke(false.B)
       dut.io.iCacheReqOut.bits.activeByteLane.poke(15.U)
       dut.io.iCacheReqOut.valid.poke(true.B)

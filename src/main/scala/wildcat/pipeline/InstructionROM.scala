@@ -11,7 +11,9 @@ class InstructionROM(code: Array[Int]) extends Module {
   val addrReg = RegInit(0.U(32.W))
   addrReg := io.address
   val instructions = VecInit(code.toIndexedSeq.map(_.S(32.W).asUInt))
-  io.data := instructions(addrReg(31, 2))
+  val instructionReg = RegInit(0x00000013.U(32.W))
+  instructionReg := instructions(io.address(31, 2))
+  io.data := instructionReg
   // for checking two failing tests
   val toggle = RegInit(false.B)
   toggle := !toggle
