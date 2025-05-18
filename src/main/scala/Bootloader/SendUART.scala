@@ -38,8 +38,7 @@ object SendUART {
     }
 
     val serialPort = SerialPort.getCommPort(foundPortName)
-    serialPort.setBaudRate(115200) // Set baud rate (match with receiver)
-
+    serialPort.setBaudRate(9600) // Set baud rate (match with receiver)
     serialPort.setNumDataBits(8)
     serialPort.setNumStopBits(SerialPort.ONE_STOP_BIT)
     serialPort.setParity(SerialPort.NO_PARITY)
@@ -52,26 +51,27 @@ object SendUART {
       System.out.println("Port opened successfully.")
     }
 
-    /*
-    // This byte array should contain the addresses and instructions for turning on the LED on the FPGA board
-    val data = Array[Byte](0xF0.toByte,0x01.toByte,0x00.toByte,0x00.toByte,0x00.toByte,0x00.toByte,0x00.toByte,0xFF.toByte,0xF1.toByte,0x00.toByte,0x00.toByte,0x00.toByte,0x00.toByte,0x00.toByte,0x00.toByte,0x01.toByte)
-
-    for(i <- data){
-      serialPort.writeBytes(data.slice(i,i+4),4)
-      System.out.println(data.slice(i,i+4).mkString("Array(", ", ", ")")) //Check what we are sending
-    }
-    */
-
     //Get the bytes of the file to send:
     val programPath = Paths.get(args(0))
     val programBytes = Files.readAllBytes(programPath)
     val zsblPath = Paths.get("ZSBL_demo.bin")
     val zsblBytes = Files.readAllBytes(zsblPath)
+    val traphandlerPath = Paths.get("Exception_Handler.bin")
+    val traphandlerBytes = Files.readAllBytes(traphandlerPath)
+    val uartTestPath = Paths.get("helloUart.bin")
+    val uartTestBytes = Files.readAllBytes(uartTestPath)
 
     //Send ZSBL:
-    sendFile(zsblBytes,serialPort,0x0)
+    //sendFile(zsblBytes, serialPort, 0x0)
+
     //Send the program
-    //sendFile(programBytes, serialPort,0x100)
+    //sendFile(programBytes, serialPort,  0x100)
+
+    //Send exception handler
+    //sendFile(traphandlerBytes, serialPort,  0x00300000)
+
+    //Uart test program
+    sendFile(uartTestBytes, serialPort,  0x0)
 
     //Set the bootloader to sleep and stop stalling the wildcat:
     bootloaderSleep(serialPort)
@@ -93,13 +93,13 @@ object SendUART {
       if(!(paddedChunk(0) == 0x00 && paddedChunk(1) == 0x00 && paddedChunk(2) == 0x00 && paddedChunk(3) == 0x00)) {
         val addressBytesPadded = ByteBuffer.allocate(4).putInt(address).array()
 
-        // Write address (4 bytes) little endian (reverse)
-        serialPort.writeBytes(addressBytesPadded, 4)
-        println(addressBytesPadded.reverse.map(b => f"0x$b%02X").mkString("Address: (", " ", ")"))
+        // Write address (4 bytes) little endian (reverse needed)
+        serialPort.writeBytes(addressBytesPadded.reverse, 4)
+        println(addressBytesPadded.map(b => f"0x$b%02X").mkString("Address: (", " ", ")"))
 
-        // Write data (4 bytes) little endian (reverse)
+        // Write data (4 bytes) little endian (no reverse needed)
         serialPort.writeBytes(paddedChunk, 4)
-        println(paddedChunk.reverse.map(b => f"0x$b%02X").mkString("Data: (", " ", ")"))
+        println(paddedChunk.map(b => f"0x$b%02X").mkString("Data: (", " ", ")"))
       }
       address += 4
     }

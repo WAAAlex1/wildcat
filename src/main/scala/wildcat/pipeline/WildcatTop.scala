@@ -74,14 +74,10 @@ class WildcatTop(file: String, dmemNrByte: Int = 4096, freqHz: Int = 100000000) 
 
   // Default drive of instruction cache
   bus.io.CPUiCacheMemIO.rdEnable := true.B
-  bus.io.CPUiCacheMemIO.rdAddress := cpu.io.imem.address - 4.U
+  bus.io.CPUiCacheMemIO.rdAddress := cpu.io.imem.address
   bus.io.CPUiCacheMemIO.wrData := 0.U
   bus.io.CPUiCacheMemIO.wrEnable := Seq.fill(4)(false.B)
   bus.io.CPUiCacheMemIO.wrAddress := 0.U
-
-
-
-
 
 
   // Here IO stuff

@@ -7,6 +7,8 @@ import chisel3._
 import wildcat.Util
 import wildcat.CSR._
 import chisel.lib.uart._
+import UART.Bus
+import UART.MemoryMappedUart
 
 /*
  * This file is part of the RISC-V processor Wildcat.
@@ -18,10 +20,11 @@ import chisel.lib.uart._
  * Edited by Georg and Alexander to test our Bootloader
  *
  */
-class WildcatTopPhysical(freqHz: Int = 100000000) extends Module {
+class WildcatTopPhysical(freqHz: Int = 100000000, baudRate: Int = 115200) extends Module {
 
   val io = IO(new Bundle {
     val led = Output(UInt(16.W))
+    val sseg = Output(UInt(16.W))
     val tx = Output(UInt(1.W))
     val rx = Input(UInt(1.W))
 
@@ -63,15 +66,6 @@ class WildcatTopPhysical(freqHz: Int = 100000000) extends Module {
   MCU.io.inSio := io.inSio
   io.outSio := MCU.io.outSio
 
-   /*
-  io.CS0 := DontCare
-  io.CS1 := DontCare
-  io.CS2 := DontCare
-  io.spiClk := DontCare
-  io.dir := DontCare
-  io.outSio := DontCare
-  */
-
   //DMEM Connections
   cpu.io.dmem <> bus.io.CPUdCacheMemIO
 
@@ -92,27 +86,50 @@ class WildcatTopPhysical(freqHz: Int = 100000000) extends Module {
   // Here IO stuff
   // IO is mapped in the space 0xf000_0000 - 0xffff_ffff
 
-  val ledReg = RegInit(0.U(8.W))
+  val ledReg = RegInit(0.U(32.W))
 
   // ********************************************************************
 
-  // Instantiate UART - do not use freq < baudrate (will crash)
-  val tx = Module(new BufferedTx(freqHz, 115200))
-  val rx = Module(new Rx(freqHz, 115200))
-  io.tx := tx.io.txd
-  rx.io.rxd := io.rx
+  //Initialize UART:
+  val mmUart = MemoryMappedUart(
+    freqHz,
+    baudRate,
+    txBufferDepth = 16,
+    rxBufferDepth = 16
+  )
 
-  tx.io.channel.bits := cpu.io.dmem.wrData(7, 0)
-  tx.io.channel.valid := false.B
-  rx.io.channel.ready := false.B
+  val UARTport = Bus.RequestPort() // bus port
+  UARTport.init()
+
+  mmUart.io.port <> UARTport
+  io.tx := mmUart.io.pins.tx
+  mmUart.io.pins.rx := io.rx
+
+  when(cpu.io.dmem.rdAddress === "hF000_0000".U) { // UART status reg
+    UARTport.readRequest(1.U)
+  }
+  when(cpu.io.dmem.rdAddress === "hF000_0004".U) { // UART Send and receive reg
+    UARTport.readRequest(0.U)
+  }
+
+//  // Instantiate UART - do not use freq < baudrate (will crash)
+//  val tx = Module(new BufferedTx(freqHz, baudRate))
+//  val rx = Module(new Rx(freqHz, baudRate))
+//  io.tx := tx.io.txd
+//  rx.io.rxd := io.rx
+//
+//  tx.io.channel.bits := cpu.io.dmem.wrData(7, 0)
+//  tx.io.channel.valid := false.B
+//  rx.io.channel.ready := false.B
 
   // ********************************************************************
 
   // Default values for memory accesses
-  val uartStatusReg = RegNext(rx.io.channel.valid ## tx.io.channel.ready) // Mapped to 0xf000_0000, bit 0 TX ready (TDE), bit 1 RX data available (RDF)
+  //val uartStatusReg = RegNext(rx.io.channel.valid ## tx.io.channel.ready) // Mapped to 0xf000_0000, bit 0 TX ready (TDE), bit 1 RX data available (RDF)
   val bootloaderStatusReg = RegInit(0.U(8.W)) // Mapped to 0xf100_0000, 0x00 = Active, 0x01 = sleep
   val memAddressReg = RegNext(cpu.io.dmem.rdAddress)
   val writeAddressReg = RegNext(cpu.io.dmem.wrAddress)
+
 
   // Instantiate CLINT module
   val clint = Module(new CLINT())
@@ -135,7 +152,7 @@ class WildcatTopPhysical(freqHz: Int = 100000000) extends Module {
   // ********************************************************************
 
   // Instantiate Bootloader
-  val BL = Module(new Bootloader(freqHz, 115200))
+  val BL = Module(new Bootloader(freqHz, baudRate))
   val BL_Stall = ~bootloaderStatusReg(0).asBool // 0 = bootloader is active -> BL_stall = true
   //Connect bootloader
   BL.io.rx := io.rx
@@ -152,10 +169,12 @@ class WildcatTopPhysical(freqHz: Int = 100000000) extends Module {
       // Access to CLINT
       cpu.io.dmem.rdData := clint.io.link.rdData
     }.elsewhen(memAddressReg === "hF000_0000".U) {    // UART status reg
-      cpu.io.dmem.rdData := uartStatusReg
+      //cpu.io.dmem.rdData := uartStatusReg
+      cpu.io.dmem.rdData := UARTport.rdData.asSInt
     }.elsewhen(memAddressReg === "hF000_0004".U) {    // UART Send and receive reg
-      cpu.io.dmem.rdData := rx.io.channel.bits
-      rx.io.channel.ready := cpu.io.dmem.rdEnable
+      //cpu.io.dmem.rdData := rx.io.channel.bits
+      //rx.io.channel.ready := cpu.io.dmem.rdEnable
+      cpu.io.dmem.rdData := UARTport.rdData.asSInt
     }.elsewhen(memAddressReg === "hF010_0000".U) {    // LED Data reg
       cpu.io.dmem.rdData := ledReg
     }.elsewhen(memAddressReg === "hF100_0000".U) {    // Bootloader status reg
@@ -168,12 +187,13 @@ class WildcatTopPhysical(freqHz: Int = 100000000) extends Module {
 
   // Memory write with memorymapping (CLINT, UART, LED)
   when ((cpu.io.dmem.wrAddress(31, 28) === 0xf.U) && (cpu.io.dmem.wrEnable.asUInt > 0.U)) {
-    when (isClintWrite) { // Write to CLINT handled by CLINT module
-      // do nothing
+    when (isClintWrite) {
+      // Write to CLINT handled by CLINT module
     } .elsewhen (cpu.io.dmem.wrAddress === "hF000_0004".U) {  // UART send and receive reg
-      tx.io.channel.valid := true.B
+      //tx.io.channel.valid := true.B
+      UARTport.writeRequest(0.U, cpu.io.dmem.wrData(7, 0))
     } .elsewhen (cpu.io.dmem.wrAddress === "hF001_0000".U) {  // LED Reg
-      ledReg := cpu.io.dmem.wrData(7, 0)
+      ledReg := cpu.io.dmem.wrData(31, 0)
     }.elsewhen(cpu.io.dmem.wrAddress   === "hF100_0000".U) {  // Bootloader status reg
       bootloaderStatusReg := cpu.io.dmem.wrData(7, 0)
     }.otherwise {
@@ -182,7 +202,8 @@ class WildcatTopPhysical(freqHz: Int = 100000000) extends Module {
     bus.io.CPUdCacheMemIO.wrEnable := Seq.fill(4)(false.B)
   }
 
-  io.led := 1.U ## 0.U(7.W) ## RegNext(ledReg)
+  io.led := RegNext(ledReg(15,0)) //1.U ## 0.U(7.W) ## RegNext(ledReg)
+  io.sseg := RegNext(ledReg(31,16))
 
   // ********************************************************************
 
@@ -206,9 +227,10 @@ class WildcatTopPhysical(freqHz: Int = 100000000) extends Module {
         clint.io.link.wrData := BL.io.instrData
 
       } .elsewhen (BL.io.instrAddr === "hF000_0004".U) {  // UART send and receive reg
-        tx.io.channel.valid := true.B
+        //tx.io.channel.valid := true.B
+        UARTport.writeRequest(0.U, BL.io.instrData(7, 0))
       } .elsewhen (BL.io.instrAddr === "hF001_0000".U) {  // LED Reg
-        ledReg := BL.io.instrData(7, 0)
+        ledReg := BL.io.instrData(31, 0)
       }.elsewhen(BL.io.instrAddr   === "hF100_0000".U) {  // Bootloader status reg
         bootloaderStatusReg := BL.io.instrData(7, 0)
       }.otherwise {
@@ -233,5 +255,5 @@ class WildcatTopPhysical(freqHz: Int = 100000000) extends Module {
 }
 
 object WildcatTopPhysical extends App {
-  emitVerilog(new WildcatTopPhysical(53000000), Array("--target-dir", "generated"))
+  emitVerilog(new WildcatTopPhysical(53000000, 9600), Array("--target-dir", "generated"))
 }
