@@ -1,7 +1,7 @@
 package wildcat.pipeline
 
 import Bootloader._
-import Caches.BusInterconnect
+import caches.BusInterconnect
 import caravan.bus.tilelink.TilelinkConfig
 import chisel3._
 import wildcat.Util
@@ -17,7 +17,7 @@ import UART.MemoryMappedUart
  *
  * Author: Martin Schoeberl (martin@jopdesign.com)
  *
- * Edited by Georg and Alexander to test our Bootloader
+ * Edited by Georg, Alexander and Gustav to connect entire microcontroller.
  *
  */
 class WildcatTopPhysical(freqHz: Int = 100000000, baudRate: Int = 115200) extends Module {

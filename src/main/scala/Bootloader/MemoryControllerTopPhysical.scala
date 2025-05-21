@@ -1,16 +1,14 @@
 package Bootloader
 
-import ExtMemory.{IOBUFFER, PSRAM_Model}
-import SPI.{SPITop, SpiControllerTop}
+import spi.SpiControllerTop
 import caravan.bus.tilelink.{TLRequest, TLResponse, TilelinkConfig}
 import chisel3.experimental._
 import chisel3._
 import chisel3.util.Decoupled
 
 /**
- * First draft of a top level of memory controller  + SPI controller module for the Wildcat
+ * Top level of memory controller + SPI controller for the Wildcat. Meant for implementation on FPGA
  *
-
  * By Gustav Philip Junker
  */
 

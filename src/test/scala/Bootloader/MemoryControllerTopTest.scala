@@ -1,6 +1,6 @@
 package Bootloader
 
-import ExtMemory.SPICommands._
+import extmemory.SPICommands._
 import caravan.bus.tilelink.{TLRequest, TLResponse, TilelinkConfig}
 import chisel3._
 import chisel3.util._

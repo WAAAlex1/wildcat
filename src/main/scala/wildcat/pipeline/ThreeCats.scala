@@ -55,8 +55,8 @@ class ThreeCats(freqHz: Int = 100000000) extends Wildcat() {
    * ******************************************************************************************** */
 
   // PC generation
-  //val pcReg = RegInit(-4.S(32.W).asUInt) // Start at address 0
-  val pcReg = RegInit(0.U(32.W)) // Start at address 0
+  val pcReg = RegInit(-4.S(32.W).asUInt) // Start at address 0
+  //val pcReg = RegInit(0.U(32.W)) // Start at address 0
   val pcNext = WireDefault(pcReg + 4.U)   // Update PC
   when(stall && !takeInterrupt) { pcNext := pcReg         }
     .elsewhen(doBranch)         { pcNext := branchTarget  }
@@ -72,7 +72,7 @@ class ThreeCats(freqHz: Int = 100000000) extends Wildcat() {
   val instrReg = RegInit(0x00000013.U) // nop on reset
   instrReg := Mux(doBranch, 0x00000013.U, Mux(stall, instrReg, instr))
 
-  when(io.Bootloader_Stall) {
+  when(io.Bootloader_Stall || io.imem.stall) {
     instr := 0x00000013.U
     pcNext := pcReg
   }

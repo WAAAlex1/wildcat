@@ -10,7 +10,8 @@ import wildcat.CSR.MemoryMap
 import wildcat.pipeline.CLINTLink
 
 /**
- * First draft of memory controller module for the Wildcat.
+ * Memory controller module for the Wildcat. Performs arbitration, address decoding
+ * and request/response processing
  *
  * Address space:
  * [0xfxxx_xxxx] is the IO space for the Wildcat

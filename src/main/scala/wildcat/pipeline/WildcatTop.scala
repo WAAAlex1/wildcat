@@ -1,7 +1,7 @@
 package wildcat.pipeline
 
 import Bootloader._
-import Caches.BusInterconnect
+import caches.BusInterconnect
 import caravan.bus.tilelink.TilelinkConfig
 import chisel3._
 import wildcat.Util
@@ -52,8 +52,8 @@ class WildcatTop(file: String, dmemNrByte: Int = 4096, freqHz: Int = 100000000) 
   implicit val config = new TilelinkConfig
   val bus = Module(new BusInterconnect()) // Includes caches
 
-  //bus.io.CPUiCacheMemIO := DontCare
-  //bus.io.CPUdCacheMemIO := DontCare
+  bus.io.CPUiCacheMemIO := DontCare
+  bus.io.CPUdCacheMemIO := DontCare
 
   // Choose between simulated main memory or physical
   val MCU = Module(new MemoryControllerTopSimulator(1.U,memory))
@@ -64,10 +64,10 @@ class WildcatTop(file: String, dmemNrByte: Int = 4096, freqHz: Int = 100000000) 
   bus.io.iCacheRspIn <> MCU.io.iCacheRspIn
 
   /*
-  //DMEM Connections
+  //Data cache Connections
   cpu.io.dmem <> bus.io.CPUdCacheMemIO
 
-  //IMEM Connections
+  //Instruction cache Connections
   cpu.io.imem.data := bus.io.CPUiCacheMemIO.rdData
   cpu.io.imem.stall := bus.io.CPUiCacheMemIO.stall
 
@@ -157,7 +157,7 @@ class WildcatTop(file: String, dmemNrByte: Int = 4096, freqHz: Int = 100000000) 
       // Any other IO or memory region, do nothing for write
     }
     dmem.io.wrEnable := VecInit(Seq.fill(4)(false.B))
-    //bus.io.CPUdCacheMemIO.wrEnable := VecInit(Seq.fill(4)(false.B))
+    bus.io.CPUdCacheMemIO.wrEnable := VecInit(Seq.fill(4)(false.B))
   }
 
   io.led := 1.U ## 0.U(7.W) ## RegNext(ledReg)
