@@ -28,7 +28,7 @@ class ThreeCats(freqHz: Int = 100000000) extends Wildcat() {
   val doBranch = WireDefault(false.B)
   val branchTarget = WireDefault(0.U(32.W))
   val inSleepMode = RegInit(false.B)
-  val stall = WireDefault(io.dmem.stall || inSleepMode) // Basic stall based on memory readiness (include io.imem.stall? )
+  val stall = WireDefault(io.dmem.stall || inSleepMode || io.imem.stall || io.Bootloader_Stall) // Basic stall based on memory readiness, bootloader and wfi
   val exceptionOccurred = WireDefault(false.B)
   val takeInterrupt = WireDefault(false.B)
 
@@ -39,12 +39,6 @@ class ThreeCats(freqHz: Int = 100000000) extends Wildcat() {
     val wbData = UInt(32.W)
   }
   val exFwdReg = RegInit(0.U.asTypeOf(exFwd))
-
-  // PC generation
-  val pcReg = RegInit(0.U(32.W)) // Start at address 0
-  val pcNext = WireDefault(Mux(stall && !takeInterrupt, pcReg, Mux(doBranch, branchTarget, pcReg + 4.U)))   // Update PC only if not stalled
-  pcReg := pcNext
-  io.imem.address := pcNext
 
   // Simple initialization flag
   val processorInitialized = RegInit(false.B)
@@ -57,28 +51,46 @@ class ThreeCats(freqHz: Int = 100000000) extends Wildcat() {
   }
 
   /** ********************************************************************************************
-   * FETCH STAGE
+   * FETCH STAGE & PC GEN
    * ******************************************************************************************** */
 
+  // PC generation
+  //val pcReg = RegInit(0.U(32.W)) // Start at address 0
+  val pcReg = RegInit(-4.S(32.W).asUInt) // Start at address 0
+  val pcNext = WireDefault(pcReg + 4.U)   // Update PC
+  when(io.Bootloader_Stall)         { pcNext := 0x00000000.U  }
+    .elsewhen(stall && !takeInterrupt){ pcNext := pcReg         }
+    .elsewhen(doBranch)               { pcNext := branchTarget  }
+
+  pcReg := pcNext
+  io.imem.address := pcNext
+
+  //Begin fetch instruction
   val instr = WireDefault(io.imem.data)
-  when (io.imem.stall || io.Bootloader_Stall) {
-    instr := 0x00000013.U
-    pcNext := Mux(doBranch, branchTarget, pcReg)
-  }
 
-  /** ********************************************************************************************
-   * DECODE STAGE
-   * ******************************************************************************************** */
   // Instruction Register
   val pcRegReg = RegNext(pcReg)
   val instrReg = RegInit(0x00000013.U) // nop on reset
   instrReg := Mux(doBranch, 0x00000013.U, Mux(stall, instrReg, instr))
 
+
+  when (io.imem.stall || io.Bootloader_Stall) {
+    instr := 0x00000013.U
+  }
+
+
+
+  /** ********************************************************************************************
+   * DECODE STAGE
+   * ******************************************************************************************** */
+
   // Decode instruction & Register Addresses
   val decOut = decode(instrReg)
-  val rs1 = Wire(UInt(5.W))
-  val rs2 = Wire(UInt(5.W))
-  val rd = Wire(UInt(5.W))
+  val rs1 = Wire(UInt(5.W))// WireDefault(instr(19, 15))
+  val rs2 = Wire(UInt(5.W)) //WireDefault(instr(24, 20))
+  val rd = Wire(UInt(5.W)) //WireDefault(instr(11, 7))
+
+
   when(!stall){
     rs1 := instr(19, 15)
     rs2 := instr(24, 20)
@@ -88,6 +100,7 @@ class ThreeCats(freqHz: Int = 100000000) extends Wildcat() {
     rs2 := instrReg(24, 20)
     rd := instrReg(11, 7)
   }
+
   val (rs1Val, rs2Val, debugRegs) = registerFile(rs1, rs2, wbDest, wbData, wrEna, true)
 
   val decEx = Wire(new Bundle() {
@@ -105,6 +118,7 @@ class ThreeCats(freqHz: Int = 100000000) extends Wildcat() {
     val instruction = UInt(32.W)
     val csr_data = UInt(32.W)
   })
+
   decEx.decOut := decOut
   decEx.valid := !doBranch
   decEx.pc := pcRegReg
@@ -131,7 +145,7 @@ class ThreeCats(freqHz: Int = 100000000) extends Wildcat() {
   io.dmem.wrEnable  := VecInit(Seq.fill(4)(false.B))
   io.dmem.wrData    := data
 
-  when(decOut.isStore && !doBranch) { // && !stall
+  when(decOut.isStore && !doBranch) { // && !stall ?
     val (wrd, wre) = getWriteData(data, decEx.func3, memAddress(1, 0))
     io.dmem.wrData := wrd
     io.dmem.wrEnable := wre

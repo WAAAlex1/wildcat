@@ -34,17 +34,17 @@ class WildcatTop(file: String, dmemNrByte: Int = 4096, freqHz: Int = 100000000) 
   // val cpu = Module(new WildFour())
   // val cpu = Module(new StandardFive())
 
-  //val dmem = Module(new ScratchPadMem(memory, nrBytes = dmemNrByte))
-  //cpu.io.dmem <> dmem.io
+  val dmem = Module(new ScratchPadMem(memory, nrBytes = dmemNrByte))
+  cpu.io.dmem <> dmem.io
 
 
 
-  /*
+
   val imem = Module(new InstructionROM(memory))
   imem.io.address := cpu.io.imem.address
   cpu.io.imem.data := imem.io.data
   cpu.io.imem.stall := imem.io.stall
-  */
+
 
 
 
@@ -63,9 +63,7 @@ class WildcatTop(file: String, dmemNrByte: Int = 4096, freqHz: Int = 100000000) 
   MCU.io.iCacheReqOut <> bus.io.iCacheReqOut
   bus.io.iCacheRspIn <> MCU.io.iCacheRspIn
 
-  val firstCycle = RegInit(true.B)
-  firstCycle := false.B
-
+  /*
   //DMEM Connections
   cpu.io.dmem <> bus.io.CPUdCacheMemIO
 
@@ -76,10 +74,11 @@ class WildcatTop(file: String, dmemNrByte: Int = 4096, freqHz: Int = 100000000) 
   // Default drive of instruction cache
 
   bus.io.CPUiCacheMemIO.rdEnable := true.B
-  bus.io.CPUiCacheMemIO.rdAddress := Mux(firstCycle, 0.U , cpu.io.imem.address)
+  bus.io.CPUiCacheMemIO.rdAddress := cpu.io.imem.address
   bus.io.CPUiCacheMemIO.wrData := 0.U
   bus.io.CPUiCacheMemIO.wrEnable := Seq.fill(4)(false.B)
   bus.io.CPUiCacheMemIO.wrAddress := 0.U
+  */
 
 
 
@@ -161,8 +160,8 @@ class WildcatTop(file: String, dmemNrByte: Int = 4096, freqHz: Int = 100000000) 
     } .otherwise {
       // Any other IO or memory region, do nothing for write
     }
-    //dmem.io.wrEnable := VecInit(Seq.fill(4)(false.B))
-    bus.io.CPUdCacheMemIO.wrEnable := VecInit(Seq.fill(4)(false.B))
+    dmem.io.wrEnable := VecInit(Seq.fill(4)(false.B))
+    //bus.io.CPUdCacheMemIO.wrEnable := VecInit(Seq.fill(4)(false.B))
   }
 
   io.led := 1.U ## 0.U(7.W) ## RegNext(ledReg)

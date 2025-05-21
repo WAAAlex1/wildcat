@@ -26,6 +26,7 @@ class CacheController(blockSize: Int) extends Module {
     val stall = Output(Bool())
     val ready = Output(Bool())
     val wrEnable = Input(Vec (4, Bool()))
+    val busy = Output(Bool())
 
     // Input/output to/from external memory via bus
     val memDataIn = Input(UInt(32.W))
@@ -286,6 +287,7 @@ class CacheController(blockSize: Int) extends Module {
   io.WTaddr := memAddReg
   io.WTwre := wreReg
   //io.CPUdataOut := lastRead
+  io.busy := (!io.ready && !rwReg) || (io.rw && memReq =/= 0.U)
 
   //io.alloAddr := (memWordAdd ## 0.U(2.W)) + rwIndex*4.U
   io.alloAddr := memAddReg(31,2 + m) ## rwIndex(m - 1, 0)*4.U
