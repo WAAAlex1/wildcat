@@ -7,14 +7,18 @@
 #       - Addr of Program: 0x0040_0000
 
 
-# Set up stack (address of stack top = 0x00FF_0000 = 16MB - 64KB)
-li sp, 0x00FF0000
-
-# Setup the trap vector (address = 0x0030_0000) (mtvec is csr address 0x305).
-li t0, 0x00300000
-csrw mtvec, t0
-
-# Jump to program entry (address = 0x0040_0000)
-li t0, 0x00000100
-jr t0
-
+lui     t0,0xf0010
+li      t1,51
+sb      t1,0(t0) # 0xfffffffff0010000
+lui     sp,0xff0
+lui     t0,0x300
+csrw    mtvec,t0
+li      t0,256
+jr      t0 # 0x300000
+nop
+nop
+nop
+nop
+lui     t0,0xf0010
+li      t1,136
+sb      t1,0(t0) # 0xfffffffff0010000

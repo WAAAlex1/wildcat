@@ -28,7 +28,7 @@ class ThreeCats(freqHz: Int = 100000000) extends Wildcat() {
   val doBranch = WireDefault(false.B)
   val branchTarget = WireDefault(0.U(32.W))
   val inSleepMode = RegInit(false.B)
-  val stall = WireDefault(io.dmem.stall || inSleepMode || io.imem.stall || io.Bootloader_Stall) // Basic stall based on memory readiness, bootloader and wfi
+  val stall = WireDefault(io.dmem.stall || inSleepMode || io.imem.stall) // io.Bootloader_Stall) // Basic stall based on memory readiness and wfi
   val exceptionOccurred = WireDefault(false.B)
   val takeInterrupt = WireDefault(false.B)
 
@@ -55,12 +55,11 @@ class ThreeCats(freqHz: Int = 100000000) extends Wildcat() {
    * ******************************************************************************************** */
 
   // PC generation
-  //val pcReg = RegInit(0.U(32.W)) // Start at address 0
-  val pcReg = RegInit(-4.S(32.W).asUInt) // Start at address 0
+  //val pcReg = RegInit(-4.S(32.W).asUInt) // Start at address 0
+  val pcReg = RegInit(0.U(32.W)) // Start at address 0
   val pcNext = WireDefault(pcReg + 4.U)   // Update PC
-  when(io.Bootloader_Stall)         { pcNext := 0x00000000.U  }
-    .elsewhen(stall && !takeInterrupt){ pcNext := pcReg         }
-    .elsewhen(doBranch)               { pcNext := branchTarget  }
+  when(stall && !takeInterrupt) { pcNext := pcReg         }
+    .elsewhen(doBranch)         { pcNext := branchTarget  }
 
   pcReg := pcNext
   io.imem.address := pcNext
@@ -73,12 +72,10 @@ class ThreeCats(freqHz: Int = 100000000) extends Wildcat() {
   val instrReg = RegInit(0x00000013.U) // nop on reset
   instrReg := Mux(doBranch, 0x00000013.U, Mux(stall, instrReg, instr))
 
-
-  when (io.imem.stall || io.Bootloader_Stall) {
+  when(io.Bootloader_Stall) {
     instr := 0x00000013.U
+    pcNext := pcReg
   }
-
-
 
   /** ********************************************************************************************
    * DECODE STAGE
@@ -86,16 +83,12 @@ class ThreeCats(freqHz: Int = 100000000) extends Wildcat() {
 
   // Decode instruction & Register Addresses
   val decOut = decode(instrReg)
-  val rs1 = Wire(UInt(5.W))// WireDefault(instr(19, 15))
-  val rs2 = Wire(UInt(5.W)) //WireDefault(instr(24, 20))
-  val rd = Wire(UInt(5.W)) //WireDefault(instr(11, 7))
+  val rs1 = WireDefault(instr(19, 15))
+  val rs2 = WireDefault(instr(24, 20))
+  val rd = WireDefault(instr(11, 7))
 
 
-  when(!stall){
-    rs1 := instr(19, 15)
-    rs2 := instr(24, 20)
-    rd := instr(11, 7)
-  }.otherwise {
+  when(stall){
     rs1 := instrReg(19, 15)
     rs2 := instrReg(24, 20)
     rd := instrReg(11, 7)

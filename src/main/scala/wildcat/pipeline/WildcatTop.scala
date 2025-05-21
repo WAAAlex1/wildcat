@@ -81,10 +81,6 @@ class WildcatTop(file: String, dmemNrByte: Int = 4096, freqHz: Int = 100000000) 
   */
 
 
-
-
-
-
   // Here IO stuff
   // IO is mapped ot 0xf000_0000
   // use lower bits to select IOs
