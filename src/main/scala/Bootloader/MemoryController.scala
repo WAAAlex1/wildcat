@@ -10,12 +10,13 @@ import wildcat.CSR.MemoryMap
 import wildcat.pipeline.CLINTLink
 
 /**
- * First draft of memory controller module for the Wildcat.
+ * Memory controller module for the Wildcat. Performs arbitration, address decoding
+ * and request/response processing
  *
  * Address space:
  * [0xfxxx_xxxx] is the IO space for the Wildcat
- * [23,0] is the real address space of the memory
- * [27,24] are so far unused control signal bits we might need later
+ * [23,0] is the real address space of the memory (including flash)
+ * [27,25] are so far unused control signal bits we might need later
  * [0x1000_0000 etc.] is also unused so far.
  */
 
@@ -68,7 +69,7 @@ class MemoryController(implicit val config:TilelinkConfig) extends Module {
   // Default settings for SPI controllers
   io.SPIctrl.en := rspPending
   io.SPIctrl.rw := currentReq.isWrite
-  io.SPIctrl.addr := currentReq.addrRequest(23, 0)
+  io.SPIctrl.addr := currentReq.addrRequest(22, 0)
   io.SPIctrl.dataIn := data2write
   io.SPIctrl.size := dataSize
 
@@ -106,22 +107,23 @@ class MemoryController(implicit val config:TilelinkConfig) extends Module {
   // Address decoding on response
   when(rspPending){
     when(currentReq.addrRequest(31, 28) === 0xF.U) {
-      //Do nothing cause memory mapped IO defined in Wildcattop?
+      //Do nothing cause memory mapped IO defined in Wildcattop
       readData := 0.U
       rspValid := true.B
       rspPending := false.B
 
-    }.elsewhen(currentReq.addrRequest(23)) {
-      // RAM 1 read/write
-      io.moduleSel := Seq(false.B, false.B, true.B)
-
-    }.elsewhen(!currentReq.addrRequest(23)) {
-      // RAM 0 read/ write
-      io.moduleSel := Seq(false.B, true.B, false.B)
-
-    }.otherwise{
+    }.elsewhen(currentReq.addrRequest(24)){
       // Flash read/write
       io.moduleSel := Seq(true.B, false.B, false.B)
+    }.elsewhen(!currentReq.addrRequest(23)) {
+      // RAMa read/write
+      io.moduleSel := Seq(false.B, true.B, false.B)
+
+    }.elsewhen(currentReq.addrRequest(23)) {
+      // RAMb read/write
+      io.moduleSel := Seq(false.B, false.B, true.B)
+    }.otherwise{
+      // undefined
     }
   }
 

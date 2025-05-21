@@ -1,7 +1,7 @@
 package Bootloader
 
-import Caches.BusInterconnect
-import Caches.SimpleCache.CacheFunctions.pokeVecBool
+import caches.BusInterconnect
+import caches.simple.CacheFunctions.pokeVecBool
 import caravan.bus.tilelink.{TLRequest, TLResponse, TilelinkConfig}
 import chisel3._
 import chisel3.util._
