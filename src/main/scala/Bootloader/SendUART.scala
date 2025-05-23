@@ -38,7 +38,8 @@ object SendUART {
     }
 
     val serialPort = SerialPort.getCommPort(foundPortName)
-    serialPort.setBaudRate(9600) // Set baud rate (match with receiver)
+    serialPort.setBaudRate(115200) // Set baud rate (match with receiver)
+
     serialPort.setNumDataBits(8)
     serialPort.setNumStopBits(SerialPort.ONE_STOP_BIT)
     serialPort.setParity(SerialPort.NO_PARITY)
@@ -62,16 +63,16 @@ object SendUART {
     val uartTestBytes = Files.readAllBytes(uartTestPath)
 
     //Send ZSBL:
-    //sendFile(zsblBytes, serialPort, 0x0)
+    sendFile(zsblBytes, serialPort, 0x0)
 
     //Send the program
-    //sendFile(programBytes, serialPort,  0x100)
+    sendFile(programBytes, serialPort,  0x100)
 
     //Send exception handler
-    //sendFile(traphandlerBytes, serialPort,  0x00300000)
+    sendFile(traphandlerBytes, serialPort,  0x00300000)
 
     //Uart test program
-    sendFile(uartTestBytes, serialPort,  0x0)
+    //sendFile(uartTestBytes, serialPort,  0x0)
 
     //Set the bootloader to sleep and stop stalling the wildcat:
     bootloaderSleep(serialPort)

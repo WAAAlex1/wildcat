@@ -4,6 +4,9 @@ import chisel.lib.uart._
 import chisel3._
 import chisel3.util._
 
+
+// CREDIT: TJARK PETERSEN
+
 /** A combined UART receiver and transmitter with a memory mapped interface.
   *
   * The UART is controlled through 32-bit aligned registers and buffers mapped to the

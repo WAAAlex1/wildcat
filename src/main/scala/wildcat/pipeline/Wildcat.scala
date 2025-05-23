@@ -1,6 +1,7 @@
 package wildcat.pipeline
 
 import chisel3._
+import UART._
 
 /*
  * This file is part of the RISC-V processor Wildcat.
@@ -20,5 +21,10 @@ abstract class Wildcat(freqHz: Int = 100000000) extends Module {
     val mtimecmpVal_in = Input(UInt(64.W))
     val timerCounter_out = Output(UInt(64.W))
     val Bootloader_Stall = Input(Bool())
+
+
+    //UART
+    val UARTport = Bus.RequestPort() // bus port
+
   })
 }

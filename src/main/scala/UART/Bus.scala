@@ -2,6 +2,8 @@ package UART
 
 import chisel3._
 
+// CREDIT: TJARK PETERSEN
+
 object  Bus {
 
   /** Base type for bus ports.

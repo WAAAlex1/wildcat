@@ -2,6 +2,7 @@ package wildcat.pipeline
 
 import chisel3._
 import wildcat.pipeline.Functions._
+//import UART._
 
 /*
  * This file is part of the RISC-V processor Wildcat.
@@ -32,6 +33,8 @@ class ThreeCats(freqHz: Int = 100000000) extends Wildcat() {
   val exceptionOccurred = WireDefault(false.B)
   val takeInterrupt = WireDefault(false.B)
 
+  io.UARTport.init()
+
   // Forwarding data and register
   val exFwd = new Bundle() {
     val valid = Bool()
@@ -55,8 +58,8 @@ class ThreeCats(freqHz: Int = 100000000) extends Wildcat() {
    * ******************************************************************************************** */
 
   // PC generation
-  //val pcReg = RegInit(-4.S(32.W).asUInt) // Start at address 0
-  val pcReg = RegInit(0.U(32.W)) // Start at address 0
+  val pcReg = RegInit(-4.S(32.W).asUInt) // Start at address 0
+  //val pcReg = RegInit(0.U(32.W)) // Start at address 0
   val pcNext = WireDefault(pcReg + 4.U)   // Update PC
   when(stall && !takeInterrupt) { pcNext := pcReg         }
     .elsewhen(doBranch)         { pcNext := branchTarget  }
@@ -86,7 +89,6 @@ class ThreeCats(freqHz: Int = 100000000) extends Wildcat() {
   val rs1 = WireDefault(instr(19, 15))
   val rs2 = WireDefault(instr(24, 20))
   val rd = WireDefault(instr(11, 7))
-
 
   when(stall){
     rs1 := instrReg(19, 15)
@@ -142,6 +144,10 @@ class ThreeCats(freqHz: Int = 100000000) extends Wildcat() {
     val (wrd, wre) = getWriteData(data, decEx.func3, memAddress(1, 0))
     io.dmem.wrData := wrd
     io.dmem.wrEnable := wre
+
+    when(memAddress === "hF000_0004".U){
+      io.UARTport.writeRequest(0.U, wrd)
+    }
   }
 
   // Instantiate CSR Module and read
@@ -152,6 +158,14 @@ class ThreeCats(freqHz: Int = 100000000) extends Wildcat() {
   csr.io.readEnable := (decOut.isCsrrw && decEx.rd =/= 0.U) || decOut.isCsrrs || decOut.isCsrrc ||
     (decOut.isCsrrwi && decEx.rd =/= 0.U) || decOut.isCsrrsi || decOut.isCsrrci
   decEx.csr_data := csr.io.data
+
+  // UART DRIVE CONNECTIONS
+  when(memAddress=== "hF000_0000".U && (decOut.isLoad && !doBranch)) { // UART status reg
+    io.UARTport.readRequest(1.U)
+  }
+  when(memAddress === "hF000_0004".U && (decOut.isLoad && !doBranch)) { // UART Send and receive reg
+    io.UARTport.readRequest(0.U)
+  }
 
   /**********************************************************************************************
    * EXECUTE STAGE
