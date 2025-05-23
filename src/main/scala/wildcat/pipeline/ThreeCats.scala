@@ -75,7 +75,7 @@ class ThreeCats(freqHz: Int = 100000000) extends Wildcat() {
   val instrReg = RegInit(0x00000013.U) // nop on reset
   instrReg := Mux(doBranch, 0x00000013.U, Mux(stall, instrReg, instr))
 
-  when(io.Bootloader_Stall) {
+  when(io.Bootloader_Stall || io.imem.stall) {
     instr := 0x00000013.U
     pcNext := pcReg
   }
