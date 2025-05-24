@@ -116,7 +116,7 @@ class SpiControllerTop(prescale: UInt) extends Module {
                 quadReg := true.B
             }
             delayCounter := delayCounter + 1.U
-            when (delayCounter === 2.U + (16.U << prescale)) {
+            when (delayCounter === 2.U + (16.U << (prescale - 1.U))) {
                 cmdReg := 0xC0.U
                 addrReg := 0.U
                 dataReg := 0.U
