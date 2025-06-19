@@ -104,7 +104,6 @@ object CSR {
   val MINSTRETH       = 0xb82
 
   //Extra registers with special settings or explicitly called registers
-
   val MSTATUS         = 0x300     // Machine status register
   val MSTATUSH        = 0x310     // The 32 MSB of MSTATUS
 
@@ -130,6 +129,12 @@ object CSR {
   val MENVCFG         = 0x30A     // Environment Configuration Register
   val MENVCFGH        = 0x31A
 
+  val MSCRATCH        = 0x340     // Machine scratch register
+  val MIMPID          = 0xF13     // Machine implementation ID
+
+
+  val SATP            = 0x180     // Supervisor address translation and protection
+
   //CLINT Definitions:
   val CLINT_BASE = 0xF2000000 // Example base address, ensure it's unused
   val CLINT_SIZE = 0x10000 // Standard size (64KB)
@@ -138,11 +143,6 @@ object CSR {
   val CLINT_MSIP_OFFSET = 0x0000 // Optional: Machine Software Interrupt Pending (Hart 0)
   val CLINT_MTIMECMP_OFFSET = 0x4000 // Machine Timer Compare (Hart 0)
   val CLINT_MTIME_OFFSET = 0xBFF8 // Machine Time (Shared)
-  // ---------Bit Definitions -------------
-  // For mstatus (simplified)
-  val MSTATUS_MIE_BIT = 3  // Machine Interrupt Enable bit
-  val MIE_MTIE_BIT    = 7  // Machine Timer Interrupt Enable bit
-  val MIP_MTIP_BIT    = 7  // Machine Timer Interrupt Pending bit
 
   // --------- Interrupt cause code -------------
   val TRAP_CAUSE_MACHINE_TIMER_INTERRUPT = 0x80000007
@@ -166,6 +166,9 @@ object CSR {
   val MENVCFGH_MASK   = 0x00000000
   val TIME_MASK       = 0x00000000
   val TIMEH_MASK      = 0x00000000
+  val MSCRATCH_MASK   = 0xFFFFFFFF // Fully writable
+  val MIMPID_MASK     = 0x00000000 // Read-only (hardwired)
+  val SATP_MASK       = 0xFFFFFFFF // Fully writable (simplified for this implementation)
 
 
   // --- UPDATED Memory Map Definitions ---

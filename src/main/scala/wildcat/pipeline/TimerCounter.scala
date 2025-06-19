@@ -10,20 +10,16 @@ import wildcat.CSR // Import CSR definitions
  * Implements standard counters. mtimecmp is now handled externally
  * via memory-mapped access (e.g., through a CLINT module).
  */
-class TimerCounter(freqHz: Int = 100000000) extends Module {
+class TimerCounter(freqHz: Int = 100000000, timerFreqHz: Int = 100) extends Module {
+  require(freqHz >= timerFreqHz, "freqHz must be greater or equal to timerFreqHz to avoid division issues in TimerCounter")
   val io = IO(new Bundle {
     // --- Inputs ---
     val instrComplete = Input(Bool())           // From pipeline
-    val mtimecmpValue = Input(UInt(64.W))       // Value of mtimecmp read from the memory-mapped location (e.g., CLINT)
 
     // --- Outputs ---
     val cycle = Output(UInt(64.W))
-    val time = Output(UInt(64.W))               // This acts as MTIME
     val instret = Output(UInt(64.W))
     val currentTime = Output(UInt(64.W))        // Current mtime value, provided to the memory-mapped interface (e.g., CLINT)
-
-    // Interrupt signal to InterruptController (via Csr)
-    val timerInterruptPending = Output(Bool())
 
     // --- CSR Interface ---
     val csrAddr        = Input(UInt(12.W))
@@ -37,10 +33,11 @@ class TimerCounter(freqHz: Int = 100000000) extends Module {
   val timeReg    = RegInit(0.U(64.W)) // MTIME source
   val instretReg = RegInit(0.U(64.W))
 
-  // Clock division logic
-  val cyclesPerTimeIncrement = freqHz / 100 // Assuming 100MHz clock for 100Hz timer
+  // Clock division logic for TIME/MTIME
+  val cyclesPerTimeIncrement = freqHz / timerFreqHz // Assuming 100MHz clock for 100Hz timer
   val timeCounter = RegInit(0.U(log2Ceil(cyclesPerTimeIncrement).W))
 
+  // Update Counters
   cycleReg := cycleReg + 1.U
   when(timeCounter === (cyclesPerTimeIncrement - 1).U) {
     timeCounter := 0.U
@@ -52,45 +49,45 @@ class TimerCounter(freqHz: Int = 100000000) extends Module {
     instretReg := instretReg + 1.U
   }
 
-  // --- Timer Interrupt Comparison ---
-  // mtimecmpValue != 0 such that this will not trigger on reset/start.
-  val timeValue = timeReg // Current time value
-  val compareValue = io.mtimecmpValue // Value to compare against
-  val isGreaterOrEqual = timeValue >= compareValue // True if time >= compare
-  val isValid = compareValue =/= 0.U // Don't trigger if mtimecmp is 0
-  io.timerInterruptPending := isGreaterOrEqual && isValid
-
-  // Output counter values
+  // Output assignments
   io.cycle := cycleReg
-  io.time := timeReg         // Provide mtime value
   io.instret := instretReg
   io.currentTime := timeReg  // Explicitly output current time for CLINT module
 
-  // CSR Read logic (Handles only counters/timers)
+  // CSR Read Logic
   val readDataWire = WireDefault(0.U(32.W))
   switch(io.csrAddr) {
-    // Existing counter reads... (TIME/TIMEH CSRs provide read-only view of timeReg)
-    is(CSR.CYCLE.U)      { readDataWire := cycleReg(31, 0) }
-    is(CSR.CYCLEH.U)     { readDataWire := cycleReg(63, 32) }
-    is(CSR.TIME.U)       { readDataWire := timeReg(31, 0) }
-    is(CSR.TIMEH.U)      { readDataWire := timeReg(63, 32) }
-    is(CSR.INSTRET.U)    { readDataWire := instretReg(31, 0) }
-    is(CSR.INSTRETH.U)   { readDataWire := instretReg(63, 32) }
-    is(CSR.MCYCLE.U)     { readDataWire := cycleReg(31, 0) }
-    is(CSR.MCYCLEH.U)    { readDataWire := cycleReg(63, 32) }
-    is(CSR.MINSTRET.U)   { readDataWire := instretReg(31, 0) }
-    is(CSR.MINSTRETH.U)  { readDataWire := instretReg(63, 32) }
+    // CYCLE and MCYCLE (same counter)
+    is(CSR.CYCLE.U)    { readDataWire := cycleReg(31, 0) }
+    is(CSR.CYCLEH.U)   { readDataWire := cycleReg(63, 32) }
+    is(CSR.MCYCLE.U)   { readDataWire := cycleReg(31, 0) }
+    is(CSR.MCYCLEH.U)  { readDataWire := cycleReg(63, 32) }
+
+    // TIME (read-only, no machine mode equivalent for writing)
+    is(CSR.TIME.U)     { readDataWire := timeReg(31, 0) }
+    is(CSR.TIMEH.U)    { readDataWire := timeReg(63, 32) }
+
+    // INSTRET and MINSTRET (same counter)
+    is(CSR.INSTRET.U)  { readDataWire := instretReg(31, 0) }
+    is(CSR.INSTRETH.U) { readDataWire := instretReg(63, 32) }
+    is(CSR.MINSTRET.U) { readDataWire := instretReg(31, 0) }
+    is(CSR.MINSTRETH.U){ readDataWire := instretReg(63, 32) }
   }
   io.csrReadData := readDataWire
 
-  // CSR Write logic (Handles only writable counters/timers)
+  // CSR Write Logic (only machine mode counters are writable)
   when(io.csrWriteEnable) {
     switch(io.csrAddr) {
-      // Existing writable counters...
-      is(CSR.MCYCLE.U)     { cycleReg := Cat(cycleReg(63, 32), io.csrWriteData) }
-      is(CSR.MCYCLEH.U)    { cycleReg := Cat(io.csrWriteData, cycleReg(31, 0)) }
-      is(CSR.MINSTRET.U)   { instretReg := Cat(instretReg(63, 32), io.csrWriteData) }
-      is(CSR.MINSTRETH.U)  { instretReg := Cat(io.csrWriteData, instretReg(31, 0)) }
+      // MCYCLE write (low and high)
+      is(CSR.MCYCLE.U)   { cycleReg := Cat(cycleReg(63, 32), io.csrWriteData) }
+      is(CSR.MCYCLEH.U)  { cycleReg := Cat(io.csrWriteData, cycleReg(31, 0)) }
+
+      // MINSTRET write (low and high)
+      is(CSR.MINSTRET.U) { instretReg := Cat(instretReg(63, 32), io.csrWriteData) }
+      is(CSR.MINSTRETH.U){ instretReg := Cat(io.csrWriteData, instretReg(31, 0)) }
+
+      // TIME/TIMEH are read-only (no writes allowed)
+      // CYCLE/CYCLEH and INSTRET/INSTRETH are read-only user mode aliases
     }
   }
 
