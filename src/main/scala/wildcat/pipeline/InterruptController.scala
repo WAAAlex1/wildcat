@@ -30,7 +30,6 @@ class InterruptController extends Module {
 
     // Trap Handling Inputs (from Csr module)
     val takeTrap       = Input(Bool())
-    val trapIsInterrupt= Input(Bool())
 
     // MRET Execution Signal
     val mret_executing = Input(Bool())
@@ -128,6 +127,5 @@ class InterruptController extends Module {
   //FOR WFI TO PIPELINE
   io.mstatusInterruptEnable := mstatus_mie
   io.timerInterruptEnabled := mie_mtie
-
 
 }

@@ -16,7 +16,6 @@ class TimerCounter(freqHz: Int = 100000000) extends Module {
     val instrComplete = Input(Bool())           // From pipeline
     val mtimecmpValue = Input(UInt(64.W))       // Value of mtimecmp read from the memory-mapped location (e.g., CLINT)
 
-
     // --- Outputs ---
     val cycle = Output(UInt(64.W))
     val time = Output(UInt(64.W))               // This acts as MTIME
@@ -26,7 +25,7 @@ class TimerCounter(freqHz: Int = 100000000) extends Module {
     // Interrupt signal to InterruptController (via Csr)
     val timerInterruptPending = Output(Bool())
 
-    // --- MODIFIED: CSR Interface ---
+    // --- CSR Interface ---
     val csrAddr        = Input(UInt(12.W))
     val csrWriteEnable = Input(Bool())
     val csrWriteData   = Input(UInt(32.W))
@@ -54,7 +53,7 @@ class TimerCounter(freqHz: Int = 100000000) extends Module {
   }
 
   // --- Timer Interrupt Comparison ---
-  // mtimecmpValue != 0 such that this will not trigger on reset/start. Might introduce some edge case problems?
+  // mtimecmpValue != 0 such that this will not trigger on reset/start.
   val timeValue = timeReg // Current time value
   val compareValue = io.mtimecmpValue // Value to compare against
   val isGreaterOrEqual = timeValue >= compareValue // True if time >= compare

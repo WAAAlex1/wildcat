@@ -34,7 +34,7 @@ class Csr(freqHz: Int = 100000000) extends Module {
     val data         = Output(UInt(32.W)) // Data read from CSR (after forwarding)
     val mretTarget   = Output(UInt(32.W)) // MEPC value for MRET jump
     val trapVector   = Output(UInt(32.W)) // MTVEC value for trap handler jump
-    val timerCounter = Output(UInt(64.W)) // TimerCounter to CLINT (through toplevel)
+    val timerCounter = Output(UInt(64.W)) // TimerCounter to CLINT (TIMERCOUNTER->CSR->CPU->TOPLEVEL->CLINT)
 
     // Interrupt Request to Pipeline
     val interruptRequest = Output(Bool())   // An interrupt is pending and enabled
@@ -50,7 +50,7 @@ class Csr(freqHz: Int = 100000000) extends Module {
   // Timer/Counter Module (Handles TIME, CYCLE, INSTRET CSRs)
   val timerCounter = Module(new TimerCounter(freqHz))
   timerCounter.io.instrComplete   := io.instrComplete
-  timerCounter.io.csrAddr         := io.readAddress // Pass raw read address
+  timerCounter.io.csrAddr         := io.readAddress
   timerCounter.io.csrWriteEnable  := io.writeEnable && isCounterCSR(io.writeAddress) // Qualify write enable
   timerCounter.io.csrWriteData    := io.writeData
   timerCounter.io.mtimecmpValue   := io.mtimecmpVal
@@ -64,7 +64,6 @@ class Csr(freqHz: Int = 100000000) extends Module {
   interruptController.io.csrWriteEnable := io.writeEnable && isInterruptCSR(io.writeAddress) // Qualify write enable
   interruptController.io.csrWriteData   := io.writeData
   interruptController.io.takeTrap       := io.takeTrap
-  interruptController.io.trapIsInterrupt:= io.trapIsInterrupt
   interruptController.io.mret_executing := io.mret_executing
 
   // Get interrupt request signals from InterruptController
@@ -74,39 +73,60 @@ class Csr(freqHz: Int = 100000000) extends Module {
   //----------------------------------------------------------------------------
   // Register Definitions
   //----------------------------------------------------------------------------
-  // Generic CSR Memory
-  val csrMem = SyncReadMem(4096, UInt(32.W))
-
-  // Special Registers for Exception/Trap Handling & State
+  // Registers for Exception/Trap Handling & State
   val mepcReg   = RegInit(0.U(32.W))
   val mcauseReg = RegInit(0.U(32.W))
   val mtvalReg  = RegInit(0.U(32.W))
   val mtvecReg  = RegInit(0.U(32.W))
 
-  //----------------------------------------------------------------------------
-  // Forwarding Registers
-  //----------------------------------------------------------------------------
-  val lastWriteAddr = RegNext(io.writeAddress)
-  // Qualify forwarding enable: Write must be enabled, target must not be RO,
-  // and target must not be handled by InterruptController or TimerCounter directly.
-  val lastWriteEnable = RegNext(io.writeEnable && !isReadOnly(io.writeAddress) && !isInterruptCSR(io.writeAddress) && !isCounterCSR(io.writeAddress), false.B)
-  val lastWriteData = RegNext(io.writeData)
+  // Standard read-only ID registers
+  val marchidReg  = RegInit(CSR.WILDCAT_MARCHID.U(32.W))
+  val mvendoridReg= RegInit(CSR.WILDCAT_VENDORID.U(32.W))
+  val misaReg     = RegInit(CSR.WILDCAT_MISA.U(32.W))
+  val hartidReg   = RegInit(0.U(32.W))
 
-  // Registers for forwarding exception updates
-  // Store *which* CSR was updated by the trap mechanism last cycle
-  val lastTrapWriteAddr = RegNext(Mux(io.takeTrap,
-    Mux(io.trapIsInterrupt, 0.U,
-      Mux(io.writeAddress === CSR.MEPC.U, CSR.MEPC.U,
-        Mux(io.writeAddress === CSR.MCAUSE.U, CSR.MCAUSE.U,
-          Mux(io.writeAddress === CSR.MTVAL.U, CSR.MTVAL.U, 0.U)))
-    ), 0.U)) // Address being written during trap (MEPC, MCAUSE, MTVAL)
-  val lastTrapOccurred = RegNext(io.takeTrap, false.B)
-  val lastTrapPC = RegNext(io.trapPC) // Store MEPC value written by trap
-  val lastTrapCause = RegNext(Mux(io.trapIsInterrupt, io.interruptCause, io.exceptionCause)) // Store MCAUSE value written by trap
-  val lastTrapValue = RegNext(Mux(io.trapIsInterrupt, 0.U, io.trapInstruction)) // Store MTVAL value written by trap
+  //----------------------------------------------------------------------------
+  // CSR Read Operation
+  //----------------------------------------------------------------------------
+  when(isInterruptCSR(io.readAddress))          { io.data := interruptController.io.csrReadData}
+  .elsewhen(isCounterCSR(io.readAddress))       { io.data := timerCounter.io.csrReadData}
+  // Read specific registers handled directly here
+  .elsewhen(io.readAddress === CSR.MEPC.U)      { io.data := mepcReg }
+  .elsewhen(io.readAddress === CSR.MCAUSE.U)    { io.data := mcauseReg }
+  .elsewhen(io.readAddress === CSR.MTVAL.U)     { io.data := mtvalReg }
+  .elsewhen(io.readAddress === CSR.MTVEC.U)     { io.data := mtvecReg }
+  // Standard read-only ID registers
+  .elsewhen(io.readAddress === CSR.MARCHID.U)   { io.data := marchidReg }
+  .elsewhen(io.readAddress === CSR.MVENDORID.U) { io.data := mvendoridReg }
+  .elsewhen(io.readAddress === CSR.MISA.U)      { io.data := misaReg }
+  .elsewhen(io.readAddress === CSR.HARTID.U)    { io.data := hartidReg } // Assuming Hart ID 0
+  // Default to reading 0
+  .otherwise                                    { io.data := 0.U}
+
+  //----------------------------------------------------------------------------
+  // CSR Write Operation
+  //
+  // # Writes delegated to specialized modules. Only handled here for special regs.
+  //
+  //----------------------------------------------------------------------------
+  when(io.writeEnable) {
+    // Delegate writes to specialized modules
+    when(isInterruptCSR(io.writeAddress))       { } // Write handled by InterruptController module
+    .elsewhen(isCounterCSR(io.writeAddress))    { } // Write handled by TimerCounter module
+    // Handle writes to specific registers directly
+    .elsewhen(io.writeAddress === CSR.MEPC.U)   { mepcReg  := io.writeData & (~3.U(32.W)).asUInt } //alligned 4 byte
+    .elsewhen(io.writeAddress === CSR.MCAUSE.U) { mcauseReg:= io.writeData }
+    .elsewhen(io.writeAddress === CSR.MTVAL.U)  { mtvalReg := io.writeData }
+    .elsewhen(io.writeAddress === CSR.MTVEC.U)  { mtvecReg := io.writeData & (~3.U(32.W)).asUInt } //alligned 4 byte
+    // Default to not writing anything
+    .otherwise {}
+  }
 
   //----------------------------------------------------------------------------
   // Trap Handling Logic
+  //
+  // # When Trap taken update mcause, mtval, and mepc
+  // # Traps are both exceptions and interrupts.
   //----------------------------------------------------------------------------
   when(io.takeTrap) {
     mepcReg := io.trapPC // Save PC of trapped instruction
@@ -122,79 +142,6 @@ class Csr(freqHz: Int = 100000000) extends Module {
   }
 
   //----------------------------------------------------------------------------
-  // CSR Read Operation (Before Forwarding)
-  //----------------------------------------------------------------------------
-  val readDataInternal = Wire(UInt(32.W)) // Value read before forwarding
-
-  // Prioritize reads from specialized modules/registers
-  when(isInterruptCSR(io.readAddress)) {
-    readDataInternal := interruptController.io.csrReadData // Read MSTATUS, MIE, MIP
-  }.elsewhen(isCounterCSR(io.readAddress)) {
-      readDataInternal := timerCounter.io.csrReadData      // Read TIME, CYCLE, INSTRET, etc.
-    }
-    // Read specific registers handled directly here
-    .elsewhen(io.readAddress === CSR.MEPC.U)      { readDataInternal := mepcReg }
-    .elsewhen(io.readAddress === CSR.MCAUSE.U)    { readDataInternal := mcauseReg }
-    .elsewhen(io.readAddress === CSR.MTVAL.U)     { readDataInternal := mtvalReg }
-    .elsewhen(io.readAddress === CSR.MTVEC.U)     { readDataInternal := mtvecReg }
-    // Standard read-only ID registers
-    .elsewhen(io.readAddress === CSR.MARCHID.U)   { readDataInternal := CSR.WILDCAT_MARCHID.U }
-    .elsewhen(io.readAddress === CSR.MVENDORID.U) { readDataInternal := CSR.WILDCAT_VENDORID.U }
-    .elsewhen(io.readAddress === CSR.MISA.U)      { readDataInternal := CSR.WILDCAT_MISA.U }
-    .elsewhen(io.readAddress === CSR.HARTID.U)    { readDataInternal := 0.U } // Assuming Hart ID 0
-    // Default to reading from generic CSR memory
-    .otherwise {
-
-    }
-
-  //----------------------------------------------------------------------------
-  // Forwarding Logic
-  //----------------------------------------------------------------------------
-  io.data := MuxCase(readDataInternal, Seq(
-    // Case 1: Immediate same-cycle read-after-write
-    (io.readEnable && io.writeEnable && (io.readAddress === io.writeAddress) && !isReadOnly(io.writeAddress)) -> io.writeData,
-
-    // Case 2: Forward data potentially updated by a trap mechanism in the *current* cycle
-    (io.readEnable && io.takeTrap) ->
-      MuxLookup(io.readAddress, readDataInternal, Seq(
-        CSR.MEPC.U   -> io.trapPC,
-        CSR.MCAUSE.U -> Mux(io.trapIsInterrupt, io.interruptCause, io.exceptionCause),
-        CSR.MTVAL.U  -> Mux(io.trapIsInterrupt, 0.U, io.trapInstruction)
-      )),
-
-    // Case 3: Forward data written by a regular CSR instruction in the *previous* cycle
-    (io.readEnable && lastWriteEnable && (io.readAddress === lastWriteAddr)) -> lastWriteData,
-
-    // Case 4: Forward data written by the trap mechanism in the *previous* cycle
-    (io.readEnable && lastTrapOccurred && (io.readAddress === lastTrapWriteAddr)) ->
-      MuxLookup(io.readAddress, readDataInternal, Seq(
-        CSR.MEPC.U   -> lastTrapPC,
-        CSR.MCAUSE.U -> lastTrapCause,
-        CSR.MTVAL.U  -> lastTrapValue
-      ))
-  ))
-
-  //----------------------------------------------------------------------------
-  // CSR Write Operation
-  //----------------------------------------------------------------------------
-  when(io.writeEnable) {
-    // Delegate writes to specialized modules first
-    when(isInterruptCSR(io.writeAddress)) {
-      // Write handled by InterruptController instance
-    }.elsewhen(isCounterCSR(io.writeAddress)) {
-        // Write handled by TimerCounter instance
-      }
-      // Handle writes to specific registers directly
-      .elsewhen(io.writeAddress === CSR.MEPC.U)    { mepcReg  := io.writeData & (~3.U(32.W)).asUInt }
-      .elsewhen(io.writeAddress === CSR.MCAUSE.U)  { mcauseReg:= io.writeData }
-      .elsewhen(io.writeAddress === CSR.MTVAL.U)   { mtvalReg := io.writeData }
-      .elsewhen(io.writeAddress === CSR.MTVEC.U)   { mtvecReg := io.writeData & (~1.U(32.W)).asUInt }
-      // Default to writing generic CSR memory if not read-only
-      .otherwise {
-      }
-  }
-
-  //----------------------------------------------------------------------------
   // Other Outputs
   //----------------------------------------------------------------------------
   io.mretTarget := mepcReg // MRET jumps to mepc
@@ -202,28 +149,23 @@ class Csr(freqHz: Int = 100000000) extends Module {
   io.globalInterruptEnabled := interruptController.io.mstatusInterruptEnable
   io.timerInterruptEnabled := interruptController.io.timerInterruptEnabled
 
-
   //----------------------------------------------------------------------------
   // Helper Functions
   //----------------------------------------------------------------------------
   def isReadOnly(addr: UInt): Bool = {
-    val upperBits = addr(11, 10)
-    val isMRO = (upperBits === "b11".U)
-
-    isMRO
+    addr(11, 10) === "b11".U
   }
 
   def isCounterCSR(addr: UInt): Bool = {
-    (addr === CSR.CYCLE.U) || (addr === CSR.CYCLEH.U) ||
-      (addr === CSR.TIME.U) || (addr === CSR.TIMEH.U) || // Read-only access via CSR module. Memorymapped in CLINT.
-      (addr === CSR.INSTRET.U) || (addr === CSR.INSTRETH.U) ||
-      (addr === CSR.MCYCLE.U) || (addr === CSR.MCYCLEH.U) ||
-      (addr === CSR.MINSTRET.U) || (addr === CSR.MINSTRETH.U)
+    (addr === CSR.CYCLE.U)    ||  (addr === CSR.CYCLEH.U)   ||
+    (addr === CSR.TIME.U)     ||  (addr === CSR.TIMEH.U)    ||
+    (addr === CSR.INSTRET.U)  ||  (addr === CSR.INSTRETH.U) ||
+    (addr === CSR.MCYCLE.U)   ||  (addr === CSR.MCYCLEH.U)  ||
+    (addr === CSR.MINSTRET.U) ||  (addr === CSR.MINSTRETH.U)
   }
 
   def isInterruptCSR(addr: UInt): Bool = {
     (addr === CSR.MSTATUS.U) || (addr === CSR.MIE.U) || (addr === CSR.MIP.U)
   }
-
 
 }
