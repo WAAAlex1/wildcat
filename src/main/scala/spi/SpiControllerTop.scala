@@ -1,6 +1,6 @@
 package spi
 
-import Bootloader.SpiCTRLIO
+import bootloader.SpiCTRLIO
 import chisel3._
 import chisel3.util._
 

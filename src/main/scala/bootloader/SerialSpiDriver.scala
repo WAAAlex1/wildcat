@@ -1,4 +1,4 @@
-package Bootloader
+package bootloader
 
 import com.fazecast.jSerialComm._
 

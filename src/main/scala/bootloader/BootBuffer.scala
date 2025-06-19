@@ -1,4 +1,4 @@
-package Bootloader
+package bootloader
 
 import chisel.lib.uart._
 import chisel3._

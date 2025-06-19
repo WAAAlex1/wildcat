@@ -1,7 +1,7 @@
 package wildcat.pipeline
 
 import chisel3._
-import UART._
+import uart._
 
 /*
  * This file is part of the RISC-V processor Wildcat.

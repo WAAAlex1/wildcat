@@ -1,4 +1,4 @@
-package Bootloader
+package bootloader
 
 import extmemory.SPICommands._
 import caravan.bus.tilelink.{TLRequest, TLResponse, TilelinkConfig}

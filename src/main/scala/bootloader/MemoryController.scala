@@ -1,6 +1,6 @@
 // OLD / ORIGINAL MEMORYCONTROLLER
 
-package Bootloader
+package bootloader
 
 import caravan.bus.tilelink.{TLRequest, TLResponse, TilelinkConfig}
 import chisel3._

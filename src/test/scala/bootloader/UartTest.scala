@@ -1,4 +1,4 @@
-package Bootloader
+package bootloader
 
 import chisel3._
 import chiseltest._

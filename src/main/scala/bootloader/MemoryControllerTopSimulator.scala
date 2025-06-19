@@ -1,4 +1,4 @@
-package Bootloader
+package bootloader
 
 import extmemory._
 import spi.SpiControllerTop

@@ -11,7 +11,7 @@ import wildcat.CSR
  * generic CSR storage, and interfaces with TimerCounter and InterruptController modules.
  * Includes forwarding logic and passes MRET signal to InterruptController.
  */
-class Csr(freqHz: Int = 100000000) extends Module {
+class OldCsr(freqHz: Int = 100000000) extends Module {
   val io = IO(new Bundle {
     // === INPUTS ===
     val readAddress    = Input(UInt(12.W))  // Address for read operation
@@ -56,7 +56,7 @@ class Csr(freqHz: Int = 100000000) extends Module {
   timerCounter.io.mtimecmpValue   := io.mtimecmpVal
   io.timerCounter                 := timerCounter.io.currentTime
 
-  // Interrupt Controller Module (Handles MSTATUS, MIE, MIP)
+  // Interrupt Controller Module (Handles MSTATUS.MIE, MIE, MIP)
   val interruptController = Module(new InterruptController())
   interruptController.io.timerInterruptPendingIn := timerCounter.io.timerInterruptPending
   interruptController.io.csrReadAddr    := io.readAddress // Pass raw read address
@@ -144,7 +144,8 @@ class Csr(freqHz: Int = 100000000) extends Module {
     .elsewhen(io.readAddress === CSR.HARTID.U)    { readDataInternal := 0.U } // Assuming Hart ID 0
     // Default to reading from generic CSR memory
     .otherwise {
-
+      readDataInternal := csrMem.read(io.readAddress, io.readEnable)
+      // printf("[Csr] Read from generic CSR 0x%x\n", io.readAddress)
     }
 
   //----------------------------------------------------------------------------
@@ -191,6 +192,10 @@ class Csr(freqHz: Int = 100000000) extends Module {
       .elsewhen(io.writeAddress === CSR.MTVEC.U)   { mtvecReg := io.writeData & (~1.U(32.W)).asUInt }
       // Default to writing generic CSR memory if not read-only
       .otherwise {
+        when(!isReadOnly(io.writeAddress)){
+          csrMem.write(io.writeAddress, io.writeData)
+          // printf("[Csr] Write to generic CSR 0x%x \n", io.writeAddress)
+        }
       }
   }
 
@@ -207,10 +212,11 @@ class Csr(freqHz: Int = 100000000) extends Module {
   // Helper Functions
   //----------------------------------------------------------------------------
   def isReadOnly(addr: UInt): Bool = {
-    val upperBits = addr(11, 10)
-    val isMRO = (upperBits === "b11".U)
+    val upperBits = addr(11, 8)
+    // Standard User/Supervisor RO ranges ( upper bit === C || D || E || F
+    val isStandardReadOnlyRange = (upperBits === 0xC.U) || (upperBits === 0xD.U) || (upperBits === 0xE.U) || (upperBits === 0xF.U)
 
-    isMRO
+    isStandardReadOnlyRange
   }
 
   def isCounterCSR(addr: UInt): Bool = {
@@ -224,6 +230,5 @@ class Csr(freqHz: Int = 100000000) extends Module {
   def isInterruptCSR(addr: UInt): Bool = {
     (addr === CSR.MSTATUS.U) || (addr === CSR.MIE.U) || (addr === CSR.MIP.U)
   }
-
 
 }

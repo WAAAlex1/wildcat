@@ -1,4 +1,4 @@
-package UART
+package uart
 
 import chisel.lib.uart._
 import chisel3._

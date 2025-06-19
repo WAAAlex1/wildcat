@@ -1,4 +1,4 @@
-package Bootloader
+package bootloader
 
 /*
  * New SendUART will take any binary file and send it with correct addresses.
@@ -66,10 +66,10 @@ object SendUART {
     sendFile(zsblBytes, serialPort, 0x0)
 
     //Send the program
-    sendFile(programBytes, serialPort,  0x100)
+    //sendFile(programBytes, serialPort,  0x100)
 
     //Send exception handler
-    sendFile(traphandlerBytes, serialPort,  0x00300000)
+    //sendFile(traphandlerBytes, serialPort,  0x00300000)
 
     //Uart test program
     //sendFile(uartTestBytes, serialPort,  0x0)

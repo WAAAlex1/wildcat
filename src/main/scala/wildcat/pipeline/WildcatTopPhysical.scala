@@ -1,13 +1,13 @@
 package wildcat.pipeline
 
-import Bootloader._
+import bootloader._
 import caches.BusInterconnect
 import caravan.bus.tilelink.TilelinkConfig
 import chisel3._
 import wildcat.Util
 import wildcat.CSR._
 import chisel.lib.uart._
-import UART._
+import uart._
 
 /*
  * This file is part of the RISC-V processor Wildcat.
@@ -64,6 +64,11 @@ class WildcatTopPhysical(freqHz: Int = 100000000, baudRate: Int = 115200) extend
   io.dir := MCU.io.dir
   MCU.io.inSio := io.inSio
   io.outSio := MCU.io.outSio
+
+  // When MCU Simulator selected uncomment these
+  //io.spiClk := DontCare
+  //io.dir := DontCare
+  //io.outSio := DontCare
 
   //DMEM Connections
   cpu.io.dmem <> bus.io.CPUdCacheMemIO
@@ -228,10 +233,8 @@ class WildcatTopPhysical(freqHz: Int = 100000000, baudRate: Int = 115200) extend
       bus.io.CPUdCacheMemIO.wrData    := BL.io.instrData
       bus.io.CPUdCacheMemIO.wrEnable  := VecInit(Seq.fill(4)(BL.io.wrEnabled.asBool))
       bus.io.CPUdCacheMemIO.rdEnable  := false.B
-
-      bus.io.CPUiCacheMemIO.rdEnable := false.B
-
     }
+    bus.io.CPUiCacheMemIO.rdEnable := false.B
 
   }
 

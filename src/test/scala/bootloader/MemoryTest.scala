@@ -1,4 +1,4 @@
-package Bootloader
+package bootloader
 
 import caches.BusInterconnect
 import caches.simple.CacheFunctions.pokeVecBool

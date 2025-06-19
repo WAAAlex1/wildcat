@@ -40,13 +40,60 @@ class WildcatTopPhysicalDataTest() extends AnyFlatSpec with
         //Send to memory mapped address for sleep
         val bootSleepAddr = "hF1000000".U
 
+//        send32bit("h00000000".U) //First send address
+//        send32bit("h00108093".U) //Then send the instruction (addi x1, x1, 1)
+//        //dut.io.led.expect(0.U) // should fail always
+//
+//        send32bit("h00000004".U) //First send address
+//        send32bit("hffdff06f".U) //Then send the instruction (jal x0, -4)
+//        //dut.io.led.expect(0.U) // should fail always
+
+
+        //Send the ZSBL_demo.bin file:
         send32bit("h00000000".U) //First send address
-        send32bit("h00108093".U) //Then send the instruction (addi x1, x1, 1)
-        //dut.io.led.expect(0.U) // should fail always
+        send32bit("hf00102b7".U)
 
         send32bit("h00000004".U) //First send address
-        send32bit("hffdff06f".U) //Then send the instruction (jal x0, -4)
-        //dut.io.led.expect(0.U) // should fail always
+        send32bit("h03300313".U)
+
+        send32bit("h00000008".U) //First send address
+        send32bit("h00628023".U)
+
+        send32bit("h0000000c".U) //First send address
+        send32bit("h00ff0137".U)
+
+        send32bit("h00000010".U) //First send address
+        send32bit("h003002b7".U)
+
+        send32bit("h00000014".U) //First send address
+        send32bit("h30529073".U)
+
+        send32bit("h00000018".U) //First send address
+        send32bit("h10000293".U)
+
+        send32bit("h0000001c".U) //First send address
+        send32bit("h00028067".U)
+
+        send32bit("h00000020".U) //First send address
+        send32bit("h00000013".U)
+
+        send32bit("h00000024".U) //First send address
+        send32bit("h00000013".U)
+
+        send32bit("h00000028".U) //First send address
+        send32bit("h00000013".U)
+
+        send32bit("h0000002c".U) //First send address
+        send32bit("h00000013".U)
+
+        send32bit("h00000030".U) //First send address
+        send32bit("hf00102b7".U)
+
+        send32bit("h00000034".U) //First send address
+        send32bit("h08800313".U)
+
+        send32bit("h00000038".U) //First send address
+        send32bit("h00628023".U)
 
         //Now send memory mapped IO for setting bootloader to sleep
         send32bit(bootSleepAddr)

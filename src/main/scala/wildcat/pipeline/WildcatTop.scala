@@ -1,6 +1,6 @@
 package wildcat.pipeline
 
-import Bootloader._
+import bootloader._
 import caches.BusInterconnect
 import caravan.bus.tilelink.TilelinkConfig
 import chisel3._

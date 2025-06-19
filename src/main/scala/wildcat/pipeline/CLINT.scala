@@ -90,7 +90,7 @@ class CLINT extends Module {
   }
 
   // --- Read Logic ---
-  // Read is combinational based on current inputs
+  // Read is combinatorial based on current inputs
   when(io.link.enable && !io.link.isWrite) {
     when(isMtimecmpAccess) {
       rdDataWire := Mux(isLowWordAccess, mtimecmpReg(31, 0), mtimecmpReg(63, 32))

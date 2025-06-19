@@ -1,4 +1,4 @@
-package Bootloader
+package bootloader
 
 import chisel3._
 import chiseltest._
@@ -11,7 +11,7 @@ import scala.Console.println
  */
 class BootloaderTestByte extends AnyFlatSpec with
   ChiselScalatestTester {
-  "Bootloader" should "receive 1 byte" in {
+  "bootloader" should "receive 1 byte" in {
     test(new Bootloader(10000000))
       .withAnnotations(Seq(WriteVcdAnnotation)) { dut =>
       val BIT_CNT = ((10000000 + 115200 / 2) / 115200 - 1)
@@ -53,7 +53,7 @@ class BootloaderTestByte extends AnyFlatSpec with
 
 class BootloaderTestScala extends AnyFlatSpec with
   ChiselScalatestTester {
-  "Bootloader" should "Receive entire instruction and addr and enable writing" in {
+  "bootloader" should "Receive entire instruction and addr and enable writing" in {
     test(new Bootloader(10000000))
       .withAnnotations(Seq(WriteVcdAnnotation)) { dut =>
         val BIT_CNT = ((10000000 + 115200 / 2) / 115200 - 1)

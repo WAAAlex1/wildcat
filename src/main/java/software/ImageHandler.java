@@ -1,4 +1,4 @@
-package Software;
+package software;
 
 import java.io.*;
 import java.nio.file.*;

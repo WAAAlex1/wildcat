@@ -1,4 +1,4 @@
-package Bootloader
+package bootloader
 
 import spi.SpiControllerTop
 import caravan.bus.tilelink.{TLRequest, TLResponse, TilelinkConfig}
