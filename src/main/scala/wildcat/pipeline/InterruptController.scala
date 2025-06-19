@@ -3,129 +3,146 @@ package wildcat.pipeline
 
 import chisel3._
 import chisel3.util._
-import wildcat.CSR // Assuming CSR definitions are here
+import wildcat.CSR
 
 /**
- * Handles M-mode interrupt control logic (mie, mip, mstatus.MIE).
- * Receives timer pending signal externally.
+ * Handles M-mode interrupt control logic.
+ * Owns MIE and MIP registers, generates timer interrupts internally,
+ * and provides clean interface for CSR access and trap handling.
  */
 class InterruptController extends Module {
   val io = IO(new Bundle {
-    // CSR Interface (from Csr module for MSTATUS, MIE, MIP)
-    val csrReadAddr    = Input(UInt(12.W))
-    val csrWriteAddr   = Input(UInt(12.W))
-    val csrWriteEnable = Input(Bool())
-    val csrWriteData   = Input(UInt(32.W))
-    val csrReadData    = Output(UInt(32.W)) // Data read for MSTATUS, MIE, MIP
+    // Interrupt Sources (hardware signals to generate interrupts)
+    val mtime = Input(UInt(64.W))                     // Current mtime from TimerCounter
+    val mtimecmp = Input(UInt(64.W))                  // Current mtimecmp from CLINT
+    val externalInterrupt = Input(Bool())             // External interrupt source (for future expansion)
+    val softwareInterrupt = Input(Bool())             // Software interrupt source (for future expansion)
 
-    // Interrupt Source Inputs
-    val timerInterruptPendingIn = Input(Bool()) // From TimerCounter via Csr
-    // Add other interrupt source inputs here if needed
+    // Control from CSR module (only global enable from MSTATUS)
+    val globalInterruptEnable = Input(Bool())         // MSTATUS.MIE bit
 
-    // Interrupt Control Outputs (to Csr module)
+    // CSR interface for MIE/MIP registers (owned by this module)
+    val mieWrite = Input(Bool())
+    val mieWriteData = Input(UInt(32.W))
+    val mieReadData = Output(UInt(32.W))
+    val mipReadData = Output(UInt(32.W))
+
+    // Outputs to Pipeline
     val interruptRequest = Output(Bool())
-    val interruptCause   = Output(UInt(32.W))
-    val mstatusInterruptEnable = Output(Bool())
+    val interruptCause = Output(UInt(32.W))
+
+    // For trap handling (to update MSTATUS.MIE/MPIE in CSR module)
+    val trapTaken = Input(Bool())
+    val mretExecuting = Input(Bool())
+    val disableInterrupts = Output(Bool()) // Tell CSR to clear MSTATUS.MIE
+    val enableInterrupts = Output(Bool())  // Tell CSR to restore MSTATUS.MIE from MPIE
+
+    // Additional outputs for WFI and debugging
     val timerInterruptEnabled = Output(Bool())
-
-    // Trap Handling Inputs (from Csr module)
-    val takeTrap       = Input(Bool())
-
-    // MRET Execution Signal
-    val mret_executing = Input(Bool())
+    val anyInterruptPending = Output(Bool())
   })
 
-  // Registers for Interrupt Control CSRs (MSTATUS.MIE, MIE, MIP)
-  val mstatus_mie = RegInit(false.B)
-  val mstatus_mpie = RegInit(true.B) // Machine Previous Interrupt Enable - Start enabled (as per spec)
-  val mie_mtie    = RegInit(false.B) // Only Timer Enable bit for now
-  val mip_mtip    = RegInit(false.B) // Only Timer Pending bit for now
+  // ============================================================================
+  // Register Definitions (32-bit registers, not bit-by-bit)
+  // ============================================================================
 
-  // Update mip.MTIP based on hardware signal
-  mip_mtip := io.timerInterruptPendingIn
+  // MIE Register - Machine Interrupt Enable (32-bit)
+  val mieReg = RegInit(0.U(32.W))
 
-  // Interrupt Request Logic
-  val timerInterruptActive = mstatus_mie && mie_mtie && mip_mtip
-  io.interruptRequest := timerInterruptActive
-  io.interruptCause := Mux(timerInterruptActive, "h80000007".U, 0.U)
+  // MIP Register - Machine Interrupt Pending (32-bit, mostly read-only from software)
+  val mipReg = RegInit(0.U(32.W))
 
-  // CSR Read Logic (Only for MSTATUS, MIE, MIP)
-  val readDataWire = WireDefault(0.U(32.W))
-  val MIE_BIT = 3
-  val MPIE_BIT = 7
-  val MTIE_BIT = 7
-  val MTIP_BIT = 7
-  switch(io.csrReadAddr) {
-    // Construct mstatus read value from internal registers
-    is(CSR.MSTATUS.U) {
-      // Combine relevant bits. Assume other MSTATUS bits are 0 or hardwired.
-      // Adjust Cat arguments if other bits like MPP need representation.
-      readDataWire := Cat(
-        Fill(31 - MPIE_BIT, 0.U), // Bits 31 down to MPIE_BIT+1
-        mstatus_mpie,             // Bit 7 (MPIE)
-        Fill(MPIE_BIT - MIE_BIT - 1, 0.U), // Bits 6 down to MIE_BIT+1
-        mstatus_mie,              // Bit 3 (MIE)
-        Fill(MIE_BIT, 0.U)         // Bits 2 down to 0
-      )
-    }
-    // Construct MIE read value
-    is(CSR.MIE.U)     {
-      readDataWire := Cat(
-        Fill(31 - MTIE_BIT, 0.U), // Higher bits
-        mie_mtie,                 // Bit 7 (MTIE)
-        Fill(MTIE_BIT, 0.U)       // Lower bits
-      )
-    }
-    // Construct MIP read value
-    is(CSR.MIP.U)     {
-      readDataWire := Cat(
-        Fill(31 - MTIP_BIT, 0.U), // Higher bits
-        mip_mtip,                 // Bit 7 (MTIP)
-        Fill(MTIP_BIT, 0.U)       // Lower bits
-      )
-    }
-  }
-  io.csrReadData := readDataWire
+  // ============================================================================
+  // Interrupt Generation Logic (Internal)
+  // ============================================================================
 
-  // CSR Write Logic (Only for MSTATUS, MIE - respecting masks)
-  when(io.csrWriteEnable) {
-    when(io.csrWriteAddr === CSR.MSTATUS.U) {
-      // Allow writing MIE and MPIE based on the write mask defined in CSR.scala
-      val MSTATUS_WRITE_MASK = "b0000_0000_0000_0000_0000_0000_1000_1000".U // Allow writing MPIE(7), MIE(3)
-      val maskedWriteData = io.csrWriteData & MSTATUS_WRITE_MASK
+  // Timer interrupt generation (moved from TimerCounter)
+  val timerInterruptPending = io.mtime >= io.mtimecmp && io.mtimecmp =/= 0.U
 
-      // Only update if the corresponding mask bit is 1
-      when(MSTATUS_WRITE_MASK(MIE_BIT))   { mstatus_mie := maskedWriteData(MIE_BIT) }
-      when(MSTATUS_WRITE_MASK(MPIE_BIT))  { mstatus_mpie := maskedWriteData(MPIE_BIT) }
-      // Handle other writable mstatus bits if any based on mask
-    }
-      .elsewhen(io.csrWriteAddr === CSR.MIE.U) {
-        // Allow writing MTIE based on the write mask
-        val MIE_WRITE_MASK = "b0000_0000_0000_0000_0000_0000_1000_0000".U // Allow writing MTIE(7)
-        val maskedWriteData = io.csrWriteData & MIE_WRITE_MASK
+  // External interrupt (for future expansion)
+  val externalInterruptPending = io.externalInterrupt
 
-        when(MIE_WRITE_MASK(MTIE_BIT))    { mie_mtie := maskedWriteData(MTIE_BIT) }
-      }
-    // MIP is read-only for software, ignore writes
-  }
+  // Software interrupt (for future expansion)
+  val softwareInterruptPending = io.softwareInterrupt
 
-  // Trap Handling Updates
-  when(io.takeTrap) {
-    mstatus_mpie := mstatus_mie // Save current MIE state to MPIE
-    mstatus_mie := false.B // Disable global interrupts
-    printf("[InterruptController] Trap Taken: MIE(%b) -> MPIE, MIE -> false\n", mstatus_mie) // Use value *before* update for print
+  // Update MIP register with hardware-generated pending bits
+  val mipUpdated = WireDefault(mipReg)
+  mipUpdated := Cat(
+    mipReg(31, 8),                    // Reserved bits [31:8]
+    timerInterruptPending,            // MTIP - bit 7
+    mipReg(6, 4),                     // Reserved bits [6:4]
+    externalInterruptPending,         // MEIP - bit 3 (for future)
+    mipReg(2, 1),                     // Reserved bits [2:1]
+    softwareInterruptPending          // MSIP - bit 0 (for future)
+  )
+  mipReg := mipUpdated
+
+  // ============================================================================
+  // Interrupt Priority and Request Logic
+  // ============================================================================
+
+  // Extract individual enable bits from MIE register
+  val timerInterruptEnabled = mieReg(7)      // MTIE - bit 7
+  val externalInterruptEnabled = mieReg(3)   // MEIE - bit 3
+  val softwareInterruptEnabled = mieReg(0)   // MSIE - bit 0
+
+  // Interrupt request logic (priority: External > Software > Timer)
+  val externalInterruptActive = io.globalInterruptEnable && externalInterruptEnabled && externalInterruptPending
+  val softwareInterruptActive = io.globalInterruptEnable && softwareInterruptEnabled && softwareInterruptPending
+  val timerInterruptActive = io.globalInterruptEnable && timerInterruptEnabled && timerInterruptPending
+
+  // Generate interrupt request and cause (following RISC-V priority)
+  val anyInterruptActive = externalInterruptActive || softwareInterruptActive || timerInterruptActive
+
+  io.interruptRequest := anyInterruptActive
+  io.interruptCause := MuxCase(0.U, Seq(
+    externalInterruptActive -> 0x8000000B.U,  // Machine external interrupt
+    softwareInterruptActive -> 0x80000003.U,  // Machine software interrupt
+    timerInterruptActive    -> 0x80000007.U   // Machine timer interrupt
+  ))
+
+  // ============================================================================
+  // CSR Interface (Read/Write Logic)
+  // ============================================================================
+
+  // MIE Register Read
+  io.mieReadData := mieReg
+
+  // MIP Register Read (always current hardware state)
+  io.mipReadData := mipReg
+
+  // MIE Register Write (using bit masks for clean implementation)
+  when(io.mieWrite) {
+    // Write mask: allow writing to standard interrupt enable bits
+    val MIE_WRITE_MASK = 0x00000889.U  // MEIE(3), MTIE(7), MSIE(0), others reserved
+    val MIE_WRITE_MASK_NEG = 0xFFFFF776.U
+    mieReg := (io.mieWriteData & MIE_WRITE_MASK) | (mieReg & MIE_WRITE_MASK_NEG)
   }
 
-  // MRET Logic
-  // Action on executing MRET (restore MIE <- MPIE, set MPIE <- 1)
-  when(io.mret_executing) {
-    mstatus_mie := mstatus_mpie // Restore global interrupt enable from MPIE
-    mstatus_mpie := true.B      // Set MPIE to 1 (interrupts were enabled prior to trap)
-    printf("[InterruptController] MRET Executing: MIE <- MPIE(%b), MPIE -> true\n", mstatus_mpie) // Use value *before* update for print
+  // Note: MIP register is read-only from software (hardware updates only)
+
+  // ============================================================================
+  // Trap Handling Logic
+  // ============================================================================
+
+  // Default: don't change interrupt state
+  io.disableInterrupts := false.B
+  io.enableInterrupts := false.B
+
+  // When trap is taken, tell CSR module to disable global interrupts
+  when(io.trapTaken) {
+    io.disableInterrupts := true.B
   }
 
-  //FOR WFI TO PIPELINE
-  io.mstatusInterruptEnable := mstatus_mie
-  io.timerInterruptEnabled := mie_mtie
+  // When MRET is executed, tell CSR module to restore interrupt state
+  when(io.mretExecuting) {
+    io.enableInterrupts := true.B
+  }
 
+  // ============================================================================
+  // Additional Outputs
+  // ============================================================================
+
+  io.timerInterruptEnabled := timerInterruptEnabled
+  io.anyInterruptPending := timerInterruptPending || externalInterruptPending || softwareInterruptPending
 }
