@@ -29,6 +29,7 @@ class Csr(freqHz: Int = 100000000) extends Module {
     val trapInstruction  = Input(UInt(32.W))  // The trapped instruction (for mtval on exception)
     val mtimecmpVal      = Input(UInt(64.W))  // From CLINT module
     val mret_executing   = Input(Bool())
+    val externalInterrupt = Input(Bool())
 
     // === OUTPUTS ===
     val data         = Output(UInt(32.W)) // Data read from CSR (after forwarding)
@@ -64,7 +65,6 @@ class Csr(freqHz: Int = 100000000) extends Module {
   val mvendoridReg= RegInit(CSR.WILDCAT_VENDORID.U(32.W))
   val misaReg     = RegInit(CSR.WILDCAT_MISA.U(32.W))
 
-
   // Hardwired read-only registers (always return 0)
   val hartidReg   = RegInit(0.U(32.W))          // Hartid (for single hart processors hardwired to 0)
   val mimpidReg   = 0.U(32.W)                   // Implementation ID (hardwired to 0)
@@ -85,7 +85,7 @@ class Csr(freqHz: Int = 100000000) extends Module {
   val interruptController = Module(new InterruptController())
   interruptController.io.mtime              := timerCounter.io.currentTime
   interruptController.io.mtimecmp           := io.mtimecmpVal
-  interruptController.io.externalInterrupt  := false.B // For future expansion
+  interruptController.io.externalInterrupt := io.externalInterrupt
   interruptController.io.softwareInterrupt  := false.B // For future expansion
   interruptController.io.globalInterruptEnable := mstatusReg(3) // MSTATUS.MIE bit
   interruptController.io.mieWrite           := io.writeEnable && (io.writeAddress === CSR.MIE.U)
@@ -131,8 +131,8 @@ class Csr(freqHz: Int = 100000000) extends Module {
   when(io.writeEnable) {
     // Handle MSTATUS writes (using bit mask for clean implementation)
     when(io.writeAddress === CSR.MSTATUS.U) {
-      val MSTATUS_WRITE_MASK = 0x00001888.U  // Allow writing MIE(3), MPIE(7), MPP(12:11)
-      mstatusReg := (io.writeData & MSTATUS_WRITE_MASK) | (mstatusReg & ~MSTATUS_WRITE_MASK)
+      val MSTATUS_WRITE_MASK = "h00001888".U  // Allow writing MIE(3), MPIE(7), MPP(12:11)
+      mstatusReg := (io.writeData & MSTATUS_WRITE_MASK) | (mstatusReg & (~MSTATUS_WRITE_MASK).asUInt)
     }
       // MIE and MIP writes are handled by InterruptController
       .elsewhen(io.writeAddress === CSR.MIE.U)     { } // Handled by InterruptController

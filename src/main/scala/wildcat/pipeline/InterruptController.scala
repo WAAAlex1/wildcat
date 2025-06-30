@@ -57,7 +57,7 @@ class InterruptController extends Module {
   // ============================================================================
 
   // Timer interrupt generation (moved from TimerCounter)
-  val timerInterruptPending = io.mtime >= io.mtimecmp && io.mtimecmp =/= 0.U
+  val timerInterruptPending = (io.mtime >= io.mtimecmp) && io.mtimecmp =/= 0.U
 
   // External interrupt (for future expansion)
   val externalInterruptPending = io.externalInterrupt
@@ -68,12 +68,13 @@ class InterruptController extends Module {
   // Update MIP register with hardware-generated pending bits
   val mipUpdated = WireDefault(mipReg)
   mipUpdated := Cat(
-    mipReg(31, 8),                    // Reserved bits [31:8]
+    mipReg(31, 12),                   // Reserved bits [31:12]
+    externalInterruptPending,         // MEIP - bit 11 (for future)
+    mipReg(10,8),                     // Reserved bits [10:8]
     timerInterruptPending,            // MTIP - bit 7
     mipReg(6, 4),                     // Reserved bits [6:4]
-    externalInterruptPending,         // MEIP - bit 3 (for future)
-    mipReg(2, 1),                     // Reserved bits [2:1]
-    softwareInterruptPending          // MSIP - bit 0 (for future)
+    softwareInterruptPending,         // MSIP - bit 3 (for future)
+    mipReg(2, 0),                     // Reserved bits [2:0]
   )
   mipReg := mipUpdated
 
@@ -83,8 +84,8 @@ class InterruptController extends Module {
 
   // Extract individual enable bits from MIE register
   val timerInterruptEnabled = mieReg(7)      // MTIE - bit 7
-  val externalInterruptEnabled = mieReg(3)   // MEIE - bit 3
-  val softwareInterruptEnabled = mieReg(0)   // MSIE - bit 0
+  val externalInterruptEnabled = mieReg(11)  // MEIE - bit 11
+  val softwareInterruptEnabled = mieReg(3)   // MSIE - bit 3
 
   // Interrupt request logic (priority: External > Software > Timer)
   val externalInterruptActive = io.globalInterruptEnable && externalInterruptEnabled && externalInterruptPending
@@ -96,9 +97,9 @@ class InterruptController extends Module {
 
   io.interruptRequest := anyInterruptActive
   io.interruptCause := MuxCase(0.U, Seq(
-    externalInterruptActive -> 0x8000000B.U,  // Machine external interrupt
-    softwareInterruptActive -> 0x80000003.U,  // Machine software interrupt
-    timerInterruptActive    -> 0x80000007.U   // Machine timer interrupt
+    externalInterruptActive -> "h8000000B".U,  // Machine external interrupt
+    softwareInterruptActive -> "h80000003".U,  // Machine software interrupt
+    timerInterruptActive    -> "h80000007".U   // Machine timer interrupt
   ))
 
   // ============================================================================
@@ -114,9 +115,8 @@ class InterruptController extends Module {
   // MIE Register Write (using bit masks for clean implementation)
   when(io.mieWrite) {
     // Write mask: allow writing to standard interrupt enable bits
-    val MIE_WRITE_MASK = 0x00000889.U  // MEIE(3), MTIE(7), MSIE(0), others reserved
-    val MIE_WRITE_MASK_NEG = 0xFFFFF776.U
-    mieReg := (io.mieWriteData & MIE_WRITE_MASK) | (mieReg & MIE_WRITE_MASK_NEG)
+    val MIE_WRITE_MASK = "h00000888".U  // MSIE(3), MTIE(7), MEIE(11), others reserved
+    mieReg := (io.mieWriteData & MIE_WRITE_MASK) | (mieReg & (~MIE_WRITE_MASK).asUInt)
   }
 
   // Note: MIP register is read-only from software (hardware updates only)

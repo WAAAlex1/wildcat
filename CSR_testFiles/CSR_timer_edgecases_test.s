@@ -14,6 +14,7 @@
 _start:
     # --- Setup ---
     la      x5, trap_handler
+    li      x2, 2000
     csrw    mtvec, x5
 
     # Initialize test status registers (x21-x27 for individual tests)
@@ -114,15 +115,15 @@ test4_start:
     li      x6, 0xF010BFF8; lw x7, 0(x6)
     li      x6, 0xF010BFFC; lw x8, 0(x6)
 
-    # Set mtimecmp = mtime + 5 (interval = 500 cycles)
-    addi    x7, x7, 5
+    # Set mtimecmp = mtime + 2 (interval = 200 cycles)
+    addi    x7, x7, 2
 
     # Write mtimecmp
     li      x6, 0xF0104004; sw x8, 0(x6) # High word
     li      x6, 0xF0104000; sw x7, 0(x6) # Low word
 
     # Delay loop longer than interval (~1200 cycles now)
-    li      x6, 300        # Using your increased delay
+    li      x6, 200        # Using increased delay
 test4_delay:
     addi    x6, x6, -1
     bnez    x6, test4_delay

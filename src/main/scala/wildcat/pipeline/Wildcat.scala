@@ -26,5 +26,8 @@ abstract class Wildcat(freqHz: Int = 100000000) extends Module {
     //UART
     val UARTport = Bus.RequestPort() // bus port
 
+    //External Interrupt
+    val externalInterrupt = Input(Bool())
+
   })
 }

@@ -44,14 +44,18 @@ class WildcatTopPhysicalFullTest() extends AnyFlatSpec with
         send32bit("h00108093".U) //Then send the instruction (addi x1, x1, 1)
 
         send32bit("h00000004".U) //First send address
-        send32bit("h00000073".U) //Then send the instruction (ecall)
+        send32bit("hffdff06f".U) //Then send the instruction (jal x0, -4)
 
         //Now send memory mapped IO for setting bootloader to sleep
         send32bit(bootSleepAddr)
         send32bit("h00000001".U) //Sleep command data
         //Should be asleep now
 
-        dut.clock.step(1000)
+        dut.clock.step(500)
+        //Processor is awake, will continously increment x1
+        //Cannot really be verified through dut.expect as x1 not visible in IO
+        //Verify by waveform inspection
+
       }
   }
 }

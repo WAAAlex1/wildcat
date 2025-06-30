@@ -27,7 +27,7 @@ class WildcatTopPhysical(freqHz: Int = 100000000, baudRate: Int = 115200) extend
     val tx = Output(UInt(1.W))
     val rx = Input(UInt(1.W))
 
-    // To/Form SPI modules
+    // To/From SPI
     val CS0 = Output(Bool())
     val CS1 = Output(Bool())
     val CS2 = Output(Bool())
@@ -35,20 +35,29 @@ class WildcatTopPhysical(freqHz: Int = 100000000, baudRate: Int = 115200) extend
     val inSio = Input(UInt(4.W))
     val outSio = Output(UInt(4.W))
     val spiClk = Output(Bool())
+
+    // Debug outputs for UART interrupt monitoring
+    val uartRxInterrupt = Output(Bool())
+    val uartTxInterrupt = Output(Bool())
+    val uartTimeoutActive = Output(Bool())
+    val uartThresholdActive = Output(Bool())
+
   })
 
   // ********************************************************************
 
   // Here switch between different designs
   val cpu = Module(new ThreeCats(freqHz))
+  // val cpu = Module(new WildFour())       // NOT SUPPORTED
+  // val cpu = Module(new StandardFive())   // NOT SUPPORTED
 
   // ********************************************************************
 
   // Cache, bus and memory controller connections
   implicit val config = new TilelinkConfig
   val bus = Module(new BusInterconnect()) // Includes caches
-  val MCU = Module(new MemoryControllerTopPhysical(1.U))
-  //val MCU = Module(new MemoryControllerTopSimulator(1.U,Array(0)))
+  //val MCU = Module(new MemoryControllerTopPhysical(1.U))
+  val MCU = Module(new MemoryControllerTopSimulator(1.U,Array(0)))
 
   MCU.io.dCacheReqOut <> bus.io.dCacheReqOut
   bus.io.dCacheRspIn <> MCU.io.dCacheRspIn
@@ -60,15 +69,15 @@ class WildcatTopPhysical(freqHz: Int = 100000000, baudRate: Int = 115200) extend
   io.CS0 := MCU.io.CS0
   io.CS1 := MCU.io.CS1
   io.CS2 := MCU.io.CS2
-  io.spiClk := MCU.io.spiClk
-  io.dir := MCU.io.dir
-  MCU.io.inSio := io.inSio
-  io.outSio := MCU.io.outSio
+  //io.spiClk := MCU.io.spiClk
+  //io.dir := MCU.io.dir
+  //MCU.io.inSio := io.inSio
+  //io.outSio := MCU.io.outSio
 
   // When MCU Simulator selected uncomment these
-  //io.spiClk := DontCare
-  //io.dir := DontCare
-  //io.outSio := DontCare
+  io.spiClk := DontCare
+  io.dir := DontCare
+  io.outSio := DontCare
 
   //DMEM Connections
   cpu.io.dmem <> bus.io.CPUdCacheMemIO
@@ -78,7 +87,6 @@ class WildcatTopPhysical(freqHz: Int = 100000000, baudRate: Int = 115200) extend
   cpu.io.imem.stall := bus.io.CPUiCacheMemIO.stall
 
   // Default drive of instruction cache
-
   bus.io.CPUiCacheMemIO.rdEnable := true.B
   bus.io.CPUiCacheMemIO.rdAddress := cpu.io.imem.address
   bus.io.CPUiCacheMemIO.wrData := 0.U
@@ -94,25 +102,12 @@ class WildcatTopPhysical(freqHz: Int = 100000000, baudRate: Int = 115200) extend
   val ledReg = RegInit(0.U(32.W))
 
   //Instantiate & connect UART:
-  val mmUart = MemoryMappedUart(
-    freqHz,
-    baudRate,
-    txBufferDepth = 16,
-    rxBufferDepth = 16
-  )
+  val mmUart = MemoryMappedUartWithInterrupts.standard(freqHz, baudRate)
+  // Connect UART to CPU
   cpu.io.UARTport <> mmUart.io.port
   io.tx := mmUart.io.pins.tx
   mmUart.io.pins.rx := io.rx
-
-  // Instantiate UART - do not use freq < baudrate (will crash)
-//  val tx = Module(new BufferedTx(freqHz, baudRate))
-//  val rx = Module(new Rx(freqHz, baudRate))
-//  io.tx := tx.io.txd
-//  rx.io.rxd := io.rx
-//
-//  tx.io.channel.bits := cpu.io.dmem.wrData(7, 0)
-//  tx.io.channel.valid := false.B
-//  rx.io.channel.ready := false.B
+  cpu.io.externalInterrupt := mmUart.io.rxInterrupt
 
   // ********************************************************************
 
@@ -180,12 +175,12 @@ class WildcatTopPhysical(freqHz: Int = 100000000, baudRate: Int = 115200) extend
   when ((cpu.io.dmem.wrAddress(31, 28) === 0xf.U) && (cpu.io.dmem.wrEnable.asUInt > 0.U)) {
     when (isClintWrite) { // Write to CLINT handled by CLINT module
       // do nothing
-    } .elsewhen (cpu.io.dmem.wrAddress === "hF000_0004".U) {  // UART send and receive reg
+    }.elsewhen (cpu.io.dmem.wrAddress === "hF000_0004".U) {  // UART send and receive reg
       //tx.io.channel.valid := true.B
       //handled in CPU
-    } .elsewhen (cpu.io.dmem.wrAddress === "hF001_0000".U) {  // LED Reg
+    }.elsewhen (cpu.io.dmem.wrAddress === "hF001_0000".U) {  // LED Reg
       ledReg := cpu.io.dmem.wrData(31, 0)
-    }.elsewhen(cpu.io.dmem.wrAddress   === "hF100_0000".U) {  // Bootloader status reg
+    }.elsewhen (cpu.io.dmem.wrAddress === "hF100_0000".U) {  // Bootloader status reg
       bootloaderStatusReg := cpu.io.dmem.wrData(7, 0)
     }.otherwise {
       // Any other IO or memory region, do nothing for write

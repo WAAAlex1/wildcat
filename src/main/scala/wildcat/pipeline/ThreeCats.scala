@@ -174,9 +174,10 @@ class ThreeCats(freqHz: Int = 100000000) extends Wildcat() {
   // CSR MODULE ---------------------------------------------------------------------------------
   val csr = Module(new Csr(freqHz))
 
-  // IO CONNECTIONS (timerCounter to CLINT, mtimecmpVal from CLINT)
+  // IO CONNECTIONS (timerCounter to CLINT, mtimecmpVal from CLINT, externalInterrupt from UART)
   io.timerCounter_out := csr.io.timerCounter
   csr.io.mtimecmpVal := io.mtimecmpVal_in
+  csr.io.externalInterrupt := io.externalInterrupt
 
   // CSR READ (IN:ADDRESS, IN:ENABLE, OUT:DATA) - instantaneous
   csr.io.readAddress := decExReg.csrAddr

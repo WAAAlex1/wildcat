@@ -9,7 +9,7 @@ import wildcat.pipeline._
  * Top-level for testing and verification
  *
  */
-class WildcatTestTop(file: String, freqHz: Int = 100000000) extends Module {
+class WildcatTestTop(file: String, freqHz: Int = 100000000, baudrate: Int = 115200) extends Module {
 
   val io = IO(new Bundle {
     val regFile = Output(Vec(32,UInt(32.W)))
@@ -29,8 +29,13 @@ class WildcatTestTop(file: String, freqHz: Int = 100000000) extends Module {
     val debug_isIllegal = Output(Bool())
     val debug_isValid = Output(Bool())
     val debug_timer = Output(UInt(64.W))
+    val debug_timerInterruptActive = Output(Bool())
+    val debug_timerInterruptEnabled = Output(Bool())
+    val debug_globalInterruptEnabled = Output(Bool())
+    val debug_interruptRequest = Output(Bool())
+    val debug_mtimecmp = Output(UInt(32.W))
   })
-  val cpuTop = Module(new WildcatTop(file = file, freqHz = freqHz))
+  val cpuTop = Module(new WildcatTop(file = file, freqHz = freqHz, baudrate = baudrate))
 
   io.regFile := DontCare
   BoringUtils.bore(cpuTop.cpu.debugRegs, Seq(io.regFile))
@@ -50,6 +55,11 @@ class WildcatTestTop(file: String, freqHz: Int = 100000000) extends Module {
   io.debug_isIllegal := false.B
   io.debug_isValid := false.B
   io.debug_timer := 0.U
+  io.debug_interruptRequest := false.B
+  io.debug_timerInterruptActive := false.B
+  io.debug_timerInterruptEnabled := false.B
+  io.debug_globalInterruptEnabled := false.B
+  io.debug_mtimecmp := 0.U
 
   BoringUtils.bore(cpuTop.cpu.decExReg.pc, Seq(io.debug_pc))
   BoringUtils.bore(cpuTop.cpu.decExReg.instruction, Seq(io.debug_instr))
@@ -61,6 +71,11 @@ class WildcatTestTop(file: String, freqHz: Int = 100000000) extends Module {
   BoringUtils.bore(cpuTop.cpu.decExReg.decOut.isIllegal, Seq(io.debug_isIllegal))
   BoringUtils.bore(cpuTop.cpu.decExReg.valid, Seq(io.debug_isValid))
   BoringUtils.bore(cpuTop.cpu.io.timerCounter_out, Seq(io.debug_timer))
+  BoringUtils.bore(cpuTop.cpu.csr.interruptController.timerInterruptEnabled, Seq(io.debug_timerInterruptEnabled))
+  BoringUtils.bore(cpuTop.cpu.csr.interruptController.io.globalInterruptEnable, Seq(io.debug_globalInterruptEnabled))
+  BoringUtils.bore(cpuTop.cpu.csr.interruptController.io.interruptRequest, Seq(io.debug_interruptRequest))
+  BoringUtils.bore(cpuTop.cpu.csr.interruptController.timerInterruptActive, Seq(io.debug_timerInterruptActive))
+  BoringUtils.bore(cpuTop.clint.mtimecmpReg, Seq(io.debug_mtimecmp))
   cpuTop.io.rx := io.rx
   io.tx := cpuTop.io.tx
 }

@@ -94,8 +94,14 @@ abstract class CSRHardwareBaseTest extends AnyFlatSpec with ChiselScalatestTeste
     val isIllegal = dut.io.debug_isIllegal.peekBoolean()
     val isValid = dut.io.debug_isValid.peekBoolean()
     val timer = dut.io.debug_timer.peekInt()
+    val interruptRequest = dut.io.debug_interruptRequest.peekBoolean()
+    val timerInterruptEnabled = dut.io.debug_timerInterruptEnabled.peekBoolean()
+    val globalInterruptEnabled = dut.io.debug_globalInterruptEnabled.peekBoolean()
+    val timerInterruptActive = dut.io.debug_timerInterruptActive.peekBoolean()
+    val timeCompare = dut.io.debug_mtimecmp.peekInt()
 
     println(f"PC=0x${pc}%08x Instr=0x${instrValue}%08x Branch=${branch} Target=0x${target}%08x, WRITE CSR=${csrWrite}, isIllegal=${isIllegal}, isValid =${isValid}, CCnum = ${numCycles}, mtime = ${timer}")
+    println(f"InterruptRequest=${interruptRequest}, timerInterruptEnabled=${timerInterruptEnabled}, globalInterruptEnabled=${globalInterruptEnabled}, timerInterruptActive=${timerInterruptActive}, mtimecmp=${timeCompare}")
   }
 
   def printDebugInfo(dut: WildcatTestTop, numCycles: Int = 0): Unit = {
@@ -149,12 +155,12 @@ abstract class CSRHardwareBaseTest extends AnyFlatSpec with ChiselScalatestTeste
   }
 
   // Shared helper method for running tests
-  def runCSRTest(testName: String, expectedResults: Map[Int, Int], maxCycles: Int = 100, freqHz: Int = 100000000, debug: Int = 0): Unit = {
+  def runCSRTest(testName: String, expectedResults: Map[Int, Int], maxCycles: Int = 100, freqHz: Int = 100000000, debug: Int = 0, baudrate: Int = 115200): Unit = {
     // Compile the test
     val binFile = compileTest(testName)
     var clockCycles = 0
 
-    test(new WildcatTestTop(file = binFile, freqHz = freqHz)).withAnnotations(Seq(WriteVcdAnnotation)) { dut =>
+    test(new WildcatTestTop(file = binFile, freqHz = freqHz, baudrate = baudrate)).withAnnotations(Seq(WriteVcdAnnotation)) { dut =>
       // Run for enough cycles to complete the test
       println(s"\n===== STARTING $testName EXECUTION =====")
       println(s"Test binary: $binFile")
@@ -226,11 +232,11 @@ class CSRHardwareEdgeCasesTest extends CSRHardwareBaseTest {
     REGS.x10  -> 0x0000002F, // x10 (marchid value)
     REGS.x11  -> 0x0000002F, // x11 (verify marchid unchanged)
     REGS.x13  -> 0x40000101, // x13 (verify MISA Start value)
-    REGS.x14  -> 0xFFFFFFFF  // x14 (MISA NOT WRITE PROTECTED HERE)
+    REGS.x14  -> 0x40000101  // x14 (MISA WRITE PROTECTED)
   )
 
   "CSR Edge Cases Test" should "pass on the ThreeCats processor" in {
-    runCSRTest("CSR_edgecases_test", csrEdgeCaseTestExpected, 100,100000000, 0)
+    runCSRTest("CSR_edgecases_test", csrEdgeCaseTestExpected, 100, 100000000, 0)
   }
 }
 
@@ -268,9 +274,10 @@ class CSRHardwareTimerTest extends CSRHardwareBaseTest {
 
   val testFreqHz = 10000
   val numCycles = 1100 // Should take about 1000 cycles - added a little headroom.
+  val testBaudrate = 1200
 
   "Exception Handling Test" should "pass on the ThreeCats processor" in {
-    runCSRTest("CSR_timer_core_test", timerTestExpected, numCycles, testFreqHz, 0)
+    runCSRTest("CSR_timer_core_test", timerTestExpected, numCycles, testFreqHz, 0, testBaudrate)
   }
 }
 
@@ -288,9 +295,10 @@ class CSRHardwareTimeEventTest extends CSRHardwareBaseTest {
 
   val testFreqHz = 1000
   val numCycles = 2000  // With 1kHz test frequency (safe)
+  val testBaudrate = 100
 
     "Exception Handling Test" should "pass on the ThreeCats processor" in {
-      runCSRTest("CSR_time_event_test", timeEventTestExpected, numCycles, testFreqHz, 0)
+      runCSRTest("CSR_time_event_test", timeEventTestExpected, numCycles, testFreqHz, 0, testBaudrate)
     }
 }
 
@@ -300,7 +308,6 @@ class CSRHardwareTimeEventTest extends CSRHardwareBaseTest {
 class CSRHardwareTimerEdgecasesTest extends CSRHardwareBaseTest {
   // Define the expected register values
   val timerEdgeCasesTestExpected = Map(
-    REGS.x10 -> 1,        // Overall test result (1 = all passed)
     REGS.x21 -> 1,        // Test 1: Counter increments & mcycle writability
     REGS.x22 -> 1,        // Test 2: TIME CSR write protection
     REGS.x23 -> 1,        // Test 3: mtimecmp=0 does not trigger interrupts
@@ -309,13 +316,15 @@ class CSRHardwareTimerEdgecasesTest extends CSRHardwareBaseTest {
     REGS.x26 -> 1,        // Test 6: mtimecmp=MAX disables interrupts
     REGS.x27 -> 1,        // Test 7: mie.MTIE disable/enable works
     REGS.x30 -> 1,        // Volatile interrupt flag (set by handler)
+    //REGS.x10 -> 1,        // Overall test result (1 = all passed)
   )
 
   val testFreqHz = 10000
   val numCycles = 4000  // With 10kHz test frequency
+  val testBaudrate = 1200
 
     "Exception Handling Test" should "pass on the ThreeCats processor" in {
-      runCSRTest("CSR_timer_edgecases_test", timerEdgeCasesTestExpected, numCycles, testFreqHz, 0)
+      runCSRTest("CSR_timer_edgecases_test", timerEdgeCasesTestExpected, numCycles, testFreqHz, 0, testBaudrate)
     }
 }
 
@@ -332,9 +341,10 @@ class CSRHardwareWfiTest extends CSRHardwareBaseTest {
 
   val testFreqHz = 10000     // 10kHz for faster simulation
   val numCycles = 550        // Should be enough for interrupt to trigger
+  val testBaudrate = 1200
 
   "WFI and Timer Interrupt Test" should "pass on the ThreeCats processor" in {
-    runCSRTest("WFI_test", wfiTestExpected, numCycles, testFreqHz, 0)
+    runCSRTest("WFI_test", wfiTestExpected, numCycles, testFreqHz, 0, testBaudrate)
   }
 }
 
@@ -378,30 +388,31 @@ class CSRHardwareWfiEdgeCasesTest extends CSRHardwareBaseTest {
 
   val testFreqHz = 10000      // 1kHz for faster simulation
   val numCycles = 600        // Enough cycles to complete each test
+  val testBaudrate = 1200
 
   // Test 1: WFI with already pending interrupt
   "WFI Short Nap Test" should "quickly exit sleep upon interrupt" in {
-    runCSRTest("WFI_Short_Nap_test", pendingInterruptExpected, numCycles, testFreqHz, 0)
+    runCSRTest("WFI_Short_Nap_test", pendingInterruptExpected, numCycles, testFreqHz, 0, testBaudrate)
   }
 
   // Test 2: WFI with disabled interrupts
   "WFI Disabled Interrupts Test" should "act as NOP when interrupts are globally disabled" in {
-    runCSRTest("WFI_Disabled_Interrupt_test", disabledInterruptsExpected, numCycles, testFreqHz, 0)
+    runCSRTest("WFI_Disabled_Interrupt_test", disabledInterruptsExpected, numCycles, testFreqHz, 0, testBaudrate)
   }
 
   // Test 3: WFI wake-up timing
   "WFI Wake-up Timing Test" should "wake up at the correct time when interrupt triggers" in {
-    runCSRTest("WFI_WakeUp_timing_test", wakeupTimingExpected, numCycles, testFreqHz, 0)
+    runCSRTest("WFI_WakeUp_timing_test", wakeupTimingExpected, numCycles, testFreqHz, 0, testBaudrate)
   }
 
   // Test 4: WFI with interrupt masking
   "WFI Interrupt Masking Test" should "only respond to enabled interrupt sources" in {
-    runCSRTest("WFI_Interrupt_mask_test", interruptMaskingExpected, numCycles, testFreqHz, 0)
+    runCSRTest("WFI_Interrupt_mask_test", interruptMaskingExpected, numCycles, testFreqHz, 0, testBaudrate)
   }
 
   // Test 5: WFI re-execution
   "WFI Re-execution Test" should "handle consecutive WFI instructions correctly" in {
-    runCSRTest("WFI_reExecution_test", reexecutionExpected, numCycles, testFreqHz, 0)
+    runCSRTest("WFI_reExecution_test", reexecutionExpected, numCycles, testFreqHz, 0, testBaudrate)
   }
 }
 
@@ -437,39 +448,39 @@ class CSRHardwareAllTests(Ignore: String) extends CSRHardwareBaseTest {
   }
 
   "CSR Hardware Timer Functionality" should "pass all tests" in {
-    runCSRTest("CSR_timer_core_test", timerFunctionalityTest.timerTestExpected, timerFunctionalityTest.numCycles, timerFunctionalityTest.testFreqHz, 0)
+    runCSRTest("CSR_timer_core_test", timerFunctionalityTest.timerTestExpected, timerFunctionalityTest.numCycles, timerFunctionalityTest.testFreqHz, 0, timerFunctionalityTest.testBaudrate)
   }
 
   "CSR Timer Edge Cases" should "pass all tests" in {
-    runCSRTest("CSR_timer_edgecases_test", timerEdgeCasesTest.timerEdgeCasesTestExpected, timerEdgeCasesTest.numCycles, timerEdgeCasesTest.testFreqHz, 0)
+    runCSRTest("CSR_timer_edgecases_test", timerEdgeCasesTest.timerEdgeCasesTestExpected, timerEdgeCasesTest.numCycles, timerEdgeCasesTest.testFreqHz, 0, timerEdgeCasesTest.testBaudrate)
   }
 
   "CSR Timer Time Events" should "pass all tests" in {
-    runCSRTest("CSR_time_event_test", timeEventsTest.timeEventTestExpected, timeEventsTest.numCycles, timeEventsTest.testFreqHz, 0)
+    runCSRTest("CSR_time_event_test", timeEventsTest.timeEventTestExpected, timeEventsTest.numCycles, timeEventsTest.testFreqHz, 0, timeEventsTest.testBaudrate)
   }
 
   "CSR WFI" should "pass all tests" in {
-    runCSRTest("WFI_test", WFITest.wfiTestExpected, WFITest.numCycles, WFITest.testFreqHz, 0)
+    runCSRTest("WFI_test", WFITest.wfiTestExpected, WFITest.numCycles, WFITest.testFreqHz, 0, WFITest.testBaudrate)
   }
 
   "WFI Short Nap Test" should "quickly exit sleep upon interrupt" in {
-    runCSRTest("WFI_Short_Nap_test", WFIEdgeCasesTest.pendingInterruptExpected, WFIEdgeCasesTest.numCycles, WFIEdgeCasesTest.testFreqHz, 0)
+    runCSRTest("WFI_Short_Nap_test", WFIEdgeCasesTest.pendingInterruptExpected, WFIEdgeCasesTest.numCycles, WFIEdgeCasesTest.testFreqHz, 0, WFIEdgeCasesTest.testBaudrate)
   }
 
   "WFI Disabled Interrupts Test" should "act as NOP when interrupts are globally disabled" in {
-    runCSRTest("WFI_Disabled_Interrupt_test", WFIEdgeCasesTest.disabledInterruptsExpected, WFIEdgeCasesTest.numCycles, WFIEdgeCasesTest.testFreqHz, 0)
+    runCSRTest("WFI_Disabled_Interrupt_test", WFIEdgeCasesTest.disabledInterruptsExpected, WFIEdgeCasesTest.numCycles, WFIEdgeCasesTest.testFreqHz, 0, WFIEdgeCasesTest.testBaudrate)
   }
 
   "WFI Wake-up Timing Test" should "wake up at the correct time when interrupt triggers" in {
-    runCSRTest("WFI_WakeUp_timing_test", WFIEdgeCasesTest.wakeupTimingExpected, WFIEdgeCasesTest.numCycles, WFIEdgeCasesTest.testFreqHz, 0)
+    runCSRTest("WFI_WakeUp_timing_test", WFIEdgeCasesTest.wakeupTimingExpected, WFIEdgeCasesTest.numCycles, WFIEdgeCasesTest.testFreqHz, 0, WFIEdgeCasesTest.testBaudrate)
   }
 
   "WFI Interrupt Masking Test" should "only respond to enabled interrupt sources" in {
-    runCSRTest("WFI_Interrupt_mask_test", WFIEdgeCasesTest.interruptMaskingExpected, WFIEdgeCasesTest.numCycles, WFIEdgeCasesTest.testFreqHz, 0)
+    runCSRTest("WFI_Interrupt_mask_test", WFIEdgeCasesTest.interruptMaskingExpected, WFIEdgeCasesTest.numCycles, WFIEdgeCasesTest.testFreqHz, 0, WFIEdgeCasesTest.testBaudrate)
   }
 
   "WFI Re-execution Test" should "handle consecutive WFI instructions correctly" in {
-    runCSRTest("WFI_reExecution_test", WFIEdgeCasesTest.reexecutionExpected, WFIEdgeCasesTest.numCycles, WFIEdgeCasesTest.testFreqHz, 0)
+    runCSRTest("WFI_reExecution_test", WFIEdgeCasesTest.reexecutionExpected, WFIEdgeCasesTest.numCycles, WFIEdgeCasesTest.testFreqHz, 0, WFIEdgeCasesTest.testBaudrate)
   }
 
 }

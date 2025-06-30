@@ -51,63 +51,39 @@ class WildcatTopPhysicalDataTest() extends AnyFlatSpec with
 
         //Send the ZSBL_demo.bin file:
         send32bit("h00000000".U) //First send address
-        send32bit("hf00102b7".U)
+        send32bit("hf00102b7".U) //Then send data
 
         send32bit("h00000004".U) //First send address
-        send32bit("h03300313".U)
+        send32bit("h03300313".U) //Then send data
 
         send32bit("h00000008".U) //First send address
-        send32bit("h00628023".U)
+        send32bit("h00628023".U) //Then send data
 
         send32bit("h0000000c".U) //First send address
-        send32bit("h00ff0137".U)
+        send32bit("h00ff0137".U) //Then send data
 
         send32bit("h00000010".U) //First send address
-        send32bit("h003002b7".U)
+        send32bit("h003002b7".U) //Then send data
 
         send32bit("h00000014".U) //First send address
-        send32bit("h30529073".U)
+        send32bit("h30529073".U) //Then send data
 
         send32bit("h00000018".U) //First send address
-        send32bit("h10000293".U)
+        send32bit("h10000293".U) //Then send data
 
         send32bit("h0000001c".U) //First send address
-        send32bit("h00028067".U)
-
-        send32bit("h00000020".U) //First send address
-        send32bit("h00000013".U)
-
-        send32bit("h00000024".U) //First send address
-        send32bit("h00000013".U)
-
-        send32bit("h00000028".U) //First send address
-        send32bit("h00000013".U)
-
-        send32bit("h0000002c".U) //First send address
-        send32bit("h00000013".U)
-
-        send32bit("h00000030".U) //First send address
-        send32bit("hf00102b7".U)
-
-        send32bit("h00000034".U) //First send address
-        send32bit("h08800313".U)
-
-        send32bit("h00000038".U) //First send address
-        send32bit("h00628023".U)
+        send32bit("h00028067".U) //Then send data
 
         //Now send memory mapped IO for setting bootloader to sleep
-        send32bit(bootSleepAddr)
-        send32bit("h00000001".U) //Sleep command data
-        //dut.io.led.expect(0.U) // should fail always
+        send32bit(bootSleepAddr) //First send address
+        send32bit("h00000001".U) //Then send data
         //Should be asleep now
 
-        dut.clock.step(1000)
-        //dut.io.led.expect(1.U) // should fail always
+        dut.clock.step(500)
+        dut.io.led.expect("h3333".U)
 
         // Investigate X1 after test has run.
 
-        // Test will never show any instructions being ran as SPI controller not connected to mem
-        // Hence no instructions can later be read.
       }
   }
 }

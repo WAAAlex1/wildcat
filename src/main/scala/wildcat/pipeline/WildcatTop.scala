@@ -7,6 +7,7 @@ import chisel3._
 import wildcat.Util
 import wildcat.CSR._
 import chisel.lib.uart._
+import uart.MemoryMappedUart
 
 /*
  * This file is part of the RISC-V processor Wildcat.
@@ -18,7 +19,7 @@ import chisel.lib.uart._
  * Edited by Georg and Alexander to test our Bootloader
  *
  */
-class WildcatTop(file: String, dmemNrByte: Int = 4096, freqHz: Int = 100000000) extends Module {
+class WildcatTop(file: String, dmemNrByte: Int = 4096, freqHz: Int = 100000000, baudrate: Int = 115200) extends Module {
 
   val io = IO(new Bundle {
     val led = Output(UInt(16.W))
@@ -37,17 +38,12 @@ class WildcatTop(file: String, dmemNrByte: Int = 4096, freqHz: Int = 100000000) 
   val dmem = Module(new ScratchPadMem(memory, nrBytes = dmemNrByte))
   cpu.io.dmem <> dmem.io
 
-
-
-
   val imem = Module(new InstructionROM(memory))
   imem.io.address := cpu.io.imem.address
   cpu.io.imem.data := imem.io.data
   cpu.io.imem.stall := imem.io.stall
 
-
-
-
+  // ********************************************************************
   // Cache, bus and memory controller connections
   implicit val config = new TilelinkConfig
   val bus = Module(new BusInterconnect()) // Includes caches
@@ -81,30 +77,41 @@ class WildcatTop(file: String, dmemNrByte: Int = 4096, freqHz: Int = 100000000) 
   */
 
 
-  // Here IO stuff
-  // IO is mapped ot 0xf000_0000
-  // use lower bits to select IOs
+  // ********************************************************************
+  // Here IO
+  // IO is mapped in the space 0xf000_0000 - 0xffff_ffff
 
-  // UART:
-  // 0xf000_0000 status:
-  // bit 0 TX ready (TDE)
-  // bit 1 RX data available (RDF)
-  // 0xf000_0004 send and receive register
-  // BUG: If using freqhz instead of 100000000 we might get an error if freqhz > baudrate (will get negative number).
-  val tx = Module(new BufferedTx(100000000, 115200))
-  val rx = Module(new Rx(100000000, 115200))
-  io.tx := tx.io.txd
-  rx.io.rxd := io.rx
+  //LED
+  val ledReg = RegInit(0.U(32.W))
 
-  tx.io.channel.bits := cpu.io.dmem.wrData(7, 0)
-  tx.io.channel.valid := false.B
-  rx.io.channel.ready := false.B
+  //Instantiate & connect UART:
+  val mmUart = MemoryMappedUart(
+    freqHz,
+    baudrate,
+    txBufferDepth = 16,
+    rxBufferDepth = 16
+  )
+  cpu.io.UARTport <> mmUart.io.port
+  io.tx := mmUart.io.pins.tx
+  mmUart.io.pins.rx := io.rx
+
+
+  // Instantiate UART - do not use freq < baudrate (will crash)
+//  val tx = Module(new BufferedTx(100000000, 115200))
+//  val rx = Module(new Rx(100000000, 115200))
+//  io.tx := tx.io.txd
+//  rx.io.rxd := io.rx
+//
+//  tx.io.channel.bits := cpu.io.dmem.wrData(7, 0)
+//  tx.io.channel.valid := false.B
+//  rx.io.channel.ready := false.B
+
+  // ********************************************************************
 
   // Default values for memory accesses
-  val uartStatusReg = RegNext(rx.io.channel.valid ## tx.io.channel.ready)
+  //val uartStatusReg = RegNext(rx.io.channel.valid ## tx.io.channel.ready)
   val memAddressReg = RegNext(cpu.io.dmem.rdAddress)
   val writeAddressReg = RegNext(cpu.io.dmem.wrAddress)
-
 
   // Instantiate CLINT module
   val clint = Module(new CLINT())
@@ -124,47 +131,58 @@ class WildcatTop(file: String, dmemNrByte: Int = 4096, freqHz: Int = 100000000) 
   clint.io.currentTimeIn := cpu.io.timerCounter_out
   cpu.io.mtimecmpVal_in := clint.io.mtimecmpValueOut
 
-  // Memory access logic with added CLINT handling
+  // ********************************************************************
+
+  // MEMORYMAPPED OPERATIONS
+
+  // Memory read with memorymapping (CLINT, UART, Bootloader)
   when(memAddressReg(31, 28) === 0xf.U) {
     when(isClintAccess) {
       // Access to CLINT
       cpu.io.dmem.rdData := clint.io.link.rdData
-    }.elsewhen(memAddressReg(19, 16) === 0.U) {
-      // UART access
-      when(memAddressReg(3, 0) === 0.U) {
-        cpu.io.dmem.rdData := uartStatusReg
-      }.elsewhen(memAddressReg(3, 0) === 4.U) {
-        cpu.io.dmem.rdData := rx.io.channel.bits
-        rx.io.channel.ready := cpu.io.dmem.rdEnable
-      }.otherwise {
-        cpu.io.dmem.rdData := 0.U
-      }
+    }.elsewhen(memAddressReg === "hF000_0000".U) {    // UART status reg
+      //cpu.io.dmem.rdData := uartStatusReg
+      cpu.io.dmem.rdData := cpu.io.UARTport.rdData
+    }.elsewhen(memAddressReg === "hF000_0004".U) {    // UART Send and receive reg
+      //cpu.io.dmem.rdData := rx.io.channel.bits
+      //rx.io.channel.ready := cpu.io.dmem.rdEnable
+      cpu.io.dmem.rdData := cpu.io.UARTport.rdData
+    }.elsewhen(memAddressReg === "hF010_0000".U) {    // LED Data reg
+      cpu.io.dmem.rdData := ledReg
+    //}.elsewhen(memAddressReg === "hF100_0000".U) {    // Bootloader status reg
+    //  cpu.io.dmem.rdData := bootloaderStatusReg
     }.otherwise {
       cpu.io.dmem.rdData := 0.U
     }
+    //bus.io.CPUdCacheMemIO.rdEnable := false.B
   }
 
-  val ledReg = RegInit(0.U(8.W))
-  when ((cpu.io.dmem.wrAddress(31, 28) === 0xf.U) && cpu.io.dmem.wrEnable(0)) {
-    when (isClintWrite) {
-      // Write to CLINT handled by CLINT module
-    } .elsewhen (cpu.io.dmem.wrAddress(19,16) === 0.U && cpu.io.dmem.wrAddress(3, 0) === 4.U) {
-      //printf(" %c %d\n", cpu.io.dmem.wrData(7, 0), cpu.io.dmem.wrData(7, 0))
-      tx.io.channel.valid := true.B
-    } .elsewhen (cpu.io.dmem.wrAddress(19,16) === 1.U) {
-      ledReg := cpu.io.dmem.wrData(7, 0)
-    } .otherwise {
+  // Memory write with memorymapping (CLINT, UART, LED)
+  when ((cpu.io.dmem.wrAddress(31, 28) === 0xf.U) && (cpu.io.dmem.wrEnable.asUInt > 0.U)) {
+    when (isClintWrite) { // Write to CLINT handled by CLINT module
+      // do nothing
+    }.elsewhen (cpu.io.dmem.wrAddress === "hF000_0004".U) {  // UART send and receive reg
+      //tx.io.channel.valid := true.B
+      //handled in CPU
+    }.elsewhen (cpu.io.dmem.wrAddress === "hF001_0000".U) {  // LED Reg
+      ledReg := cpu.io.dmem.wrData(31, 0)
+    //}.elsewhen(cpu.io.dmem.wrAddress   === "hF100_0000".U) {  // Bootloader status reg
+    //  bootloaderStatusReg := cpu.io.dmem.wrData(7, 0)
+    }.otherwise {
       // Any other IO or memory region, do nothing for write
     }
     dmem.io.wrEnable := VecInit(Seq.fill(4)(false.B))
-    bus.io.CPUdCacheMemIO.wrEnable := VecInit(Seq.fill(4)(false.B))
+    bus.io.CPUdCacheMemIO.wrEnable := Seq.fill(4)(false.B)
   }
 
-  io.led := 1.U ## 0.U(7.W) ## RegNext(ledReg)
+  // ********************************************************************
+  // TOPLEVEL CONNECTIONS
 
-  when(isClintAccess) {
-    //printf(p"[WildcatTop] CLINT Access: Addr=0x${Hexadecimal(memAddressReg)}, isWrite=${isClintWrite}\n")
-  }
+  io.led := RegNext(ledReg) //1.U ## 0.U(7.W) ## RegNext(ledReg)
+
+  // ********************************************************************
+
+
 }
 
 object WildcatTop extends App {
