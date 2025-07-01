@@ -7,7 +7,7 @@ import chisel3._
 import wildcat.Util
 import wildcat.CSR._
 import chisel.lib.uart._
-import uart.MemoryMappedUart
+import uart.{MemoryMappedUart, MemoryMappedUartWithInterrupts}
 
 /*
  * This file is part of the RISC-V processor Wildcat.
@@ -85,26 +85,12 @@ class WildcatTop(file: String, dmemNrByte: Int = 4096, freqHz: Int = 100000000, 
   val ledReg = RegInit(0.U(32.W))
 
   //Instantiate & connect UART:
-  val mmUart = MemoryMappedUart(
-    freqHz,
-    baudrate,
-    txBufferDepth = 16,
-    rxBufferDepth = 16
-  )
+  val mmUart = MemoryMappedUartWithInterrupts.standard(freqHz, baudrate)
+  // Connect UART to CPU
   cpu.io.UARTport <> mmUart.io.port
   io.tx := mmUart.io.pins.tx
   mmUart.io.pins.rx := io.rx
-
-
-  // Instantiate UART - do not use freq < baudrate (will crash)
-//  val tx = Module(new BufferedTx(100000000, 115200))
-//  val rx = Module(new Rx(100000000, 115200))
-//  io.tx := tx.io.txd
-//  rx.io.rxd := io.rx
-//
-//  tx.io.channel.bits := cpu.io.dmem.wrData(7, 0)
-//  tx.io.channel.valid := false.B
-//  rx.io.channel.ready := false.B
+  cpu.io.externalInterrupt := mmUart.io.rxInterrupt
 
   // ********************************************************************
 
